@@ -8,6 +8,7 @@ On the Github page go to a repository, then "Admin", "Service Hooks", "Post-Rece
 You can even test the whole thing here, by clicking on the!
 
 h1. How this works
+
 When someone pushes changes onto Github, it sends a json file to the service hook url. 
 It contains information about the repository that was updated.
 
