@@ -3,13 +3,18 @@ h1. What is it?
 this is a small HTTP server written in python. 
 It allows you to have a version of your project installed, that will be updated automatically on each Github push.
 
-In order for it to run, start it by typing "python GitAutoDeploy.py" and add the http address to the github post Post-Receive URLs.
-On the Github page go to a repository, then "Admin", "Service Hooks", "Post-Receive URLs" and add the url of your machine (e.g. http://example.com:8001).
+To set it up, do the following:
+* install python
+* enter the matching for your project(s) in the GitAutoDeploy.conf.json file
+* start the server by typing "python GitAutoDeploy.py"
+* On the Github page go to a repository, then "Admin", "Service Hooks", 
+"Post-Receive URLs" and add the url of your machine + port (e.g. http://example.com:8001).
+
 You can even test the whole thing here, by clicking on the!
 
 h1. How this works
 
-When someone pushes changes onto Github, it sends a json file to the service hook url. 
+When someone pushes changes into Github, it sends a json file to the service hook url. 
 It contains information about the repository that was updated.
 
 All it really does is match the repository urls to your local repository paths in the config file, 
