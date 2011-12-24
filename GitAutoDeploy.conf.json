@@ -1,0 +1,13 @@
+{
+	"port": 8001, 
+	"repositories": 
+	[{
+		"url": "https://github.com/logsol/Test-Repo", 
+		"path": "/home/logsol/projects/Test-Repo",
+		"deploy": "echo deploying"
+	}, 
+	{
+		"url": "https://github.com/logsol/Katharsis-Framework",
+		"path": "/home/logsol/projects/Katharsis-Framework"
+	}]
+}
