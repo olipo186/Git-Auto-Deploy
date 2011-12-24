@@ -21,5 +21,5 @@ All it really does is match the repository urls to your local repository paths i
 move there and run "git pull".
 
 
-Additionally it runs a deploy command that you can add to the config file optionally.
+Additionally it runs a deploy bash command that you can add to the config file optionally.
 Make sure that you start the server as the user that is allowed to pull from the github repository.
