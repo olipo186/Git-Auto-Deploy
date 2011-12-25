@@ -6,7 +6,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
     CONFIG_FILEPATH = './GitAutoDeploy.conf.json'
     config = None
-    deamonMode = False
+    quiet = False
 
     @classmethod
     def getConfig(myClass):
@@ -14,22 +14,18 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
             try:
                 configString = open(myClass.CONFIG_FILEPATH).read()
             except:
-                print 'Could not load ' + myClass.CONFIG_FILEPATH + ' file'
-                sys.exit()
+                sys.exit('Could not load ' + myClass.CONFIG_FILEPATH + ' file')
 
             try:
                 myClass.config = json.loads(configString)
             except:
-                print myClass.CONFIG_FILEPATH + ' file is not valid json'
-                sys.exit()
+                sys.exit(myClass.CONFIG_FILEPATH + ' file is not valid json')
 
             for repository in myClass.config['repositories']:
                 if(not os.path.isdir(repository['path'])):
-                    print 'Directory ' + repository['path'] + ' not found'
-                    sys.exit()
+                    sys.exit('Directory ' + repository['path'] + ' not found')
                 if(not os.path.isdir(repository['path'] + '/.git')):
-                    print 'Directory ' + repository['path'] + ' is not a Git repository'
-                    sys.exit()
+                    sys.exit('Directory ' + repository['path'] + ' is not a Git repository')
 
         return myClass.config
 
@@ -58,12 +54,13 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
     def respond(self):
         self.send_response(200)
-        self.send_header("Content-type", "text/plain")
+        self.send_header('Content-type', 'text/plain')
         self.end_headers()
 
     def pull(self, path):
-        print "\nPost push request received"
-        print "Updating " + path
+        if(not self.quiet):
+            print "\nPost push request received"
+            print 'Updating ' + path
         call(['cd "' + path + '"; git pull'], shell=True)
 
     def deploy(self, path):
@@ -71,18 +68,32 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
         for repository in config['repositories']:
             if(repository['path'] == path):
                 if 'deploy' in repository:
-                     print "Executing deploy command"
+                     if(not self.quiet):
+                         print 'Executing deploy command'
                      call(['cd "' + path + '";' + repository['deploy']], shell=True)
                 break
 
 def main():
     try:
-        print "Github Autodeploy Service v 0.1 started"
+        for arg in sys.argv: 
+            if(arg == '-d' or arg == '--deamon-mode'):
+                 GitAutoDeploy.quiet = True
+
+        server = None
+        if(not GitAutoDeploy.quiet):
+            print 'Github Autodeploy Service v 0.1 started'
+            
         server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
         server.serve_forever()
-    except KeyboardInterrupt:
-        print "Closing"
-        server.socket.close()
+    except (KeyboardInterrupt, SystemExit) as e:
+        if(e):
+            print >> sys.stderr, e
+
+        if(not server is None):
+            server.socket.close()
+
+        if(not GitAutoDeploy.quiet):
+            print 'Goodbye'
 
 if __name__ == '__main__':
      main()
