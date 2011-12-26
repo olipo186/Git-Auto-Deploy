@@ -7,6 +7,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
     CONFIG_FILEPATH = './GitAutoDeploy.conf.json'
     config = None
     quiet = False
+    deamon = False
 
     @classmethod
     def getConfig(myClass):
@@ -75,18 +76,29 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
 def main():
     try:
+        server = None
         for arg in sys.argv: 
             if(arg == '-d' or arg == '--deamon-mode'):
-                 GitAutoDeploy.quiet = True
+                GitAutoDeploy.deamon = True
+                GitAutoDeploy.quiet = True
+            if(arg == '-q' or arg == '--quiet'):
+                GitAutoDeploy.quiet = True
+                
+        if(GitAutoDeploy.deamon):
+            pid = os.fork()
+            if(pid != 0):
+                sys.exit()
+            os.setsid()
 
-        server = None
         if(not GitAutoDeploy.quiet):
             print 'Github Autodeploy Service v 0.1 started'
-            
+        else:
+            print 'Github Autodeploy Service v 0.1 started in deamon mode'
+             
         server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
         server.serve_forever()
     except (KeyboardInterrupt, SystemExit) as e:
-        if(e):
+        if(e): # wtf, why is this creating a new line?
             print >> sys.stderr, e
 
         if(not server is None):
