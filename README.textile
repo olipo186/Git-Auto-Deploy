@@ -1,3 +1,5 @@
+!http://logsol.github.com/Github-Auto-Deploy/images/Github-Auto-Deploy.png!
+
 h1. What is it?
 
 this is a small HTTP server written in python. 
