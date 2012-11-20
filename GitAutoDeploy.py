@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import json, urlparse, sys, os
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from subprocess import call
