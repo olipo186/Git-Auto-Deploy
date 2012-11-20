@@ -7,7 +7,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
     CONFIG_FILEPATH = './GitAutoDeploy.conf.json'
     config = None
     quiet = False
-    deamon = False
+    daemon = False
 
     @classmethod
     def getConfig(myClass):
@@ -78,13 +78,13 @@ def main():
     try:
         server = None
         for arg in sys.argv: 
-            if(arg == '-d' or arg == '--deamon-mode'):
-                GitAutoDeploy.deamon = True
+            if(arg == '-d' or arg == '--daemon-mode'):
+                GitAutoDeploy.daemon = True
                 GitAutoDeploy.quiet = True
             if(arg == '-q' or arg == '--quiet'):
                 GitAutoDeploy.quiet = True
                 
-        if(GitAutoDeploy.deamon):
+        if(GitAutoDeploy.daemon):
             pid = os.fork()
             if(pid != 0):
                 sys.exit()
@@ -93,7 +93,7 @@ def main():
         if(not GitAutoDeploy.quiet):
             print 'Github Autodeploy Service v 0.1 started'
         else:
-            print 'Github Autodeploy Service v 0.1 started in deamon mode'
+            print 'Github Autodeploy Service v 0.1 started in daemon mode'
              
         server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
         server.serve_forever()
