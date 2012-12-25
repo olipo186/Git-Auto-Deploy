@@ -7,6 +7,7 @@ It allows you to have a version of your project installed, that will be updated 
 
 To set it up, do the following:
 * install python
+* copy the GitAutoDeploy.conf.json.example to GitAutoDeploy.conf.json. This file will be gitignored and can be environment specific.
 * enter the matching for your project(s) in the GitAutoDeploy.conf.json file
 * start the server by typing "python GitAutoDeploy.py" 
 * to run it as a deamon add ==--deamon-mode==
