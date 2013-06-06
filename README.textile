@@ -1,9 +1,9 @@
-!http://logsol.github.com/Github-Auto-Deploy/images/Github-Auto-Deploy.png!
+!http://olipo186.github.com/Github-Gitlab-Auto-Deploy/images/Github-Gitlab-Auto-Deploy.png!
 
 h1. What is it?
 
 this is a small HTTP server written in python. 
-It allows you to have a version of your project installed, that will be updated automatically on each Github push.
+It allows you to have a version of your project installed, that will be updated automatically on each Github or Gitlab push.
 
 To set it up, do the following:
 * install python
@@ -11,14 +11,14 @@ To set it up, do the following:
 * enter the matching for your project(s) in the GitAutoDeploy.conf.json file
 * start the server by typing "python GitAutoDeploy.py" 
 * to run it as a daemon add ==--daemon-mode==
-* On the Github page go to a repository, then "Admin", "Service Hooks", 
+* On the Github or Gitlab page go to a repository, then "Admin", "Service Hooks", 
 "Post-Receive URLs" and add the url of your machine + port (e.g. http://example.com:8001).
 
 You can even test the whole thing here, by clicking on the "Test Hook" button, whohoo!
 
 h1. How this works
 
-When someone pushes changes into Github, it sends a json file to the service hook url. 
+When someone pushes changes into Github or Gitlab, it sends a json file to the service hook url. 
 It contains information about the repository that was updated.
 
 All it really does is match the repository urls to your local repository paths in the config file, 
@@ -26,4 +26,4 @@ move there and run "git pull".
 
 
 Additionally it runs a deploy bash command that you can add to the config file optionally.
-Make sure that you start the server as the user that is allowed to pull from the github repository.
+Make sure that you start the server as the user that is allowed to pull from the github or gitlab repository.
