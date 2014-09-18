@@ -48,10 +48,9 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		items = []
 
 		# If payload is missing, we assume gitlab syntax.
-		if not 'payload' in post:
+		if not 'payload' in post and 'repository' in body:
 			response = json.loads(body)
-			if 'repository' in body:
-				items.append(response['repository']['url'])
+			items.append(response['repository']['url'])
 
 		# Otherwise, we assume github syntax.
 		else:
