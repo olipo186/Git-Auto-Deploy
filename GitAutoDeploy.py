@@ -45,19 +45,19 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		body = self.rfile.read(length)
 		post = urlparse.parse_qs(body)
 		items = []
-		
+
 		# If payload is missing, we assume gitlab syntax.
 		if not 'payload' in post:
 			response = json.loads(body)
 			if 'repository' in body:
 				items.append(response['repository']['url'])
-		
+
 		# Otherwise, we assume github syntax.
 		else:
 			for itemString in post['payload']:
 				item = json.loads(itemString)
 				items.append(item['repository']['url'])
-		
+
 		return items
 
 	def getMatchingPaths(self, repoUrl):
@@ -77,7 +77,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		if(not self.quiet):
 			print "\nPost push request received"
 			print 'Updating ' + path
-		call(['cd "' + path + '" && git pull'], shell=True)
+		call(['cd "' + path + '" && git fetch origin && git update-index --refresh &> /dev/null && git reset --hard origin/master'], shell=True)
 
 	def deploy(self, path):
 		config = self.getConfig()
@@ -92,13 +92,13 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 def main():
 	try:
 		server = None
-		for arg in sys.argv: 
+		for arg in sys.argv:
 			if(arg == '-d' or arg == '--daemon-mode'):
 				GitAutoDeploy.daemon = True
 				GitAutoDeploy.quiet = True
 			if(arg == '-q' or arg == '--quiet'):
 				GitAutoDeploy.quiet = True
-				
+
 		if(GitAutoDeploy.daemon):
 			pid = os.fork()
 			if(pid != 0):
@@ -109,7 +109,7 @@ def main():
 			print 'Github & Gitlab Autodeploy Service v 0.1 started'
 		else:
 			print 'Github & Gitlab Autodeploy Service v 0.1 started in daemon mode'
-			 
+
 		server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
 		server.serve_forever()
 	except (KeyboardInterrupt, SystemExit) as e:
