@@ -117,7 +117,7 @@ def main():
 		if(e): # wtf, why is this creating a new line?
 			print >> sys.stderr, e
 
-		if(not server is None):
+		if(server is not None):
 			server.socket.close()
 
 		if(not GitAutoDeploy.quiet):
