@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import json, urlparse, sys, os
+import json, urlparse, sys, os, signal
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from subprocess import call
 
@@ -83,22 +83,37 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		config = self.getConfig()
 		for repository in config['repositories']:
 			if(repository['path'] == path):
+				cmds = []
 				if 'deploy' in repository:
-					 if(not self.quiet):
-						 print 'Executing deploy command'
-					 call(['cd "' + path + '" && ' + repository['deploy']], shell=True)
+					cmds.append(repository['deploy'])
+
+				gd = config['global_deploy']
+				print gd
+				if len(gd[0]) is not 0:
+					cmds.insert(0, gd[0])
+				if len(gd[1]) is not 0:
+					cmds.append(gd[1])
+
+				if(not self.quiet):
+					print 'Executing deploy command(s)'
+				print cmds
+				for cmd in cmds:
+					call(['cd "' + path + '" && ' + cmd], shell=True)
+
 				break
 
-def main():
-	try:
-		server = None
+
+class GitAutoDeployMain:
+	
+	server = None
+
+	def run(self):
 		for arg in sys.argv:
 			if(arg == '-d' or arg == '--daemon-mode'):
 				GitAutoDeploy.daemon = True
 				GitAutoDeploy.quiet = True
 			if(arg == '-q' or arg == '--quiet'):
 				GitAutoDeploy.quiet = True
-
 		if(GitAutoDeploy.daemon):
 			pid = os.fork()
 			if(pid != 0):
@@ -110,17 +125,21 @@ def main():
 		else:
 			print 'Github & Gitlab Autodeploy Service v 0.1 started in daemon mode'
 
-		server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
-		server.serve_forever()
-	except (KeyboardInterrupt, SystemExit) as e:
-		if(e): # wtf, why is this creating a new line?
-			print >> sys.stderr, e
+		self.server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
+		self.server.serve_forever()
 
-		if(server is not None):
-			server.socket.close()
-
+	def close(self, signum, frame):
 		if(not GitAutoDeploy.quiet):
-			print 'Goodbye'
+			print '\nGoodbye'
+
+		if(self.server is not None):
+			self.server.socket.close()
+			sys.exit()
 
 if __name__ == '__main__':
-	 main()
+	gadm = GitAutoDeployMain()
+	
+	signal.signal(signal.SIGHUP, gadm.close)
+	signal.signal(signal.SIGINT, gadm.close)
+
+	gadm.run()
