@@ -133,6 +133,7 @@ class GitAutoDeployMain:
 			self.server.serve_forever()
 		except socket.error, e:
 			print "Error on socket: %s" % e
+			self.debug_diagnosis()
 			sys.exit(1)	
 
 	def create_pidfile(self):
@@ -141,8 +142,48 @@ class GitAutoDeployMain:
 		f.write(str(mainpid))
 		f.close()
 
+	def read_pidfile(self):
+		f = open(GitAutoDeploy.getConfig()['pidfilepath'],'r')
+		pid = f.readlines();
+		return pid;
+
 	def remove_pidfile(self):
 		os.remove(GitAutoDeploy.getConfig()['pidfilepath'])
+
+	def debug_diagnosis(self):
+		if(GitAutoDeploy.getConfig()['debug'] == "True" ):
+			f = open("/proc/net/tcp",'r')
+			filecontent = f.readlines()
+			f.close()
+			filecontent.pop(0)
+
+			pids = [int(x) for x in os.listdir('/proc') if x.isdigit()]
+			for line in filecontent:
+				a_line = " ".join(line.split()).split(" ")
+				hexport = a_line[1].split(':')[1]
+				decport = str(int(hexport,16))
+				inode = a_line[9]
+
+				if(decport  == str(GitAutoDeploy.getConfig()['port'])):
+					mpid = False
+					for pid in pids:
+						try:
+							for fd in os.listdir("/proc/%s/fd" % pid):
+								cinode = os.readlink("/proc/%s/fd/%s" % (pid, fd))
+								try:
+									minode = cinode.split("[")[1].split("]")[0]
+									if(minode == inode):
+										mpid = pid
+								except IndexError:
+									continue
+						
+						except OSError:
+							continue
+					if(mpid != False):
+						print 'Process with pid number', mpid, 'is using port', decport
+						f = open("/proc/%s/cmdline" % mpid)
+						cmdline = f.readlines();
+						print 'cmdline ->', cmdline
 
 	def stop(self):
 		if(self.server is not None):
@@ -154,7 +195,7 @@ class GitAutoDeployMain:
 		self.remove_pidfile()
 		sys.exit(0)
 
-	def signal_handle(self, signum, frame):
+	def signal_handler(self, signum, frame):
 		if(signum == 1):
 			self.stop()
 			self.run()
@@ -169,7 +210,7 @@ class GitAutoDeployMain:
 if __name__ == '__main__':
 	gadm = GitAutoDeployMain()
 	
-	signal.signal(signal.SIGHUP, gadm.signal_handle)
-	signal.signal(signal.SIGINT, gadm.signal_handle)
+	signal.signal(signal.SIGHUP, gadm.signal_handler)
+	signal.signal(signal.SIGINT, gadm.signal_handler)
 
 	gadm.run()
