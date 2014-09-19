@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import json, urlparse, sys, os, signal
+import json, urlparse, sys, os, signal, socket
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from subprocess import call
 
@@ -114,32 +114,62 @@ class GitAutoDeployMain:
 				GitAutoDeploy.quiet = True
 			if(arg == '-q' or arg == '--quiet'):
 				GitAutoDeploy.quiet = True
+			
 		if(GitAutoDeploy.daemon):
 			pid = os.fork()
 			if(pid != 0):
 				sys.exit()
 			os.setsid()
 
+		self.create_pidfile()
+
 		if(not GitAutoDeploy.quiet):
 			print 'Github & Gitlab Autodeploy Service v 0.1 started'
 		else:
 			print 'Github & Gitlab Autodeploy Service v 0.1 started in daemon mode'
 
-		self.server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
-		self.server.serve_forever()
+		try:
+			self.server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
+			self.server.serve_forever()
+		except socket.error, e:
+			print "Error on socket: %s" % e
+			sys.exit(1)	
 
-	def close(self, signum, frame):
-		if(not GitAutoDeploy.quiet):
-			print '\nGoodbye'
+	def create_pidfile(self):
+		mainpid = os.getpid()
+		f = open(GitAutoDeploy.getConfig()['pidfilepath'], 'w')
+		f.write(str(mainpid))
+		f.close()
 
+	def remove_pidfile(self):
+		os.remove(GitAutoDeploy.getConfig()['pidfilepath'])
+
+	def stop(self):
 		if(self.server is not None):
 			self.server.socket.close()
-			sys.exit()
+
+	def exit(self):
+		if(not GitAutoDeploy.quiet):
+			print '\nGoodbye'
+		self.remove_pidfile()
+		sys.exit(0)
+
+	def signal_handle(self, signum, frame):
+		if(signum == 1):
+			self.stop()
+			self.run()
+		elif(signum == 2):
+			print 'Keyboard Interrupt!!!'
+			self.stop()
+			self.exit()
+		else:
+			self.stop()
+			self.exit()	
 
 if __name__ == '__main__':
 	gadm = GitAutoDeployMain()
 	
-	signal.signal(signal.SIGHUP, gadm.close)
-	signal.signal(signal.SIGINT, gadm.close)
+	signal.signal(signal.SIGHUP, gadm.signal_handle)
+	signal.signal(signal.SIGINT, gadm.signal_handle)
 
 	gadm.run()
