@@ -8,6 +8,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
 	CONFIG_FILEPATH = './GitAutoDeploy.conf.json'
 	config = None
+	debug = True
 	quiet = False
 	daemon = False
 
@@ -104,7 +105,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
 
 class GitAutoDeployMain:
-	
+
 	server = None
 
 	def run(self):
@@ -114,7 +115,7 @@ class GitAutoDeployMain:
 				GitAutoDeploy.quiet = True
 			if(arg == '-q' or arg == '--quiet'):
 				GitAutoDeploy.quiet = True
-			
+
 		if(GitAutoDeploy.daemon):
 			pid = os.fork()
 			if(pid != 0):
@@ -134,7 +135,7 @@ class GitAutoDeployMain:
 		except socket.error, e:
 			print "Error on socket: %s" % e
 			self.debug_diagnosis()
-			sys.exit(1)	
+			sys.exit(1)
 
 	def create_pidfile(self):
 		mainpid = os.getpid()
@@ -151,39 +152,47 @@ class GitAutoDeployMain:
 		os.remove(GitAutoDeploy.getConfig()['pidfilepath'])
 
 	def debug_diagnosis(self):
-		if(GitAutoDeploy.getConfig()['debug'] == "True" ):
-			f = open("/proc/net/tcp",'r')
-			filecontent = f.readlines()
-			f.close()
-			filecontent.pop(0)
+		if GitAutoDeploy.debug == False:
+			return
 
-			pids = [int(x) for x in os.listdir('/proc') if x.isdigit()]
-			for line in filecontent:
-				a_line = " ".join(line.split()).split(" ")
-				hexport = a_line[1].split(':')[1]
-				decport = str(int(hexport,16))
-				inode = a_line[9]
+		with open("/proc/net/tcp",'r') as f:
+			filecontent = f.readlines()[1:]
 
-				if(decport  == str(GitAutoDeploy.getConfig()['port'])):
-					mpid = False
-					for pid in pids:
-						try:
-							for fd in os.listdir("/proc/%s/fd" % pid):
-								cinode = os.readlink("/proc/%s/fd/%s" % (pid, fd))
-								try:
-									minode = cinode.split("[")[1].split("]")[0]
-									if(minode == inode):
-										mpid = pid
-								except IndexError:
-									continue
-						
-						except OSError:
-							continue
-					if(mpid != False):
-						print 'Process with pid number', mpid, 'is using port', decport
-						f = open("/proc/%s/cmdline" % mpid)
-						cmdline = f.readlines();
-						print 'cmdline ->', cmdline
+		pids = [int(x) for x in os.listdir('/proc') if x.isdigit()]
+		conf_port = str(GitAutoDeploy.getConfig()['port'])
+		mpid = False
+
+		for line in filecontent:
+			if mpid != False:
+				break
+
+			_, laddr, _, _, _, _, _, _, _, inode = line.split()[:10]
+			decport = str(int(laddr.split(':')[1], 16))
+
+			if decport != conf_port:
+				continue
+
+			for pid in pids:
+				try:
+					path = "/proc/%s/fd" % pid
+					if os.access(path, os.R_OK) is False:
+						continue
+
+					for fd in os.listdir(path):
+						cinode = os.readlink("/proc/%s/fd/%s" % (pid, fd))
+						minode = cinode.split(":")
+
+						if len(minode) == 2 and minode[1][1:-1] == inode:
+							mpid = pid
+				except Exception as e:
+					pass
+
+
+		if(mpid != False):
+			print 'Process with pid number', mpid, 'is using port', decport
+			with open("/proc/%s/cmdline" % mpid) as f:
+				cmdline = f.readlines();
+			print 'cmdline ->', cmdline[0].replace('\x00', ' ')
 
 	def stop(self):
 		if(self.server is not None):
@@ -205,11 +214,11 @@ class GitAutoDeployMain:
 			self.exit()
 		else:
 			self.stop()
-			self.exit()	
+			self.exit()
 
 if __name__ == '__main__':
 	gadm = GitAutoDeployMain()
-	
+
 	signal.signal(signal.SIGHUP, gadm.signal_handler)
 	signal.signal(signal.SIGINT, gadm.signal_handler)
 
