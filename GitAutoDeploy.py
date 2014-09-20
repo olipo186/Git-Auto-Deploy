@@ -115,6 +115,10 @@ class GitAutoDeployMain:
 				GitAutoDeploy.quiet = True
 			if(arg == '-q' or arg == '--quiet'):
 				GitAutoDeploy.quiet = True
+			if(arg == '--force'):
+				print '[KILLER MODE] Warning: The --force option will try to kill any process ' \
+					'using %s port. USE AT YOUR OWN RISK' %GitAutoDeploy.getConfig()['port']
+				self.kill_them_all()
 
 		if(GitAutoDeploy.daemon):
 			pid = os.fork()
@@ -133,10 +137,21 @@ class GitAutoDeployMain:
 			self.server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
 			self.server.serve_forever()
 		except socket.error, e:
-			print "Error on socket: %s" % e
-			self.debug_diagnosis()
+			if(not GitAutoDeploy.quiet and not GitAutoDeploy.daemon):
+				print "Error on socket: %s" % e
+				self.debug_diagnosis()
 			sys.exit(1)
 
+	def kill_them_all(self):
+		pid = self.get_pid_on_port(GitAutoDeploy.getConfig()['port'])
+		if pid == False:
+			print '[KILLER MODE] I don\'t know the number of pid that is using my configured port\n ' \
+				'[KILLER MODE] Maybe no one? Please, use --force option carefully'
+			return False
+
+		os.kill(pid, signal.SIGKILL)
+		return True
+ 
 	def create_pidfile(self):
 		with open(GitAutoDeploy.getConfig()['pidfilepath'], 'w') as f:
 			f.write(str(os.getpid()))
@@ -152,6 +167,18 @@ class GitAutoDeployMain:
 		if GitAutoDeploy.debug == False:
 			return
 
+		port = GitAutoDeploy.getConfig()['port']
+		pid = self.get_pid_on_port(port)
+		if pid == False:
+			print 'I don\'t know the number of pid that is using my configured port'
+			return
+		
+		print 'Process with pid number %s is using port %s' % (pid, port)
+		with open("/proc/%s/cmdline" % pid) as f:
+			cmdline = f.readlines()
+			print 'cmdline ->', cmdline[0].replace('\x00', ' ')
+
+	def get_pid_on_port(self,port):
 		with open("/proc/net/tcp",'r') as f:
 			filecontent = f.readlines()[1:]
 
@@ -183,13 +210,8 @@ class GitAutoDeployMain:
 							mpid = pid
 				except Exception as e:
 					pass
+		return mpid
 
-
-		if(mpid != False):
-			print 'Process with pid number %s is using port %s' % (mpid, decport)
-			with open("/proc/%s/cmdline" % mpid) as f:
-				cmdline = f.readlines()
-			print 'cmdline ->', cmdline[0].replace('\x00', ' ')
 
 	def stop(self):
 		if(self.server is not None):
@@ -208,6 +230,8 @@ class GitAutoDeployMain:
 			return
 		elif(signum == 2):
 			print '\nKeyboard Interrupt!!!'
+		elif(signum == 6):
+			print 'Requested close by SIGABRT (process abort signal). Code 6.'
 
 		self.exit()
 
@@ -216,5 +240,6 @@ if __name__ == '__main__':
 
 	signal.signal(signal.SIGHUP, gadm.signal_handler)
 	signal.signal(signal.SIGINT, gadm.signal_handler)
+	signal.signal(signal.SIGABRT, gadm.signal_handler)
 
 	gadm.run()
