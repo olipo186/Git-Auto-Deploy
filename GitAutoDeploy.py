@@ -145,8 +145,8 @@ class GitAutoDeployMain:
 
 	def read_pidfile(self):
 		f = open(GitAutoDeploy.getConfig()['pidfilepath'],'r')
-		pid = f.readlines();
-		return pid;
+		pid = f.readlines()
+		return pid
 
 	def remove_pidfile(self):
 		os.remove(GitAutoDeploy.getConfig()['pidfilepath'])
@@ -191,7 +191,7 @@ class GitAutoDeployMain:
 		if(mpid != False):
 			print 'Process with pid number', mpid, 'is using port', decport
 			with open("/proc/%s/cmdline" % mpid) as f:
-				cmdline = f.readlines();
+				cmdline = f.readlines()
 			print 'cmdline ->', cmdline[0].replace('\x00', ' ')
 
 	def stop(self):
