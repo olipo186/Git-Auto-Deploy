@@ -202,16 +202,14 @@ class GitAutoDeployMain:
 		sys.exit(0)
 
 	def signal_handler(self, signum, frame):
+		self.stop()
 		if(signum == 1):
-			self.stop()
 			self.run()
+			return
 		elif(signum == 2):
-			print 'Keyboard Interrupt!!!'
-			self.stop()
-			self.exit()
-		else:
-			self.stop()
-			self.exit()
+			print '\nKeyboard Interrupt!!!'
+
+		self.exit()
 
 if __name__ == '__main__':
 	gadm = GitAutoDeployMain()
