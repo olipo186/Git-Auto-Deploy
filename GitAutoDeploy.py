@@ -186,7 +186,7 @@ class GitAutoDeployMain:
 
 
 		if(mpid != False):
-			print 'Process with pid number', mpid, 'is using port', decport
+			print 'Process with pid number %s is using port %s' % (mpid, decport)
 			with open("/proc/%s/cmdline" % mpid) as f:
 				cmdline = f.readlines()
 			print 'cmdline ->', cmdline[0].replace('\x00', ' ')
