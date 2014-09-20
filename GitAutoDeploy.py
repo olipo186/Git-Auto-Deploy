@@ -138,15 +138,12 @@ class GitAutoDeployMain:
 			sys.exit(1)
 
 	def create_pidfile(self):
-		mainpid = os.getpid()
-		f = open(GitAutoDeploy.getConfig()['pidfilepath'], 'w')
-		f.write(str(mainpid))
-		f.close()
+		with open(GitAutoDeploy.getConfig()['pidfilepath'], 'w') as f:
+			f.write(str(os.getpid()))
 
 	def read_pidfile(self):
-		f = open(GitAutoDeploy.getConfig()['pidfilepath'],'r')
-		pid = f.readlines()
-		return pid
+		with open(GitAutoDeploy.getConfig()['pidfilepath'],'r') as f:
+			return f.readlines()
 
 	def remove_pidfile(self):
 		os.remove(GitAutoDeploy.getConfig()['pidfilepath'])
