@@ -7,12 +7,12 @@ It allows you to have a version of your project installed, that will be updated 
 
 To set it up, do the following:
 * install python
-* copy the GitAutoDeploy.conf.json.example to GitAutoDeploy.conf.json. This file will be gitignored and can be environment specific.
-* enter the matching for your project(s) in the GitAutoDeploy.conf.json file
-* start the server by typing "python GitAutoDeploy.py"
-* to run it as a daemon add ==--daemon-mode==
+* copy the ```GitAutoDeploy.conf.json.example``` to ```GitAutoDeploy.conf.json```. This file will be gitignored and can be environment specific.
+* enter the matching for your project(s) in the ```GitAutoDeploy.conf.json``` file
+* start the server by typing ```python GitAutoDeploy.py```
+* to run it as a daemon add ```--daemon-mode```
 * On the Github or Gitlab page go to a repository, then "Admin", "Service Hooks",
-"Post-Receive URLs" and add the url of your machine + port (e.g. http://example.com:8001).
+"Post-Receive URLs" and add the url of your machine + port (e.g. ```http://example.com:8001```).
 
 You can even test the whole thing here, by clicking on the "Test Hook" button, whohoo!
 
