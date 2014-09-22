@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import json, urlparse, sys, os, signal
+import json, urlparse, sys, os, signal, socket
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from subprocess import call
 
@@ -8,6 +8,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
 	CONFIG_FILEPATH = './GitAutoDeploy.conf.json'
 	config = None
+	debug = True
 	quiet = False
 	daemon = False
 
@@ -104,7 +105,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
 
 class GitAutoDeployMain:
-	
+
 	server = None
 
 	def run(self):
@@ -114,32 +115,106 @@ class GitAutoDeployMain:
 				GitAutoDeploy.quiet = True
 			if(arg == '-q' or arg == '--quiet'):
 				GitAutoDeploy.quiet = True
+
 		if(GitAutoDeploy.daemon):
 			pid = os.fork()
 			if(pid != 0):
 				sys.exit()
 			os.setsid()
 
+		self.create_pidfile()
+
 		if(not GitAutoDeploy.quiet):
 			print 'Github & Gitlab Autodeploy Service v 0.1 started'
 		else:
 			print 'Github & Gitlab Autodeploy Service v 0.1 started in daemon mode'
 
-		self.server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
-		self.server.serve_forever()
+		try:
+			self.server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
+			self.server.serve_forever()
+		except socket.error, e:
+			print "Error on socket: %s" % e
+			self.debug_diagnosis()
+			sys.exit(1)
 
-	def close(self, signum, frame):
-		if(not GitAutoDeploy.quiet):
-			print '\nGoodbye'
+	def create_pidfile(self):
+		with open(GitAutoDeploy.getConfig()['pidfilepath'], 'w') as f:
+			f.write(str(os.getpid()))
 
+	def read_pidfile(self):
+		with open(GitAutoDeploy.getConfig()['pidfilepath'],'r') as f:
+			return f.readlines()
+
+	def remove_pidfile(self):
+		os.remove(GitAutoDeploy.getConfig()['pidfilepath'])
+
+	def debug_diagnosis(self):
+		if GitAutoDeploy.debug == False:
+			return
+
+		with open("/proc/net/tcp",'r') as f:
+			filecontent = f.readlines()[1:]
+
+		pids = [int(x) for x in os.listdir('/proc') if x.isdigit()]
+		conf_port = str(GitAutoDeploy.getConfig()['port'])
+		mpid = False
+
+		for line in filecontent:
+			if mpid != False:
+				break
+
+			_, laddr, _, _, _, _, _, _, _, inode = line.split()[:10]
+			decport = str(int(laddr.split(':')[1], 16))
+
+			if decport != conf_port:
+				continue
+
+			for pid in pids:
+				try:
+					path = "/proc/%s/fd" % pid
+					if os.access(path, os.R_OK) is False:
+						continue
+
+					for fd in os.listdir(path):
+						cinode = os.readlink("/proc/%s/fd/%s" % (pid, fd))
+						minode = cinode.split(":")
+
+						if len(minode) == 2 and minode[1][1:-1] == inode:
+							mpid = pid
+				except Exception as e:
+					pass
+
+
+		if(mpid != False):
+			print 'Process with pid number %s is using port %s' % (mpid, decport)
+			with open("/proc/%s/cmdline" % mpid) as f:
+				cmdline = f.readlines()
+			print 'cmdline ->', cmdline[0].replace('\x00', ' ')
+
+	def stop(self):
 		if(self.server is not None):
 			self.server.socket.close()
-			sys.exit()
+
+	def exit(self):
+		if(not GitAutoDeploy.quiet):
+			print '\nGoodbye'
+		self.remove_pidfile()
+		sys.exit(0)
+
+	def signal_handler(self, signum, frame):
+		self.stop()
+		if(signum == 1):
+			self.run()
+			return
+		elif(signum == 2):
+			print '\nKeyboard Interrupt!!!'
+
+		self.exit()
 
 if __name__ == '__main__':
 	gadm = GitAutoDeployMain()
-	
-	signal.signal(signal.SIGHUP, gadm.close)
-	signal.signal(signal.SIGINT, gadm.close)
+
+	signal.signal(signal.SIGHUP, gadm.signal_handler)
+	signal.signal(signal.SIGINT, gadm.signal_handler)
 
 	gadm.run()
