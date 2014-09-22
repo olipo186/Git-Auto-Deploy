@@ -16,14 +16,14 @@ To set it up, do the following:
 
 You can even test the whole thing here, by clicking on the "Test Hook" button, whohoo!
 
-h2. Configure GitAutoDeploy to start up at machine boot
+h2. Configure GitAutoDeploy to get executed at start up
 
 h3. Debian and Sys-V like init system.
-* Copy file initfiles/debianLSBInitScripts/gitautodeploy to /etc/init.d/
-* Make it executable: chmod 755 /etc/init.d/gitautodeploy
-* Also you need to make GitAutoDeploy.py executable (if it not yet): chmod 755 GitAutoDeploy.py
-* This init script assumes that you have GitAutoDeploy.py placed on /opt/Gitlab_Auto_Deploy/GitAutoDeploy.py. If it not, edit gitautodeploy init script and modify DAEMON and PWD.
-* Now you need to add the correct symbolic link to your specific runlevel dir to cause the script to be executed. On Debian_Sys-V just do update.rc.d gitautodeploy defaults
+* Copy file ```initfiles/debianLSBInitScripts/gitautodeploy``` to ```/etc/init.d/```
+* Make it executable: ```chmod 755 /etc/init.d/gitautodeploy```
+* Also you need to make ```GitAutoDeploy.py``` executable (if it isn't already): ```chmod 755 GitAutoDeploy.py```
+* This init script assumes that you have ```GitAutoDeploy.py``` in ```/opt/Gitlab_Auto_Deploy/GitAutoDeploy.py```. If this is not the case, edit ```gitautodeploy``` init script and modify ```DAEMON``` and ```PWD```.
+* Now you need to add the correct symbolic link to your specific runlevel dir to get the script executed on each start up. On Debian_Sys-V just do ```update.rc.d gitautodeploy defaults```
 
 h1. How this works
 
