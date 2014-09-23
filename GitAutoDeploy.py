@@ -89,7 +89,6 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 					cmds.append(repository['deploy'])
 
 				gd = config['global_deploy']
-				print gd
 				if len(gd[0]) is not 0:
 					cmds.insert(0, gd[0])
 				if len(gd[1]) is not 0:
@@ -97,7 +96,6 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
 				if(not self.quiet):
 					print 'Executing deploy command(s)'
-				print cmds
 				for cmd in cmds:
 					call(['cd "' + path + '" && ' + cmd], shell=True)
 
