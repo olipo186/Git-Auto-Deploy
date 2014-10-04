@@ -3,6 +3,7 @@
 import json, urlparse, sys, os, signal, socket
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from subprocess import call
+from threading import Timer
 
 class GitAutoDeploy(BaseHTTPRequestHandler):
 
@@ -35,6 +36,9 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
 	def do_POST(self):
 		urls = self.parseRequest()
+		Timer(1.0, self.do_process, [urls]).start()
+
+	def do_process(self, urls):
 		for url in urls:
 			paths = self.getMatchingPaths(url)
 			for path in paths:
