@@ -239,6 +239,6 @@ if __name__ == '__main__':
 	signal.signal(signal.SIGHUP, gadm.signal_handler)
 	signal.signal(signal.SIGINT, gadm.signal_handler)
 	signal.signal(signal.SIGABRT, gadm.signal_handler)
-	signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+	signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
 	gadm.run()
