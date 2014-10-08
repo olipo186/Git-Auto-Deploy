@@ -82,7 +82,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		if(not self.quiet):
 			print "\nPost push request received"
 			print 'Updating ' + path
-		call(['cd "' + path + '" && git fetch origin && git update-index --refresh &> /dev/null && git reset --hard origin/master'], shell=True)
+		call(['cd "' + path + '" && git fetch origin ; git update-index --refresh &> /dev/null ; git reset --hard origin/master'], shell=True)
 
 	def deploy(self, path):
 		config = self.getConfig()
