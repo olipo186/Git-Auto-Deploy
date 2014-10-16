@@ -128,8 +128,8 @@ class GitAutoDeployMain:
 
 		if(GitAutoDeploy.daemon):
 			pid = os.fork()
-			if(pid != 0):
-				sys.exit(1)
+			if(pid > 0):
+				sys.exit(0)
 			os.setsid()
 
 		self.create_pidfile()
@@ -239,7 +239,7 @@ class GitAutoDeployMain:
 		elif(signum == 6):
 			print 'Requested close by SIGABRT (process abort signal). Code 6.'
 
-		self.exit(1)
+		self.exit()
 
 if __name__ == '__main__':
 	gadm = GitAutoDeployMain()
