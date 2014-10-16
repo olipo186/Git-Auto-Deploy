@@ -19,23 +19,28 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 			try:
 				configString = open(myClass.CONFIG_FILEPATH).read()
 			except:
-				sys.exit('Could not load ' + myClass.CONFIG_FILEPATH + ' file')
+				print "Could not load %s file" % myClass.CONFIG_FILEPATH
+				sys.exit(2)
 
 			try:
 				myClass.config = json.loads(configString)
 			except:
-				sys.exit(myClass.CONFIG_FILEPATH + ' file is not valid json')
+				print "%s file is not valid JSON" % myClass.CONFIG_FILEPATH
+				sys.exit(2)
 
 			for repository in myClass.config['repositories']:
 				if(not os.path.isdir(repository['path'])):
-					sys.exit('Directory ' + repository['path'] + ' not found')
+					print "Directory %s not found" % repository['path']
+					sys.exit(2)
 				if(not os.path.isdir(repository['path'] + '/.git')):
-					sys.exit('Directory ' + repository['path'] + ' is not a Git repository')
+					print "Directory %s is not a Git repository" % repository['path']
+					sys.exit(2)
 
 		return myClass.config
 
 	def do_POST(self):
 		urls = self.parseRequest()
+		self.respond()
 		Timer(1.0, self.do_process, [urls]).start()
 
 	def do_process(self, urls):
@@ -44,7 +49,6 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 			for path in paths:
 				self.pull(path)
 				self.deploy(path)
-		self.respond()
 
 	def parseRequest(self):
 		length = int(self.headers.getheader('content-length'))
@@ -124,8 +128,8 @@ class GitAutoDeployMain:
 
 		if(GitAutoDeploy.daemon):
 			pid = os.fork()
-			if(pid != 0):
-				sys.exit()
+			if(pid > 0):
+				sys.exit(0)
 			os.setsid()
 
 		self.create_pidfile()
