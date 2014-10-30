@@ -51,21 +51,47 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 				self.deploy(path)
 
 	def parseRequest(self):
+		contenttype = self.headers.getheader('content-type')
 		length = int(self.headers.getheader('content-length'))
 		body = self.rfile.read(length)
-		post = urlparse.parse_qs(body)
+
 		items = []
+		
+		try:
+			if contenttype == "application/json" or contenttype == "application/x-www-form-urlencoded":
+				post = urlparse.parse_qs(body)
 
-		# If payload is missing, we assume gitlab syntax.
-		if not 'payload' in post and 'repository' in body:
-			response = json.loads(body)
-			items.append(response['repository']['url'])
+			# If payload is missing, we assume gitlab syntax.
+			if contenttype == "application/json" and "payload" not in post:
+				mode = "github"
+			# If x-www-form-urlencoded, we assume bitbucket syntax.
+			elif contenttype == "application/x-www-form-urlencoded":
+				mode = "bitbucket"
+			# Oh Gitlab, dear Gitlab...
+			else:
+				mode = "gitlab"
 
-		# Otherwise, we assume github syntax.
-		else:
-			for itemString in post['payload']:
-				item = json.loads(itemString)
-				items.append(item['repository']['url'])
+			
+			if mode == "github":
+				response = json.loads(body)
+				items.append(response['repository']['url'])
+				
+			elif mode == "bitbucket":
+				for itemString in post['payload']:
+					item = json.loads(itemString)
+					items.append("ssh://hg@bitbucket.org" + item['repository']['absolute_url'][0:-1]))
+
+			# Otherwise, we assume github/bitbucket syntax.
+			elif mode == "gitlab":
+				for itemString in post['payload']:
+					item = json.loads(itemString)
+					items.append(item['repository']['url'])
+			
+			# WTF?!
+			else:
+				pass
+		except Exception:
+			pass
 
 		return items
 
