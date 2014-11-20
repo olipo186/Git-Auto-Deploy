@@ -79,7 +79,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 			elif mode == "bitbucket":
 				for itemString in post['payload']:
 					item = json.loads(itemString)
-					items.append("ssh://hg@bitbucket.org" + item['repository']['absolute_url'][0:-1]))
+					items.append("ssh://hg@bitbucket.org" + item['repository']['absolute_url'][0:-1])
 
 			# Otherwise, we assume github/bitbucket syntax.
 			elif mode == "gitlab":
