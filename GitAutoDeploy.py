@@ -102,7 +102,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 			if(repository['url'] == repoUrl):
 				res.append({
 					'path': repository['path'],
-					'branch': (repository['branch'] or 'master')
+					'branch': ('branch' in repository) and repository['branch'] or 'master'
 				})
 		return res
 
