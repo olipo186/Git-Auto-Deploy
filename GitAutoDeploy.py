@@ -45,10 +45,10 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 
 	def do_process(self, urls):
 		for url in urls:
-			paths = self.getMatchingPaths(url)
-			for path in paths:
-				self.pull(path)
-				self.deploy(path)
+			repos = self.getMatchingPaths(url)
+			for repo in repos:
+				self.pull(repo['path'], repo['branch'])
+				self.deploy(repo['path'])
 
 	def parseRequest(self):
 		contenttype = self.headers.getheader('content-type')
@@ -100,7 +100,10 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		config = self.getConfig()
 		for repository in config['repositories']:
 			if(repository['url'] == repoUrl):
-				res.append(repository['path'])
+				res.append({
+					'path': repository['path'],
+					'branch': ('branch' in repository) and repository['branch'] or 'master'
+				})
 		return res
 
 	def respond(self):
@@ -108,11 +111,11 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		self.send_header('Content-type', 'text/plain')
 		self.end_headers()
 
-	def pull(self, path):
+	def pull(self, path, branch):
 		if(not self.quiet):
 			print "\nPost push request received"
 			print 'Updating ' + path
-		call(['cd "' + path + '" && git fetch origin ; git update-index --refresh &> /dev/null ; git reset --hard origin/master'], shell=True)
+		call(['cd "' + path + '" && git fetch origin ; git update-index --refresh &> /dev/null ; git reset --hard origin/' + branch], shell=True)
 
 	def deploy(self, path):
 		config = self.getConfig()

@@ -8,6 +8,7 @@
 	"repositories":
 	[{
 		"url": "https://github.com/logsol/Test-Repo",
+		"branch": "master",
 		"path": "/home/logsol/projects/Test-Repo",
 		"deploy": "echo deploying"
 	},
