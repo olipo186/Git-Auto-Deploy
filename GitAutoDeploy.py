@@ -49,8 +49,11 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 			for repo in repos:
 				if self.lock(repo['path']):
 					try:
-						self.pull(repo['path'], repo['branch'])
-						self.deploy(repo['path'])
+						n = 4
+						while 0 < n and 0 != self.pull(repo['path'], repo['branch']):
+							--n
+						if 0 < n:
+							self.deploy(repo['path'])
 					except:
 						call(['echo "Error during \'pull\' or \'deploy\' operation on path: ' + repo['path'] + '"'], shell=True)
 					finally:
@@ -127,7 +130,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		if(not self.quiet):
 			print "\nPost push request received"
 			print 'Updating ' + path
-		res = call(['cd "' + path + '" && git fetch origin ; git update-index --refresh &> /dev/null ; git reset --hard origin/' + branch], shell=True)
+		res = call(['sleep 5; cd "' + path + '" && git fetch origin ; git update-index --refresh &> /dev/null ; git reset --hard origin/' + branch], shell=True)
 		call(['echo "Pull result: ' + str(res) + '"'], shell=True)
 		return res
 
