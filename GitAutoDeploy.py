@@ -35,7 +35,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 				if(not os.path.isdir(repository['path'] + '/.git')):
 					print "Directory %s is not a Git repository" % repository['path']
 					sys.exit(2)
-				self.clearLock(repository['path'])
+				myClass.clearLock(repository['path'])
 
 		return myClass.config
 
@@ -127,7 +127,8 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 	def unlock(self, path):
 		call(['sh unlock.sh "' + path + '"'], shell=True)
 
-	def clearLock(self, path):
+	@classmethod
+	def clearLock(myClass, path):
 		call(['sh clear_lock.sh "' + path + '"'], shell=True)
 
 	def pull(self, path, branch):
