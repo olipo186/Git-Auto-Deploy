@@ -40,6 +40,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 				if(not os.path.isdir(repository['path'] + '/.git')):
 					print "Directory %s is not a Git repository" % repository['path']
 					sys.exit(2)
+				myClass.clearLock(repository['path'])
 
 		return myClass.config
 
@@ -52,8 +53,17 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		for url in urls:
 			repos = self.getMatchingPaths(url)
 			for repo in repos:
-				self.pull(repo['path'], repo['branch'])
-				self.deploy(repo['path'])
+				if self.lock(repo['path']):
+					try:
+						n = 4
+						while 0 < n and 0 != self.pull(repo['path'], repo['branch']):
+							--n
+						if 0 < n:
+							self.deploy(repo['path'])
+					except:
+						call(['echo "Error during \'pull\' or \'deploy\' operation on path: ' + repo['path'] + '"'], shell=True)
+					finally:
+						self.unlock(repo['path'])
 
 	def parseRequest(self):
 		contenttype = self.headers.getheader('content-type')
@@ -116,11 +126,23 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		self.send_header('Content-type', 'text/plain')
 		self.end_headers()
 
+	def lock(self, path):
+		return 0 == call(['sh lock.sh "' + path + '"'], shell=True)
+
+	def unlock(self, path):
+		call(['sh unlock.sh "' + path + '"'], shell=True)
+
+	@classmethod
+	def clearLock(myClass, path):
+		call(['sh clear_lock.sh "' + path + '"'], shell=True)
+
 	def pull(self, path, branch):
 		if(not self.quiet):
 			print "\nPost push request received"
 			print 'Updating ' + path
-		call(['cd "' + path + '" && git fetch origin ; git update-index --refresh &> /dev/null ; git reset --hard origin/' + branch], shell=True)
+		res = call(['sleep 5; cd "' + path + '" && git fetch origin ; git update-index --refresh &> /dev/null ; git reset --hard origin/' + branch], shell=True)
+		call(['echo "Pull result: ' + str(res) + '"'], shell=True)
+		return res
 
 	def deploy(self, path):
 		config = self.getConfig()
