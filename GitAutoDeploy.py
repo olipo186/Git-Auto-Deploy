@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import json, urlparse, sys, os, signal, socket
+import json, urlparse, sys, os, signal, socket, re
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from subprocess import call
 from threading import Timer
@@ -177,6 +177,9 @@ class GitAutoDeployMain:
 				GitAutoDeploy.quiet = True
 			if(arg == '-q' or arg == '--quiet'):
 				GitAutoDeploy.quiet = True
+			if(arg == '--ssh-keyscan'):
+				print 'Scanning repository hosts for ssh keys...'
+				self.ssh_key_scan()
 			if(arg == '--force'):
 				print '[KILLER MODE] Warning: The --force option will try to kill any process ' \
 					'using %s port. USE AT YOUR OWN RISK' %GitAutoDeploy.getConfig()['port']
@@ -203,6 +206,18 @@ class GitAutoDeployMain:
 				print "Error on socket: %s" % e
 				self.debug_diagnosis()
 			sys.exit(1)
+
+	def ssh_key_scan(self):
+		for repository in GitAutoDeploy.getConfig()['repositories']:
+			url = repository['url']
+			print "Scanning repository: %s" %  url
+			m = re.match('.*@(.*?):', url)
+			if(m != None):
+				port = repository['port']
+				port = '' if port == None else ('-p' + port)
+				call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], shell=True)
+			else:
+				print 'Could not find regexp match in path: %s' % url
 
 	def kill_them_all(self):
 		pid = self.get_pid_on_port(GitAutoDeploy.getConfig()['port'])
