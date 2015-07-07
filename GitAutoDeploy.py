@@ -140,7 +140,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		if(not self.quiet):
 			print "\nPost push request received"
 			print 'Updating ' + path
-		res = call(['sleep 5; cd "' + path + '" && git fetch origin ; git update-index --refresh &> /dev/null ; git reset --hard origin/' + branch], shell=True)
+		res = call(['sleep 5; cd "' + path + '" && unset GIT_DIR && git fetch origin && git update-index --refresh && git reset --hard origin/' + branch], shell=True)
 		call(['echo "Pull result: ' + str(res) + '"'], shell=True)
 		return res
 
