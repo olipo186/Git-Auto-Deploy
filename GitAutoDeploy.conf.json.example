@@ -1,5 +1,6 @@
 {
 	"pidfilepath": "/var/run/gitautodeploy/gitautodeploy.pid",
+	"host": "localhost",
 	"port": 8001,
 	"global_deploy": [
 		"echo Starting deploy!",

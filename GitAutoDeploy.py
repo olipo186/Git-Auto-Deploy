@@ -199,7 +199,9 @@ class GitAutoDeployMain:
 			print 'Github & Gitlab Autodeploy Service v 0.1 started in daemon mode'
 
 		try:
-			self.server = HTTPServer(('', GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
+			self.server = HTTPServer((GitAutoDeploy.getConfig()['host'], GitAutoDeploy.getConfig()['port']), GitAutoDeploy)
+			sa = self.server.socket.getsockname()
+			print "Listeing on", sa[0], "port", sa[1]
 			self.server.serve_forever()
 		except socket.error, e:
 			if(not GitAutoDeploy.quiet and not GitAutoDeploy.daemon):
