@@ -31,7 +31,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 			for repository in myClass.config['repositories']:
 				if(not os.path.isdir(repository['path'])):
 					print "Directory %s not found" % repository['path']
-					call(['git clone '+repository['url']+' '+repository['path']], shell=True)
+					call(['git clone --recursive '+repository['url']+' '+repository['path']], shell=True)
 					if(not os.path.isdir(repository['path'])):
 						print "Unable to clone repository %s" % repository['url']
 						sys.exit(2)
@@ -140,7 +140,7 @@ class GitAutoDeploy(BaseHTTPRequestHandler):
 		if(not self.quiet):
 			print "\nPost push request received"
 			print 'Updating ' + path
-		res = call(['sleep 5; cd "' + path + '" && git fetch origin ; git update-index --refresh &> /dev/null ; git reset --hard origin/' + branch], shell=True)
+		res = call(['sleep 5; cd "' + path + '" && unset GIT_DIR && git fetch origin && git update-index --refresh && git reset --hard origin/' + branch + ' && git submodule init && git submodule update'], shell=True)
 		call(['echo "Pull result: ' + str(res) + '"'], shell=True)
 		return res
 
