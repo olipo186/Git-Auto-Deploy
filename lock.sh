@@ -19,7 +19,7 @@ else
         sleep 5
         { > status_running; }
     done
-    rm status_waiting
+    rm -f status_waiting
 
     set +o noclobber
     cd -

@@ -1,2 +1,2 @@
 #!/bin/sh
-cd $1 && rm status_waiting status_running; cd -
+rm -f "$1/status_waiting" "$1/status_running"
