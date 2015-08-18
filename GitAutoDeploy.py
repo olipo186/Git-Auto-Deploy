@@ -321,7 +321,15 @@ class GitAutoDeploy(object):
             print "%s file is not valid JSON\n" % self.config_path
             raise e
 
+        # Translate any ~ in the path into /home/<user>
+        if 'pidfilepath' in self._config:
+            self._config['pidfilepath'] = os.path.expanduser(self._config['pidfilepath'])
+
         for repo_config in self._config['repositories']:
+
+            # Translate any ~ in the path into /home/<user>
+            if 'path' in repo_config:
+                repo_config['path'] = os.path.expanduser(repo_config['path'])
 
             if not os.path.isdir(repo_config['path']):
 
@@ -393,7 +401,7 @@ class GitAutoDeploy(object):
             f.write(str(os.getpid()))
 
     def read_pid_file(self):
-        with open(self.get_config()['pidfilepath'],'r') as f:
+        with open(self.get_config()['pidfilepath'], 'r') as f:
             return f.readlines()
 
     def remove_pid_file(self):
@@ -402,7 +410,6 @@ class GitAutoDeploy(object):
 
     def exit(self):
         import sys
-
         print '\nGoodbye'
         self.remove_pid_file()
         sys.exit(0)
