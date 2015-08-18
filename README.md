@@ -26,11 +26,11 @@ Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell comman
 
 ## Command line options
 
-```--daemon-mode (-d)``` Run in background (daemon mode)
-```--quiet (-q)``` Suppress all output
-```--ssh-keygen```
-```--force```
-```--config <path>``` Specify custom configuration file
+--daemon-mode (-d) Run in background (daemon mode)
+--quiet (-q) Suppress all output
+--ssh-keygen
+--force
+--config <path> Specify custom configuration file
 
 ## Start automatically on boot
 
