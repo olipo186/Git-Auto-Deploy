@@ -8,9 +8,9 @@
 	],
 	"repositories":
 	[{
-		"url": "https://github.com/olipo186/Github-Gitlab-Auto-Deploy.git",
+		"url": "https://github.com/olipo186/Git-Auto-Deploy.git",
 		"branch": "master",
-		"path": "~/repositories/Github-Gitlab-Auto-Deploy",
+		"path": "~/repositories/Git-Auto-Deploy",
 		"deploy": "echo deploying"
 	},
 	{
