@@ -1,6 +1,50 @@
 #!/usr/bin/env python
 
 
+class Lock():
+    """Simple implementation of a mutex lock using the file systems. Works on *nix systems."""
+
+    path = None
+    _has_lock = False
+
+    def __init__(self, path):
+        self.path = path
+
+    def obtain(self):
+        import os
+        try:
+            os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            self._has_lock = True
+            print "Successfully obtained lock: %s" % self.path
+        except OSError:
+            return False
+        else:
+            return True
+
+    def release(self):
+        import os
+        if not self._has_lock:
+            raise Exception("Unable to release lock that is owned by another process")
+        try:
+            os.remove(self.path)
+            print "Successfully released lock: %s" % self.path
+        finally:
+            self._has_lock = False
+
+    def has_lock(self):
+        return self._has_lock
+
+    def clear(self):
+        import os
+        try:
+            os.remove(self.path)
+        except OSError:
+            pass
+        finally:
+            print "Successfully cleared lock: %s" % self.path
+            self._has_lock = False
+
+
 class GitWrapper():
     """Wraps the git client. Currently uses git through shell command invocations."""
 
@@ -23,6 +67,12 @@ class GitWrapper():
                     branch + ' && git submodule init && git submodule update'], shell=True)
         call(['echo "Pull result: ' + str(res) + '"'], shell=True)
         return res
+
+    @staticmethod
+    def clone(url, path):
+        from subprocess import call
+        call(['git clone --recursive %s %s' % (url, path)], shell=True)
+
 
     @staticmethod
     def deploy(repo_config):
@@ -131,7 +181,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
 class GitAutoDeploy(object):
 
-    CONFIG_FILE_PATH = './GitAutoDeploy.conf.json'
+    config_path = './GitAutoDeploy.conf.json'
     debug = True
     daemon = False
 
@@ -147,26 +197,10 @@ class GitAutoDeploy(object):
         return cls._instance
 
     @staticmethod
-    def lock(path):
-        from subprocess import call
-        return 0 == call(['sh lock.sh "' + path + '"'], shell=True)
-
-    @staticmethod
-    def unlock(path):
-        from subprocess import call
-        call(['sh unlock.sh "' + path + '"'], shell=True)
-
-    @staticmethod
-    def clear_lock(path):
-        from subprocess import call
-        call(['sh clear_lock.sh "' + path + '"'], shell=True)
-
-    @staticmethod
-    def debug_diagnosis():
+    def debug_diagnosis(port):
         if GitAutoDeploy.debug is False:
             return
 
-        port = GitAutoDeploy().get_config()['port']
         pid = GitAutoDeploy.get_pid_on_port(port)
         if pid is False:
             print 'I don\'t know the number of pid that is using my configured port'
@@ -218,7 +252,8 @@ class GitAutoDeploy(object):
 
     @staticmethod
     def process_repo_urls(urls):
-        from subprocess import call
+        import os
+        import time
 
         repo_config = GitAutoDeploy().get_matching_repo_config(urls)
 
@@ -226,65 +261,87 @@ class GitAutoDeploy(object):
             print 'Unable to find any of the repository URLs in the config: %s' % ', '.join(urls)
             return
 
-        if GitAutoDeploy.lock(repo_config['path']):
+        running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
+        waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
+        try:
 
-            try:
-                n = 4
-                while 0 < n and 0 != GitWrapper.pull(repo_config):
-                    n -= 1
-                if 0 < n:
-                    GitWrapper.deploy(repo_config)
+            # Attempt to obtain the status_running lock
+            while not running_lock.obtain():
 
-            except Exception as e:
-                print e
-                call(['echo "Error during \'pull\' or \'deploy\' operation on path: ' + repo_config['path'] + '"'],
-                     shell=True)
+                # If we're unable, try once to obtain the status_waiting lock
+                if not waiting_lock.has_lock() and not waiting_lock.obtain():
+                    print "Unable to obtain the status_running lock nor the status_waiting lock. Another process is "\
+                          + "already waiting, so we'll ignore the request."
 
-            finally:
-                GitAutoDeploy.unlock(repo_config['path'])
+                    # If we're unable to obtain the waiting lock, ignore the request
+                    return
+
+                # Keep on attempting to obtain the status_running lock until we succeed
+                time.sleep(5)
+
+            n = 4
+            while 0 < n and 0 != GitWrapper.pull(repo_config):
+                n -= 1
+            if 0 < n:
+                GitWrapper.deploy(repo_config)
+
+        except Exception as e:
+            print 'Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path']
+            print e
+
+        finally:
+
+            # Release the lock if it's ours
+            if running_lock.has_lock():
+                running_lock.release()
+
+            # Release the lock if it's ours
+            if waiting_lock.has_lock():
+                waiting_lock.release()
 
     def get_config(self):
         import json
         import sys
         import os
-        from subprocess import call
 
         if self._config:
             return self._config
 
         try:
-            config_string = open(self.CONFIG_FILE_PATH).read()
+            config_string = open(self.config_path).read()
 
         except Exception as e:
-            print "Could not load %s file\n" % self.CONFIG_FILE_PATH
+            print "Could not load %s file\n" % self.config_path
             raise e
 
         try:
             self._config = json.loads(config_string)
 
         except Exception as e:
-            print "%s file is not valid JSON\n" % self.CONFIG_FILE_PATH
+            print "%s file is not valid JSON\n" % self.config_path
             raise e
 
-        for repository in self._config['repositories']:
+        for repo_config in self._config['repositories']:
 
-            if not os.path.isdir(repository['path']):
+            if not os.path.isdir(repo_config['path']):
 
-                print "Directory %s not found" % repository['path']
-                call(['git clone --recursive '+repository['url']+' '+repository['path']], shell=True)
+                print "Directory %s not found" % repo_config['path']
+                GitWrapper.clone(url=repo_config['url'], path=repo_config['path'])
 
-                if not os.path.isdir(repository['path']):
-                    print "Unable to clone repository %s" % repository['url']
+                if not os.path.isdir(repo_config['path']):
+                    print "Unable to clone repository %s" % repo_config['url']
                     sys.exit(2)
 
                 else:
-                    print "Repository %s successfully cloned" % repository['url']
+                    print "Repository %s successfully cloned" % repo_config['url']
 
-            if not os.path.isdir(repository['path'] + '/.git'):
-                print "Directory %s is not a Git repository" % repository['path']
+            if not os.path.isdir(repo_config['path'] + '/.git'):
+                print "Directory %s is not a Git repository" % repo_config['path']
                 sys.exit(2)
 
-            self.clear_lock(repository['path'])
+            # Clear any existing lock files, with no regard to possible ongoing processes
+            Lock(os.path.join(repo_config['path'], 'status_running')).clear()
+            Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
         return self._config
 
@@ -353,7 +410,6 @@ class GitAutoDeploy(object):
     def run(self):
         from sys import argv
         import sys
-        import os
         from BaseHTTPServer import HTTPServer
         import socket
 
@@ -370,6 +426,13 @@ class GitAutoDeploy(object):
         if '--force' in argv:
             print 'Attempting to kill any other process currently occupying port %s' % self.get_config()['port']
             self.kill_conflicting_processes()
+
+        if '--config' in argv:
+            import os
+            pos = argv.index('--config')
+            if len(argv) > pos + 1:
+                self.config_path = os.path.realpath(argv[argv.index('--config') + 1])
+                print 'Using custom configuration file \'%s\'' % self.config_path
 
         if GitAutoDeploy.daemon:
             pid = os.fork()
@@ -398,7 +461,7 @@ class GitAutoDeploy(object):
 
             if not GitAutoDeploy.daemon:
                 print "Error on socket: %s" % e
-                GitAutoDeploy.debug_diagnosis()
+                GitAutoDeploy.debug_diagnosis(self.get_config()['port'])
 
             sys.exit(1)
 
