@@ -2,7 +2,7 @@
 
 GitAutoDeploy.py consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. The script allows you to continuously and automatically deploy you projects during development each time you push new commits to GitHub, GitLab or Bitbucket.</p>
 
-![Flow](http://olipo186.github.com/Github-Gitlab-Auto-Deploy/images/Github-Gitlab-Auto-Deploy.png)
+![workflow](https://cloud.githubusercontent.com/assets/1056476/9344294/d3bc32a4-4607-11e5-9a44-5cd9b22e61d9.png)
 
 # How does it work?
 
