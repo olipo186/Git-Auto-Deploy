@@ -1,73 +1,109 @@
 <!DOCTYPE html>
 <html>
+
   <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <title>Github-Gitlab-Auto-Deploy by olipo186</title>
+    <meta name="description" content="Github-Auto-Deploy : a server that allows you to automatically deploy the latest version of your github or gitlab project at each git push">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Github-Auto-Deploy</title>
   </head>
 
   <body>
-    <div id="container">
-      <div class="inner">
 
-        <header>
-          <h1>Github-Gitlab-Auto-Deploy</h1>
-          <h2>a server that allows you to automatically deploy the latest version of your github or gitlab project at each git push</h2>
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/olipo186/Github-Gitlab-Auto-Deploy">View on GitHub</a>
+
+          <h1 id="project_title">Github-Auto-Deploy</h1>
+          <h2 id="project_tagline">a server that allows you to automatically deploy the latest version of your github or gitlab project at each git push</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/olipo186/Github-Gitlab-Auto-Deploy/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/olipo186/Github-Gitlab-Auto-Deploy/tarball/master">Download this project as a tar.gz file</a>
+            </section>
         </header>
+    </div>
 
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/olipo186/Github-Gitlab-Auto-Deploy/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/olipo186/Github-Gitlab-Auto-Deploy/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/olipo186/Github-Gitlab-Auto-Deploy" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p><img src="http://olipo186.github.com/Github-Gitlab-Auto-Deploy/images/Github-Gitlab-Auto-Deploy.png" alt="How it works"></p>
 
-        <hr>
+<h1>
+<a id="what-is-it" class="anchor" href="#what-is-it" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is it?</h1>
 
-        <section id="main_content">
-          <p><img src="http://olipo186.github.com/Github-Gitlab-Auto-Deploy/images/Github-Gitlab-Auto-Deploy.png" alt="diagram"></p>
-
-<h3>What is it?</h3>
-
-<p>this is a small HTTP server written in python. 
+<p>This is a small HTTP server written in python.
 It allows you to have a version of your project installed, that will be updated automatically on each Github or Gitlab push.</p>
 
 <p>To set it up, do the following:</p>
 
 <ul>
-<li>install python</li>
-<li>enter the matching for your project(s) in the GitAutoDeploy.conf.json file</li>
-<li>start the server by typing "python GitAutoDeploy.py" </li>
-<li>to run it as a deamon add ==--deamon-mode==</li>
-<li>On the Github or Gitlab page go to a repository, then "Admin", "Service Hooks", 
-"Post-Receive URLs" and add the url of your machine + port (e.g. <a href="http://example.com:8001">http://example.com:8001</a>).</li>
-</ul><p>You can even test the whole thing here, by clicking on the "Test Hook" button, whohoo!</p>
+<li>Install python</li>
+<li>Copy the <code>GitAutoDeploy.conf.json.example</code> to <code>GitAutoDeploy.conf.json</code>. This file will be gitignored and can be environment specific.</li>
+<li>Enter the matching for your project(s) in the <code>GitAutoDeploy.conf.json</code> file</li>
+<li>Start the server by typing <code>python GitAutoDeploy.py</code>
+</li>
+<li>To run it as a daemon add <code>--daemon-mode</code>
+</li>
+<li>On the Github or Gitlab page go to a repository, then "Admin", "Service Hooks",
+"Post-Receive URLs" and add the url of your machine + port (e.g. <code>http://example.com:8001</code>).</li>
+</ul>
 
-<h3>How this works</h3>
+<p>You can even test the whole thing here, by clicking on the "Test Hook" button, whohoo!</p>
 
-<p>When someone pushes changes into Github or Gitlab, it sends a json file to the service hook url. 
+<h1>
+<a id="configure-gitautodeploy-to-get-executed-at-start-up" class="anchor" href="#configure-gitautodeploy-to-get-executed-at-start-up" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configure GitAutoDeploy to get executed at start up</h1>
+
+<h3>
+<a id="debian-and-sys-v-like-init-system" class="anchor" href="#debian-and-sys-v-like-init-system" aria-hidden="true"><span class="octicon octicon-link"></span></a>Debian and Sys-V like init system.</h3>
+
+<ul>
+<li>Copy file <code>initfiles/debianLSBInitScripts/gitautodeploy</code> to <code>/etc/init.d/</code>
+</li>
+<li>Make it executable: <code>chmod 755 /etc/init.d/gitautodeploy</code>
+</li>
+<li>Also you need to make <code>GitAutoDeploy.py</code> executable (if it isn't already): <code>chmod 755 GitAutoDeploy.py</code>
+</li>
+<li>This init script assumes that you have <code>GitAutoDeploy.py</code> in <code>/opt/Gitlab_Auto_Deploy/GitAutoDeploy.py</code>. If this is not the case, edit <code>gitautodeploy</code> init script and modify <code>DAEMON</code> and <code>PWD</code>.</li>
+<li>Now you need to add the correct symbolic link to your specific runlevel dir to get the script executed on each start up. On Debian_Sys-V just do <code>update.rc.d gitautodeploy defaults</code>
+</li>
+</ul>
+
+<h3>
+<a id="systemd" class="anchor" href="#systemd" aria-hidden="true"><span class="octicon octicon-link"></span></a>Systemd</h3>
+
+<ul>
+<li>TODO</li>
+</ul>
+
+<h1>
+<a id="how-this-works" class="anchor" href="#how-this-works" aria-hidden="true"><span class="octicon octicon-link"></span></a>How this works</h1>
+
+<p>When someone pushes changes into Github or Gitlab, it sends a json file to the service hook url.
 It contains information about the repository that was updated.</p>
 
-<p>All it really does is match the repository urls to your local repository paths in the config file, 
+<p>All it really does is match the repository urls to your local repository paths in the config file,
 move there and run "git pull".</p>
 
-<p>Additionally it runs a deploy bash command that you can add to the config file optionally.
+<p>Additionally it runs a deploy bash command that you can add to the config file optionally, and it also
+allows you to add two global deploy commands, one that would run at the beginning and one that would run at the end of the deploy.
 Make sure that you start the server as the user that is allowed to pull from the github or gitlab repository.</p>
-        </section>
-
-        <footer>
-          Github-Gitlab-Auto-Deploy is maintained by <a href="https://github.com/olipo186">olipo186</a><br>
-          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
-        </footer>
-
-        
-      </div>
+      </section>
     </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Github-Auto-Deploy maintained by <a href="https://github.com/olipo186">olipo186</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
   </body>
 </html>
