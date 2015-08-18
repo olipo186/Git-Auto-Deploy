@@ -1,62 +1,82 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en-us">
   <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="Github-Auto-Deploy : a server that allows you to automatically deploy the latest version of your github or gitlab project at each git push">
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>Github-Auto-Deploy</title>
+    <meta charset="UTF-8">
+    <title>Git-Auto-Deploy by olipo186</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
-
   <body>
+    <section class="page-header">
+      <h1 class="project-name">Git-Auto-Deploy</h1>
+      <h2 class="project-tagline">Deploy your GitHub, GitLab or Bitbucket projects automatically on Git push events or webhooks using this small HTTP server written in Python. Continuous deployment in it&#39;s most simple form.</h2>
+      <a href="https://github.com/olipo186/Git-Auto-Deploy" class="btn">View on GitHub</a>
+      <a href="https://github.com/olipo186/Git-Auto-Deploy/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/olipo186/Git-Auto-Deploy/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/olipo186/Github-Gitlab-Auto-Deploy">View on GitHub</a>
-
-          <h1 id="project_title">Github-Auto-Deploy</h1>
-          <h2 id="project_tagline">a server that allows you to automatically deploy the latest version of your github or gitlab project at each git push</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/olipo186/Github-Gitlab-Auto-Deploy/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/olipo186/Github-Gitlab-Auto-Deploy/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <p><img src="http://olipo186.github.com/Github-Gitlab-Auto-Deploy/images/Github-Gitlab-Auto-Deploy.png" alt="How it works"></p>
-
-<h1>
+    <section class="main-content">
+      <h1>
 <a id="what-is-it" class="anchor" href="#what-is-it" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is it?</h1>
 
-<p>This is a small HTTP server written in python.
-It allows you to have a version of your project installed, that will be updated automatically on each Github or Gitlab push.</p>
+<p>GitAutoDeploy.py consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. The script allows you to continuously and automatically deploy you projects during development each time you push new commits to GitHub, GitLab or Bitbucket.</p>
 
-<p>To set it up, do the following:</p>
-
-<ul>
-<li>Install python</li>
-<li>Copy the <code>GitAutoDeploy.conf.json.example</code> to <code>GitAutoDeploy.conf.json</code>. This file will be gitignored and can be environment specific.</li>
-<li>Enter the matching for your project(s) in the <code>GitAutoDeploy.conf.json</code> file</li>
-<li>Start the server by typing <code>python GitAutoDeploy.py</code>
-</li>
-<li>To run it as a daemon add <code>--daemon-mode</code>
-</li>
-<li>On the Github or Gitlab page go to a repository, then "Admin", "Service Hooks",
-"Post-Receive URLs" and add the url of your machine + port (e.g. <code>http://example.com:8001</code>).</li>
-</ul>
-
-<p>You can even test the whole thing here, by clicking on the "Test Hook" button, whohoo!</p>
+<p><img src="https://cloud.githubusercontent.com/assets/1056476/9344294/d3bc32a4-4607-11e5-9a44-5cd9b22e61d9.png" alt="workflow"></p>
 
 <h1>
-<a id="configure-gitautodeploy-to-get-executed-at-start-up" class="anchor" href="#configure-gitautodeploy-to-get-executed-at-start-up" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configure GitAutoDeploy to get executed at start up</h1>
+<a id="how-does-it-work" class="anchor" href="#how-does-it-work" aria-hidden="true"><span class="octicon octicon-link"></span></a>How does it work?</h1>
+
+<p>When commits are pushed to your Git repository, the Git server will notify <code>GitAutoDeploy.py</code> by sending a HTTP POST request with a JSON body to a pre configured URL (your-host:8001). The JSON body contains detailed information about the repository and what event that triggered the request. GitAutoDeploy.py parses and validates the request, and if all goes well it issues a <code>git pull</code>.</p>
+
+<p>Additionally, <code>GitAutoDeploy.py</code> can be configured to execute a shell command upon each successful "git pull", which can be used to trigger custom build actions.</p>
+
+<h1>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting started</h1>
+
+<h2>
+<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dependencies</h2>
+
+<ul>
+<li>Git (tested on version 2.5.0)</li>
+<li>Python (tested on version 2.7)</li>
+</ul>
+
+<h2>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration</h2>
+
+<ul>
+<li>Copy <code>GitAutoDeploy.conf.json.example</code> to <code>GitAutoDeploy.conf.json</code>
+</li>
+<li>Modify <code>GitAutoDeploy.conf.json</code> to match your project setup</li>
+<li>Make sure that the <code>pidfilepath</code> path is writable for the user running the script, as well as any other path configured for your repositories.</li>
+</ul>
+
+<h2>
+<a id="running-the-application" class="anchor" href="#running-the-application" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running the application</h2>
+
+<p><code>python GitAutoDeploy.py</code></p>
+
+<h2>
+<a id="command-line-options" class="anchor" href="#command-line-options" aria-hidden="true"><span class="octicon octicon-link"></span></a>Command line options</h2>
+
+<p>--daemon-mode (-d) Run in background (daemon mode)
+--quiet (-q) Suppress all output
+--ssh-keygen
+--force
+--config  Specify custom configuration file</p>
+
+<h2>
+<a id="start-automatically-on-boot" class="anchor" href="#start-automatically-on-boot" aria-hidden="true"><span class="octicon octicon-link"></span></a>Start automatically on boot</h2>
+
+<h3>
+<a id="crontab" class="anchor" href="#crontab" aria-hidden="true"><span class="octicon octicon-link"></span></a>Crontab</h3>
+
+<p>The easiest way to configure your system to automatically start <code>GitAutoDeploy.py</code> after a reboot is through crontab. Open crontab in edit mode using <code>crontab -e</code> and add the following:</p>
+
+<p><code>@reboot /usr/bin/python /path/to/GitAutoDeploy.py --daemon-mode --quiet</code></p>
 
 <h3>
 <a id="debian-and-sys-v-like-init-system" class="anchor" href="#debian-and-sys-v-like-init-system" aria-hidden="true"><span class="octicon octicon-link"></span></a>Debian and Sys-V like init system.</h3>
@@ -73,37 +93,41 @@ It allows you to have a version of your project installed, that will be updated 
 </li>
 </ul>
 
-<h3>
-<a id="systemd" class="anchor" href="#systemd" aria-hidden="true"><span class="octicon octicon-link"></span></a>Systemd</h3>
+<h2>
+<a id="configure-github" class="anchor" href="#configure-github" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configure GitHub</h2>
 
 <ul>
-<li>TODO</li>
+<li>Go to your repository -&gt; Settings -&gt; Webhooks and Services -&gt; Add webhook</li>
+<li>In "Payload URL", enter your hostname and port (your-host:8001)</li>
+<li>Hit "Add webhook"</li>
 </ul>
 
-<h1>
-<a id="how-this-works" class="anchor" href="#how-this-works" aria-hidden="true"><span class="octicon octicon-link"></span></a>How this works</h1>
+<h2>
+<a id="configure-gitlab" class="anchor" href="#configure-gitlab" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configure GitLab</h2>
 
-<p>When someone pushes changes into Github or Gitlab, it sends a json file to the service hook url.
-It contains information about the repository that was updated.</p>
+<ul>
+<li>Go to your repository -&gt; Settings -&gt; Web hooks</li>
+<li>In "URL", enter your hostname and port (your-host:8001)</li>
+<li>Hit "Add Web Hook"</li>
+</ul>
 
-<p>All it really does is match the repository urls to your local repository paths in the config file,
-move there and run "git pull".</p>
+<h2>
+<a id="configure-bitbucket" class="anchor" href="#configure-bitbucket" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configure Bitbucket</h2>
 
-<p>Additionally it runs a deploy bash command that you can add to the config file optionally, and it also
-allows you to add two global deploy commands, one that would run at the beginning and one that would run at the end of the deploy.
-Make sure that you start the server as the user that is allowed to pull from the github or gitlab repository.</p>
-      </section>
-    </div>
+<ul>
+<li>Go to your repository -&gt; Settings -&gt; Webhooks -&gt; Add webhook</li>
+<li>In "URL", enter your hostname and port (your-host:8001)</li>
+<li>Hit "Save"</li>
+</ul>
 
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Github-Auto-Deploy maintained by <a href="https://github.com/olipo186">olipo186</a></p>
-        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/olipo186/Git-Auto-Deploy">Git-Auto-Deploy</a> is maintained by <a href="https://github.com/olipo186">olipo186</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
       </footer>
-    </div>
 
-    
+    </section>
 
+  
   </body>
 </html>
