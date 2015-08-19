@@ -171,7 +171,11 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             if 'full_name' in data['repository']:
                 repo_urls.append('git@bitbucket.org:%s.git' % data['repository']['full_name'])
-                repo_urls.append('https://oliverpoignant@bitbucket.org/%s.git' % data['repository']['full_name'])
+
+                # FIXME: Need to add a 'bitbucket_username' option in the repo config section to allow for
+                # non-repo-owners to deploy using web hooks
+                bitbucket_username = data['repository']['owner']['username']
+                repo_urls.append('https://%s@bitbucket.org/%s.git' % (bitbucket_username, data['repository']['full_name']))
 
         else:
             print "ERROR - Unable to recognize request origin. Don't know how to handle the request."
