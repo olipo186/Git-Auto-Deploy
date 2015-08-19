@@ -58,7 +58,7 @@ class GitWrapper():
 
         branch = ('branch' in repo_config) and repo_config['branch'] or 'master'
 
-        print "\nPost push request received"
+        print "Post push request received"
         print 'Updating ' + repo_config['path']
 
         res = call(['sleep 5; cd "' +
@@ -172,10 +172,9 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             if 'full_name' in data['repository']:
                 repo_urls.append('git@bitbucket.org:%s.git' % data['repository']['full_name'])
 
-                # FIXME: Need to add a 'bitbucket_username' option in the repo config section to allow for
-                # non-repo-owners to deploy using web hooks
-                bitbucket_username = data['repository']['owner']['username']
-                repo_urls.append('https://%s@bitbucket.org/%s.git' % (bitbucket_username, data['repository']['full_name']))
+                # Add a simplified version of the bitbucket HTTPS URL - without the username@bitbucket.com part. This is
+                # needed since the configured repositories might be configured using a different username.
+                repo_urls.append('https://bitbucket.org/%s.git' % (data['repository']['full_name']))
 
         else:
             print "ERROR - Unable to recognize request origin. Don't know how to handle the request."
@@ -259,54 +258,59 @@ class GitAutoDeploy(object):
         import os
         import time
 
-        repo_config = GitAutoDeploy().get_matching_repo_config(urls)
+        # Get a list of configured repositories that matches the incoming web hook reqeust
+        repo_configs = GitAutoDeploy().get_matching_repo_configs(urls)
 
-        if not repo_config:
+        if len(repo_configs) == 0:
             print 'Unable to find any of the repository URLs in the config: %s' % ', '.join(urls)
             return
 
-        running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
-        waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
-        try:
+        # Process each matching repository
+        for repo_config in repo_configs:
 
-            # Attempt to obtain the status_running lock
-            while not running_lock.obtain():
+            running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
+            waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
+            try:
 
-                # If we're unable, try once to obtain the status_waiting lock
-                if not waiting_lock.has_lock() and not waiting_lock.obtain():
-                    print "Unable to obtain the status_running lock nor the status_waiting lock. Another process is "\
-                          + "already waiting, so we'll ignore the request."
+                # Attempt to obtain the status_running lock
+                while not running_lock.obtain():
 
-                    # If we're unable to obtain the waiting lock, ignore the request
-                    return
+                    # If we're unable, try once to obtain the status_waiting lock
+                    if not waiting_lock.has_lock() and not waiting_lock.obtain():
+                        print "Unable to obtain the status_running lock nor the status_waiting lock. Another process is "\
+                              + "already waiting, so we'll ignore the request."
 
-                # Keep on attempting to obtain the status_running lock until we succeed
-                time.sleep(5)
+                        # If we're unable to obtain the waiting lock, ignore the request
+                        break
 
-            n = 4
-            while 0 < n and 0 != GitWrapper.pull(repo_config):
-                n -= 1
-            if 0 < n:
-                GitWrapper.deploy(repo_config)
+                    # Keep on attempting to obtain the status_running lock until we succeed
+                    time.sleep(5)
 
-        except Exception as e:
-            print 'Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path']
-            print e
+                n = 4
+                while 0 < n and 0 != GitWrapper.pull(repo_config):
+                    n -= 1
+                if 0 < n:
+                    GitWrapper.deploy(repo_config)
 
-        finally:
+            except Exception as e:
+                print 'Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path']
+                print e
 
-            # Release the lock if it's ours
-            if running_lock.has_lock():
-                running_lock.release()
+            finally:
 
-            # Release the lock if it's ours
-            if waiting_lock.has_lock():
-                waiting_lock.release()
+                # Release the lock if it's ours
+                if running_lock.has_lock():
+                    running_lock.release()
+
+                # Release the lock if it's ours
+                if waiting_lock.has_lock():
+                    waiting_lock.release()
 
     def get_config(self):
         import json
         import sys
         import os
+        import re
 
         if self._config:
             return self._config
@@ -330,6 +334,15 @@ class GitAutoDeploy(object):
             self._config['pidfilepath'] = os.path.expanduser(self._config['pidfilepath'])
 
         for repo_config in self._config['repositories']:
+
+            # If a Bitbucket repository is configured using the https:// URL, a username is usually
+            # specified in the beginning of the URL. To be able to compare configured Bitbucket
+            # repositories with incoming web hook events, this username needs to be stripped away in a
+            # copy of the URL.
+            if 'url' in repo_config and not 'bitbucket_username' in repo_config:
+                regexp = re.search(r"^(https?://)([^@]+)@(bitbucket\.org/)(.+)$", repo_config['url'])
+                if regexp:
+                    repo_config['url_without_usernme'] = regexp.group(1) + regexp.group(3) + regexp.group(4)
 
             # Translate any ~ in the path into /home/<user>
             if 'path' in repo_config:
@@ -357,16 +370,20 @@ class GitAutoDeploy(object):
 
         return self._config
 
-    def get_matching_repo_config(self, urls):
+    def get_matching_repo_configs(self, urls):
         """Iterates over the various repo URLs provided as argument (git://, ssh:// and https:// for the repo) and
         compare them to any repo URL specified in the config"""
 
         config = self.get_config()
+        configs = []
 
         for url in urls:
             for repo_config in config['repositories']:
                 if repo_config['url'] == url:
-                    return repo_config
+                    configs.append(repo_config)
+                elif 'url_without_usernme' in repo_config and repo_config['url_without_usernme'] == url:
+                    configs.append(repo_config)
+        return configs
 
     def ssh_key_scan(self):
         import re
