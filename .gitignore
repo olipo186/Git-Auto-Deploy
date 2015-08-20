@@ -58,6 +58,8 @@ docs/_build/
 target/
 
 GitAutoDeploy.conf.json
+*.json
+
 .idea
 .DS_Store
 ._.DS_Store

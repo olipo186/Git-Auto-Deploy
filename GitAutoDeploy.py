@@ -61,12 +61,18 @@ class GitWrapper():
         print "Post push request received"
         print 'Updating ' + repo_config['path']
 
-        res = call(['sleep 5; cd "' +
-                    repo_config['path'] +
-                    '" && unset GIT_DIR && git fetch origin && git update-index --refresh && git reset --hard origin/' +
-                    branch + ' && git submodule init && git submodule update'], shell=True)
-        call(['echo "Pull result: ' + str(res) + '"'], shell=True)
-        return res
+        cmd = 'cd "' + repo_config['path'] + '"'\
+              '&& unset GIT_DIR ' +\
+              '&& git fetch origin ' +\
+              '&& git update-index --refresh ' +\
+              '&& git reset --hard origin/' + branch + ' ' +\
+              '&& git submodule init ' +\
+              '&& git submodule update'
+
+        res = call([cmd], shell=True)
+        print 'Pull result: ' + str(res)
+
+        return int(res)
 
     @staticmethod
     def clone(url, path):
@@ -289,6 +295,7 @@ class GitAutoDeploy(object):
                 n = 4
                 while 0 < n and 0 != GitWrapper.pull(repo_config):
                     n -= 1
+
                 if 0 < n:
                     GitWrapper.deploy(repo_config)
 
@@ -364,10 +371,6 @@ class GitAutoDeploy(object):
                 print "Directory %s is not a Git repository" % repo_config['path']
                 sys.exit(2)
 
-            # Clear any existing lock files, with no regard to possible ongoing processes
-            Lock(os.path.join(repo_config['path'], 'status_running')).clear()
-            Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
-
         return self._config
 
     def get_matching_repo_configs(self, urls):
@@ -379,6 +382,8 @@ class GitAutoDeploy(object):
 
         for url in urls:
             for repo_config in config['repositories']:
+                if repo_config in configs:
+                    continue
                 if repo_config['url'] == url:
                     configs.append(repo_config)
                 elif 'url_without_usernme' in repo_config and repo_config['url_without_usernme'] == url:
@@ -440,12 +445,10 @@ class GitAutoDeploy(object):
         import sys
         from BaseHTTPServer import HTTPServer
         import socket
+        import os
 
         if '-d' in argv or '--daemon-mode' in argv:
             self.daemon = True
-
-        if '-q' in argv or '--quiet' in argv:
-            sys.stdout = open(os.devnull, 'w')
 
         if '--ssh-keygen' in argv:
             print 'Scanning repository hosts for ssh keys...'
@@ -456,28 +459,29 @@ class GitAutoDeploy(object):
             self.kill_conflicting_processes()
 
         if '--config' in argv:
-            import os
             pos = argv.index('--config')
             if len(argv) > pos + 1:
                 self.config_path = os.path.realpath(argv[argv.index('--config') + 1])
                 print 'Using custom configuration file \'%s\'' % self.config_path
 
-        if GitAutoDeploy.daemon:
+        if self.daemon:
             pid = os.fork()
             if pid > 0:
+                print 'Git Auto Deploy started in daemon mode'
                 sys.exit(0)
             os.setsid()
+        else:
+            print 'Git Auto Deploy started'
 
         self.create_pid_file()
 
-        if self.daemon:
-            print 'GitHub & GitLab auto deploy service v 0.1 started in daemon mode'
-
-            # Disable output in daemon mode
+        if '-q' in argv or '--quiet' in argv or self.daemon is True:
             sys.stdout = open(os.devnull, 'w')
 
-        else:
-            print 'GitHub & GitLab auto deploy service v 0.1 started'
+        # Clear any existing lock files, with no regard to possible ongoing processes
+        for repo_config in self.get_config()['repositories']:
+            Lock(os.path.join(repo_config['path'], 'status_running')).clear()
+            Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
         try:
             self._server = HTTPServer((self.get_config()['host'], self.get_config()['port']), WebhookRequestHandler)
