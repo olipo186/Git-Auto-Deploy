@@ -190,7 +190,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
 class GitAutoDeploy(object):
 
-    config_path = './GitAutoDeploy.conf.json'
+    config_path = None
     debug = True
     daemon = False
 
@@ -313,6 +313,33 @@ class GitAutoDeploy(object):
                 if waiting_lock.has_lock():
                     waiting_lock.release()
 
+    def get_config_path(self):
+        import os, re
+
+        if self.config_path:
+            return self.config_path
+
+        # Look for a custom config file if no path is provided as argument
+        target_directories = [
+            os.path.dirname(os.path.realpath(__file__)),  # Script path
+        ]
+
+        # Add current CWD if not identical to script path
+        if not os.getcwd() in target_directories:
+            target_directories.append(os.getcwd())
+
+        target_directories.reverse()
+
+        # Look for a *conf.json or *config.json
+        for dir in target_directories:
+            for item in os.listdir(dir):
+                if re.match(r"conf(ig)?\.json$", item):
+                    path = os.path.realpath(os.path.join(dir, item))
+                    print "Using '%s' as config" % path
+                    return path
+
+        return './GitAutoDeploy.conf.json'
+
     def get_config(self):
         import json
         import sys
@@ -321,6 +348,8 @@ class GitAutoDeploy(object):
 
         if self._config:
             return self._config
+
+        self.config_path = self.get_config_path()
 
         try:
             config_string = open(self.config_path).read()
@@ -440,6 +469,56 @@ class GitAutoDeploy(object):
         self.remove_pid_file()
         sys.exit(0)
 
+    @staticmethod
+    def create_daemon():
+        import os
+
+        try:
+            # Spawn first child
+            pid = os.fork()
+        except OSError, e:
+            raise Exception("%s [%d]" % (e.strerror, e.errno))
+
+        # First child
+        if pid == 0:
+            os.setsid()
+
+            try:
+                # Spawn second child
+                pid = os.fork()
+            except OSError, e:
+                raise Exception, "%s [%d]" % (e.strerror, e.errno)
+
+            if pid == 0:
+                os.chdir('/home/tvk')
+                os.umask(0)
+            else:
+                # Kill first child
+                os._exit(0)
+        else:
+            # Kill parent of first child
+            os._exit(0)
+
+        import resource
+        maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
+        if maxfd == resource.RLIM_INFINITY:
+            maxfd = 1024
+
+        # Close all file descriptors
+        for fd in range(0, maxfd):
+            try:
+                os.close(fd)
+            except OSError:
+                # Ignore errors if fd isn't opened
+                pass
+
+        # Redirect standard input, output and error to devnull since we won't have a terminal
+        os.open(os.devnull, os.O_RDWR)
+        os.dup2(0, 1)
+        os.dup2(0, 2)
+
+        return 0
+
     def run(self):
         from sys import argv
         import sys
@@ -465,17 +544,14 @@ class GitAutoDeploy(object):
                 print 'Using custom configuration file \'%s\'' % self.config_path
 
         if self.daemon:
-            pid = os.fork()
-            if pid > 0:
-                print 'Git Auto Deploy started in daemon mode'
-                sys.exit(0)
-            os.setsid()
+            print 'Starting Git Auto Deploy in daemon mode'
+            GitAutoDeploy.create_daemon()
         else:
             print 'Git Auto Deploy started'
 
         self.create_pid_file()
 
-        if '-q' in argv or '--quiet' in argv or self.daemon is True:
+        if '-q' in argv or '--quiet' in argv:
             sys.stdout = open(os.devnull, 'w')
 
         # Clear any existing lock files, with no regard to possible ongoing processes
