@@ -129,6 +129,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         to collect and compare them all."""
         import json
 
+        content_type = self.headers.getheader('content-type')
         length = int(self.headers.getheader('content-length'))
         body = self.rfile.read(length)
 
@@ -180,6 +181,16 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 # Add a simplified version of the bitbucket HTTPS URL - without the username@bitbucket.com part. This is
                 # needed since the configured repositories might be configured using a different username.
                 repo_urls.append('https://bitbucket.org/%s.git' % (data['repository']['full_name']))
+
+        # If payload is missing, and GitLab wasn't identified through HTTP header, we assume older GitLab syntax.
+        elif content_type == "application/json" and 'payload' not in data:
+
+            print "Received event from GitLab (old syntax)"
+
+            # One repository may posses multiple URLs for different protocols
+            for k in ['url', 'git_http_url', 'git_ssh_url']:
+                if k in data['repository']:
+                    repo_urls.append(data['repository'][k])
 
         else:
             print "ERROR - Unable to recognize request origin. Don't know how to handle the request. Outdated GitLab?"
