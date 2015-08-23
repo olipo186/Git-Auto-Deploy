@@ -129,7 +129,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         to collect and compare them all."""
         import json
 
-        #content_type = self.headers.getheader('content-type')
         length = int(self.headers.getheader('content-length'))
         body = self.rfile.read(length)
 
@@ -166,7 +165,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                     repo_urls.append(data['repository'][k])
 
         # Assume BitBucket if the User-Agent HTTP header is set to 'Bitbucket-Webhooks/2.0' (or something similar)
-        elif user_agent.lower().find('bitbucket') != -1:
+        elif user_agent and user_agent.lower().find('bitbucket') != -1:
 
             print "Received event from BitBucket"
 
@@ -183,7 +182,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 repo_urls.append('https://bitbucket.org/%s.git' % (data['repository']['full_name']))
 
         else:
-            print "ERROR - Unable to recognize request origin. Don't know how to handle the request."
+            print "ERROR - Unable to recognize request origin. Don't know how to handle the request. Outdated GitLab?"
 
         return repo_urls
 
