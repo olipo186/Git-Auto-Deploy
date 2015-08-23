@@ -64,10 +64,11 @@ class GitWrapper():
         cmd = 'cd "' + repo_config['path'] + '"'\
               '&& unset GIT_DIR ' +\
               '&& git fetch origin ' +\
-              '&& git update-index --refresh ' +\
               '&& git reset --hard origin/' + branch + ' ' +\
               '&& git submodule init ' +\
               '&& git submodule update'
+
+#              '&& git update-index --refresh ' +\
 
         res = call([cmd], shell=True)
         print 'Pull result: ' + str(res)
