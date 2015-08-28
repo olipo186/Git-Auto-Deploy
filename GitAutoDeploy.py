@@ -501,7 +501,7 @@ class GitAutoDeploy(object):
                 raise Exception, "%s [%d]" % (e.strerror, e.errno)
 
             if pid == 0:
-                os.chdir('/home/tvk')
+                os.chdir('/')
                 os.umask(0)
             else:
                 # Kill first child
