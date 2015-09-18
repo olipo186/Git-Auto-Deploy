@@ -65,7 +65,7 @@ class GitWrapper():
         print 'Updating ' + repo_config['path']
 
         cmd = 'cd "' + repo_config['path'] + '"' \
-                                             '&& unset GIT_DIR ' + \
+              '&& unset GIT_DIR ' + \
               '&& git fetch origin ' + \
               '&& git reset --hard origin/' + branch + ' ' + \
               '&& git submodule init ' + \
@@ -134,7 +134,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         to collect and compare them all."""
         import json
 
-        gitlab_push_data = False
         content_type = self.headers.getheader('content-type')
         length = int(self.headers.getheader('content-length'))
         body = self.rfile.read(length)
@@ -151,8 +150,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             if not 'push_data' in data:
                 print "ERROR - Unable to recognize data format"
                 return repo_urls
-            else:
-                gitlab_push_data = True
 
         # Assume GitLab if the X-Gitlab-Event HTTP header is set
         if gitlab_event:
@@ -201,17 +198,18 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 if k in data['repository']:
                     repo_urls.append(data['repository'][k])
 
-        #Special Case for Gitlab CI
+        # Special Case for Gitlab CI
         elif content_type == "application/json" and "build_status" in data:
 
             print "Received event from Gitlab CI"
-            for k in ['url', 'git_http_url', 'git_ssh_url']:
-                if data['build_status'] == "success":
+            # Only add repositories if the build is successful. Ignore it in other case.
+            if data['build_status'] == "success":
+                for k in ['url', 'git_http_url', 'git_ssh_url']:
                     if k in data['push_data']['repository']:
                         repo_urls.append(data['push_data']['repository'][k])
-                else:
-                    print "Gitlab CI build '%d' has status '%s'. Not pull will be done" % (data['build_id'], data['build_status'])
-                    break
+            else:
+                print "Gitlab CI build '%d' has status '%s'. Not pull will be done" % (
+                data['build_id'], data['build_status'])
 
         else:
             print "ERROR - Unable to recognize request origin. Don't know how to handle the request. Outdated GitLab?"
