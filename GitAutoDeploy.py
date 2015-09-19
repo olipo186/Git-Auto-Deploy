@@ -146,15 +146,14 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         github_event = self.headers.getheader('X-GitHub-Event')
         user_agent = self.headers.getheader('User-Agent')
 
-        if not 'repository' in data:
-            if not 'push_data' in data:
-                print "ERROR - Unable to recognize data format"
-                return repo_urls
-
         # Assume GitLab if the X-Gitlab-Event HTTP header is set
         if gitlab_event:
 
             print "Received '%s' event from GitLab" % gitlab_event
+
+            if not 'repository' in data:
+                print "ERROR - Unable to recognize data format"
+                return repo_urls
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_http_url', 'git_ssh_url']:
@@ -166,6 +165,10 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             print "Received '%s' event from GitHub" % github_event
 
+            if not 'repository' in data:
+                print "ERROR - Unable to recognize data format"
+                return repo_urls
+
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_url', 'clone_url', 'ssh_url']:
                 if k in data['repository']:
@@ -175,6 +178,10 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         elif user_agent and user_agent.lower().find('bitbucket') != -1:
 
             print "Received event from BitBucket"
+
+            if not 'repository' in data:
+                print "ERROR - Unable to recognize data format"
+                return repo_urls
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_url', 'clone_url', 'ssh_url']:
@@ -193,6 +200,10 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             print "Received event from GitLab (old syntax)"
 
+            if not 'repository' in data:
+                print "ERROR - Unable to recognize data format"
+                return repo_urls
+
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_http_url', 'git_ssh_url']:
                 if k in data['repository']:
@@ -201,7 +212,12 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Special Case for Gitlab CI
         elif content_type == "application/json" and "build_status" in data:
 
-            print "Received event from Gitlab CI"
+            print 'Received event from Gitlab CI'
+
+            if not 'push_data' in data:
+                print "ERROR - Unable to recognize data format"
+                return repo_urls
+
             # Only add repositories if the build is successful. Ignore it in other case.
             if data['build_status'] == "success":
                 for k in ['url', 'git_http_url', 'git_ssh_url']:
