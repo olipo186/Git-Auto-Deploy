@@ -324,8 +324,9 @@ class GitAutoDeploy(object):
                 if waiting_lock.has_lock():
                     waiting_lock.release()
 
-    def get_config_path(self):
-        import os, re
+    def get_default_config_path(self):
+        import os
+        import re
 
         if self.config_path:
             return self.config_path
@@ -360,7 +361,8 @@ class GitAutoDeploy(object):
         if self._config:
             return self._config
 
-        self.config_path = self.get_config_path()
+        if not self.config_path:
+            self.config_path = self.get_default_config_path()
 
         try:
             config_string = open(self.config_path).read()
@@ -554,6 +556,9 @@ class GitAutoDeploy(object):
                 self.config_path = os.path.realpath(argv[argv.index('--config') + 1])
                 print 'Using custom configuration file \'%s\'' % self.config_path
 
+        # Initialize config
+        self.get_config()
+
         if self.daemon:
             print 'Starting Git Auto Deploy in daemon mode'
             GitAutoDeploy.create_daemon()
@@ -562,6 +567,7 @@ class GitAutoDeploy(object):
 
         self.create_pid_file()
 
+        # Suppress output
         if '-q' in argv or '--quiet' in argv:
             sys.stdout = open(os.devnull, 'w')
 
