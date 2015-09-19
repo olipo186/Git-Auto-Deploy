@@ -22,7 +22,7 @@
       <h1>
 <a id="what-is-it" class="anchor" href="#what-is-it" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is it?</h1>
 
-<p>GitAutoDeploy.py consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. The script allows you to continuously and automatically deploy you projects during development each time you push new commits to GitHub, GitLab or Bitbucket.</p>
+<p>GitAutoDeploy.py consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. This application allows you to continuously and automatically deploy you projects each time you push new commits to GitHub, GitLab or Bitbucket repository.</p>
 
 <p><img src="https://cloud.githubusercontent.com/assets/1056476/9344294/d3bc32a4-4607-11e5-9a44-5cd9b22e61d9.png" alt="workflow"></p>
 
@@ -88,8 +88,8 @@
 </li>
 <li>Also you need to make <code>GitAutoDeploy.py</code> executable (if it isn't already): <code>chmod 755 GitAutoDeploy.py</code>
 </li>
-<li>This init script assumes that you have <code>GitAutoDeploy.py</code> in <code>/opt/Gitlab_Auto_Deploy/GitAutoDeploy.py</code>. If this is not the case, edit <code>gitautodeploy</code> init script and modify <code>DAEMON</code> and <code>PWD</code>.</li>
-<li>Now you need to add the correct symbolic link to your specific runlevel dir to get the script executed on each start up. On Debian_Sys-V just do <code>update.rc.d gitautodeploy defaults</code>
+<li>This init script assumes that you have <code>GitAutoDeploy.py</code> installed in <code>/opt/Git-Auto-Deploy/</code> and that the <code>pidfilepath</code> config option is set to <code>/var/run/gitautodeploy.pid</code>. If this is not the case, edit the <code>gitautodeploy</code> init script and modify <code>DAEMON</code>, <code>PWD</code> and <code>PIDFILE</code>.</li>
+<li>Now you need to add the correct symbolic link to your specific runlevel dir to get the script executed on each start up. On Debian_Sys-V just do <code>update-rc.d gitautodeploy defaults</code>
 </li>
 </ul>
 
