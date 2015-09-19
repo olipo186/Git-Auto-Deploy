@@ -44,8 +44,8 @@ The easiest way to configure your system to automatically start ```GitAutoDeploy
 * Copy file ```initfiles/debianLSBInitScripts/gitautodeploy``` to ```/etc/init.d/```
 * Make it executable: ```chmod 755 /etc/init.d/gitautodeploy```
 * Also you need to make ```GitAutoDeploy.py``` executable (if it isn't already): ```chmod 755 GitAutoDeploy.py```
-* This init script assumes that you have ```GitAutoDeploy.py``` in ```/opt/Gitlab_Auto_Deploy/GitAutoDeploy.py```. If this is not the case, edit ```gitautodeploy``` init script and modify ```DAEMON``` and ```PWD```.
-* Now you need to add the correct symbolic link to your specific runlevel dir to get the script executed on each start up. On Debian_Sys-V just do ```update.rc.d gitautodeploy defaults```
+* This init script assumes that you have ```GitAutoDeploy.py``` installed in ```/opt/Git-Auto-Deploy/``` and that the ```pidfilepath``` config option is set to ```/var/run/gitautodeploy.pid```. If this is not the case, edit the ```gitautodeploy``` init script and modify ```DAEMON```, ```PWD``` and ```PIDFILE```.
+* Now you need to add the correct symbolic link to your specific runlevel dir to get the script executed on each start up. On Debian_Sys-V just do ```update-rc.d gitautodeploy defaults```
 
 ## Configure GitHub
 
