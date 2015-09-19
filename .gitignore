@@ -63,3 +63,4 @@ GitAutoDeploy.conf.json
 .idea
 .DS_Store
 ._.DS_Store
+.fuse*
