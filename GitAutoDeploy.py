@@ -12,6 +12,7 @@ class Lock():
 
     def obtain(self):
         import os
+
         try:
             os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             self._has_lock = True
@@ -23,6 +24,7 @@ class Lock():
 
     def release(self):
         import os
+
         if not self._has_lock:
             raise Exception("Unable to release lock that is owned by another process")
         try:
@@ -36,6 +38,7 @@ class Lock():
 
     def clear(self):
         import os
+
         try:
             os.remove(self.path)
         except OSError:
@@ -61,14 +64,14 @@ class GitWrapper():
         print "Post push request received"
         print 'Updating ' + repo_config['path']
 
-        cmd = 'cd "' + repo_config['path'] + '"'\
-              '&& unset GIT_DIR ' +\
-              '&& git fetch origin ' +\
-              '&& git reset --hard origin/' + branch + ' ' +\
-              '&& git submodule init ' +\
+        cmd = 'cd "' + repo_config['path'] + '"' \
+              '&& unset GIT_DIR ' + \
+              '&& git fetch origin ' + \
+              '&& git reset --hard origin/' + branch + ' ' + \
+              '&& git submodule init ' + \
               '&& git submodule update'
 
-#              '&& git update-index --refresh ' +\
+        # '&& git update-index --refresh ' +\
 
         res = call([cmd], shell=True)
         print 'Pull result: ' + str(res)
@@ -78,6 +81,7 @@ class GitWrapper():
     @staticmethod
     def clone(url, path):
         from subprocess import call
+
         call(['git clone --recursive %s %s' % (url, path)], shell=True)
 
 
@@ -143,8 +147,9 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         user_agent = self.headers.getheader('User-Agent')
 
         if not 'repository' in data:
-            print "ERROR - Unable to recognize data format"
-            return repo_urls
+            if not 'push_data' in data:
+                print "ERROR - Unable to recognize data format"
+                return repo_urls
 
         # Assume GitLab if the X-Gitlab-Event HTTP header is set
         if gitlab_event:
@@ -184,7 +189,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 repo_urls.append('https://bitbucket.org/%s.git' % (data['repository']['full_name']))
 
         # If payload is missing, and GitLab wasn't identified through HTTP header, we assume older GitLab syntax.
-        elif content_type == "application/json" and 'payload' not in data:
+        elif content_type == "application/json" and 'payload' not in data and "build_status" not in data:
 
             print "Received event from GitLab (old syntax)"
 
@@ -193,6 +198,19 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 if k in data['repository']:
                     repo_urls.append(data['repository'][k])
 
+        # Special Case for Gitlab CI
+        elif content_type == "application/json" and "build_status" in data:
+
+            print "Received event from Gitlab CI"
+            # Only add repositories if the build is successful. Ignore it in other case.
+            if data['build_status'] == "success":
+                for k in ['url', 'git_http_url', 'git_ssh_url']:
+                    if k in data['push_data']['repository']:
+                        repo_urls.append(data['push_data']['repository'][k])
+            else:
+                print "Gitlab CI build '%d' has status '%s'. Not pull will be done" % (
+                data['build_id'], data['build_status'])
+
         else:
             print "ERROR - Unable to recognize request origin. Don't know how to handle the request. Outdated GitLab?"
 
@@ -200,7 +218,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
 
 class GitAutoDeploy(object):
-
     config_path = None
     debug = True
     daemon = False
@@ -235,7 +252,7 @@ class GitAutoDeploy(object):
     def get_pid_on_port(port):
         import os
 
-        with open("/proc/net/tcp",'r') as f:
+        with open("/proc/net/tcp", 'r') as f:
             file_content = f.readlines()[1:]
 
         pids = [int(x) for x in os.listdir('/proc') if x.isdigit()]
@@ -294,7 +311,7 @@ class GitAutoDeploy(object):
 
                     # If we're unable, try once to obtain the status_waiting lock
                     if not waiting_lock.has_lock() and not waiting_lock.obtain():
-                        print "Unable to obtain the status_running lock nor the status_waiting lock. Another process is "\
+                        print "Unable to obtain the status_running lock nor the status_waiting lock. Another process is " \
                               + "already waiting, so we'll ignore the request."
 
                         # If we're unable to obtain the waiting lock, ignore the request
@@ -457,7 +474,7 @@ class GitAutoDeploy(object):
 
         if pid is False:
             print '[KILLER MODE] I don\'t know the number of pid that is using my configured port\n ' \
-                '[KILLER MODE] Maybe no one? Please, use --force option carefully'
+                  '[KILLER MODE] Maybe no one? Please, use --force option carefully'
             return False
 
         os.kill(pid, signal.SIGKILL)
@@ -465,6 +482,7 @@ class GitAutoDeploy(object):
 
     def create_pid_file(self):
         import os
+
         with open(self.get_config()['pidfilepath'], 'w') as f:
             f.write(str(os.getpid()))
 
@@ -474,10 +492,12 @@ class GitAutoDeploy(object):
 
     def remove_pid_file(self):
         import os
+
         os.remove(self.get_config()['pidfilepath'])
 
     def exit(self):
         import sys
+
         print '\nGoodbye'
         self.remove_pid_file()
         sys.exit(0)
@@ -513,6 +533,7 @@ class GitAutoDeploy(object):
             os._exit(0)
 
         import resource
+
         maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
         if maxfd == resource.RLIM_INFINITY:
             maxfd = 1024
@@ -608,6 +629,7 @@ class GitAutoDeploy(object):
             print 'Requested close by SIGABRT (process abort signal). Code 6.'
 
         self.exit()
+
 
 if __name__ == '__main__':
     import signal
