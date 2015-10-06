@@ -1,6 +1,6 @@
 # What is it?
 
-GitAutoDeploy.py consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. This application allows you to continuously and automatically deploy you projects each time you push new commits to GitHub, GitLab or Bitbucket repository.</p>
+GitAutoDeploy.py consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. This application allows you to continuously and automatically deploy you projects each time you push new commits to your repository.</p>
 
 ![workflow](https://cloud.githubusercontent.com/assets/1056476/9344294/d3bc32a4-4607-11e5-9a44-5cd9b22e61d9.png)
 
@@ -8,7 +8,7 @@ GitAutoDeploy.py consists of a small HTTP server that listens for Web hook reque
 
 When commits are pushed to your Git repository, the Git server will notify ```GitAutoDeploy.py``` by sending a HTTP POST request with a JSON body to a pre configured URL (your-host:8001). The JSON body contains detailed information about the repository and what event that triggered the request. GitAutoDeploy.py parses and validates the request, and if all goes well it issues a ```git pull```.
 
-Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell command upon each successful "git pull", which can be used to trigger custom build actions.</p>
+Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell command upon each successful ```git pull```, which can be used to trigger custom build actions or test scripts.</p>
 
 # Getting started
 ## Dependencies
