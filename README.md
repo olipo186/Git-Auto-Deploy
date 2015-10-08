@@ -10,7 +10,7 @@ When commits are pushed to your Git repository, the Git server will notify ```Gi
 
 Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell command upon each successful ```git pull```, which can be used to trigger custom build actions or test scripts.</p>
 
-# Getting started
+# Getting started with command line utility
 ## Dependencies
 * Git (tested on version 2.5.0)
 * Python (tested on version 2.7)
@@ -46,6 +46,56 @@ The easiest way to configure your system to automatically start ```GitAutoDeploy
 * Also you need to make ```GitAutoDeploy.py``` executable (if it isn't already): ```chmod 755 GitAutoDeploy.py```
 * This init script assumes that you have ```GitAutoDeploy.py``` installed in ```/opt/Git-Auto-Deploy/``` and that the ```pidfilepath``` config option is set to ```/var/run/gitautodeploy.pid```. If this is not the case, edit the ```gitautodeploy``` init script and modify ```DAEMON```, ```PWD``` and ```PIDFILE```.
 * Now you need to add the correct symbolic link to your specific runlevel dir to get the script executed on each start up. On Debian_Sys-V just do ```update-rc.d gitautodeploy defaults```
+
+# Getting started with Docker image
+
+## Run it directly with conf file
+```
+$ docker run -t --name autodeploy \
+    -p 8001:8001 \
+    -v $HOME/.ssh/id_rsa:/root/.ssh/id_rsa:ro \
+    -v $HOME/Desktop/autodeploy/GitAutoDeploy.conf.json:/var/GitAutoDeploy.conf.json \
+    -v $HOME/Desktop/autodeploy/repository:/var/repositories/myrepo \
+    qnch/github-gitlab-auto-deploy
+```
+
+## or run it configured by environment variables
+
+Configuration file is optional. If you include it, environment variables will override it.
+
+```
+$ docker run -t --name autodeploy \
+    -p 8001:8001 \
+    -v $HOME/.ssh/id_rsa:/root/.ssh/id_rsa:ro \
+    -e AUTODEPLOY_URL=git@github.com:olipo186/Git-Auto-Deploy.git \
+    -e AUTODEPLOY_BRANCH=master \
+    -v $HOME/Desktop/autodeploy/repository:/var/repository \
+    qnch/github-gitlab-auto-deploy
+```
+
+## All options
+
+You can use this environment variables:
+
+Variable name     | Desciption
+----------------- | --------------------------------------------------------------------
+AUTODEPLOY_URL    | SSH or HTTP[S] URL
+AUTODEPLOY_BRANCH | GIT branch to follow (default: "master")
+AUTODEPLOY_PATH   | Path to checkout working dir (default: "/var/repository")
+AUTODEPLOY_PRE    | Command to call before deployment (default: "echo Deploy started!")
+AUTODEPLOY_POST   | Command to call after deployment (default: "echo Deploy completed!")
+
+If you want to deploy more than one repositories, you have to use your own config file. Then you don't have to set environment variables.
+
+Possible volumes:
+
+Volume path       | Description
+----------------- | -------------------------------------------------------------------------------------------
+/root/.ssh/id_rsa | Private key used to authenticate in repository (if not set, only HTTP connection will work)
+/var/repository   | Working tree where will be deployed selected branch. Usually used for local development.
+
+
+# Configure webhook
 
 ## Configure GitHub
 
