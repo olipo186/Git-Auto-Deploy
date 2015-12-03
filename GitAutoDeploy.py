@@ -60,14 +60,15 @@ class GitWrapper():
         from subprocess import call
 
         branch = ('branch' in repo_config) and repo_config['branch'] or 'master'
+        remote = ('remote' in repo_config) and repo_config['remote'] or 'origin'
 
         print "Post push request received"
         print 'Updating ' + repo_config['path']
 
         cmd = 'cd "' + repo_config['path'] + '"' \
               '&& unset GIT_DIR ' + \
-              '&& git fetch origin ' + \
-              '&& git reset --hard origin/' + branch + ' ' + \
+              '&& git fetch ' + remote + \
+              '&& git reset --hard ' + remote + '/' + branch + ' ' + \
               '&& git submodule init ' + \
               '&& git submodule update'
 
