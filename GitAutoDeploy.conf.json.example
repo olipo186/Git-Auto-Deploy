@@ -10,6 +10,7 @@
 	[{
 		"url": "https://github.com/olipo186/Git-Auto-Deploy.git",
 		"branch": "master",
+		"remote": "origin",
 		"path": "~/repositories/Git-Auto-Deploy",
 		"deploy": "echo deploying"
 	},
