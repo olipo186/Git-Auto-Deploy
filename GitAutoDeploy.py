@@ -438,13 +438,10 @@ class GitAutoDeploy(object):
             if not os.path.isdir(repo_config['path']):
 
                 print "Directory %s not found" % repo_config['path']
-                if 'branch' in repo_config:
-                    GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'], path=repo_config['path'])
-                else:
-                    GitWrapper.clone(url=repo_config['url'], branch=None, path=repo_config['path'])
+                GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'] if 'branch' in repo_config else None, path=repo_config['path'])
 
                 if not os.path.isdir(repo_config['path']):
-                    print "Unable to clone repository %s" % repo_config['url']
+                    print "Unable to clone %s branch of repository %s" % (repo_config['branch'] if 'branch' in repo_config else "default", repo_config['url'])
                     sys.exit(2)
 
                 else:
