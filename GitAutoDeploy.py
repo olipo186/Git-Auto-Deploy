@@ -80,10 +80,13 @@ class GitWrapper():
         return int(res)
 
     @staticmethod
-    def clone(url, path):
+    def clone(url, branch, path):
         from subprocess import call
 
-        call(['git clone --recursive %s %s' % (url, path)], shell=True)
+        if branch:
+            call(['git clone --recursive %s -b %s %s' % (url, branch, path)], shell=True)
+        else:
+            call(['git clone --recursive %s %s' % (url, path)], shell=True)
 
 
     @staticmethod
@@ -435,7 +438,7 @@ class GitAutoDeploy(object):
             if not os.path.isdir(repo_config['path']):
 
                 print "Directory %s not found" % repo_config['path']
-                GitWrapper.clone(url=repo_config['url'], path=repo_config['path'])
+                GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'], path=repo_config['path'])
 
                 if not os.path.isdir(repo_config['path']):
                     print "Unable to clone repository %s" % repo_config['url']
