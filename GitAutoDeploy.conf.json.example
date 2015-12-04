@@ -1,20 +1,21 @@
 {
-	"pidfilepath": "/var/run/gitautodeploy/gitautodeploy.pid",
-	"host": "localhost",
+	"pidfilepath": "~/.gitautodeploy.pid",
+	"host": "0.0.0.0",
 	"port": 8001,
 	"global_deploy": [
-		"echo Starting deploy!",
-		"echo Ending deploy!"
+		"echo Deploy started!",
+		"echo Deploy completed!"
 	],
 	"repositories":
 	[{
-		"url": "https://github.com/logsol/Test-Repo",
+		"url": "https://github.com/olipo186/Git-Auto-Deploy.git",
 		"branch": "master",
-		"path": "/home/logsol/projects/Test-Repo",
+		"remote": "origin",
+		"path": "~/repositories/Git-Auto-Deploy",
 		"deploy": "echo deploying"
 	},
 	{
-		"url": "https://github.com/logsol/Katharsis-Framework",
-		"path": "/home/logsol/projects/Katharsis-Framework"
+		"url": "https://github.com/github/gitignore",
+		"path": "~/repositories/gitignore"
 	}]
 }
