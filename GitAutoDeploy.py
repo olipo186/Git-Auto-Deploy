@@ -196,20 +196,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 # needed since the configured repositories might be configured using a different username.
                 repo_urls.append('https://bitbucket.org/%s.git' % (data['repository']['full_name']))
 
-        # If payload is missing, and GitLab wasn't identified through HTTP header, we assume older GitLab syntax.
-        elif content_type == "application/json" and 'payload' not in data and "build_status" not in data:
-
-            print "Received event from GitLab (old syntax)"
-
-            if not 'repository' in data:
-                print "ERROR - Unable to recognize data format"
-                return repo_urls
-
-            # One repository may posses multiple URLs for different protocols
-            for k in ['url', 'git_http_url', 'git_ssh_url']:
-                if k in data['repository']:
-                    repo_urls.append(data['repository'][k])
-
         # Special Case for Gitlab CI
         elif content_type == "application/json" and "build_status" in data:
 
@@ -228,8 +214,23 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 print "Gitlab CI build '%d' has status '%s'. Not pull will be done" % (
                 data['build_id'], data['build_status'])
 
+        # Try to find the repository urls and add them as long as the content type is set to JSON at least.
+        # This handles old GitLab requests and Gogs requests for example.
+        elif content_type == "application/json":
+
+            print "Received event from unknown origin. Assume generic data format."
+
+            if not 'repository' in data:
+                print "ERROR - Unable to recognize data format"
+                return repo_urls
+
+            # One repository may posses multiple URLs for different protocols
+            for k in ['url', 'git_http_url', 'git_ssh_url', 'http_url', 'ssh_url']:
+                if k in data['repository']:
+                    repo_urls.append(data['repository'][k])
+
         else:
-            print "ERROR - Unable to recognize request origin. Don't know how to handle the request. Outdated GitLab?"
+            print "ERROR - Unable to recognize request origin. Don't know how to handle the request."
 
         return repo_urls
 
