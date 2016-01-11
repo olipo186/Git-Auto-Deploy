@@ -1,0 +1,16 @@
+{
+	"host": "0.0.0.0",
+	"port": 8001,
+	"global_deploy": [
+		"echo Deploy started!",
+		"echo Deploy completed!"
+	],
+	"repositories":
+	[{
+		"url": "https://c440b2e99ee9ead0256d022ac85b31b7768321b1@github.com/MISingularity/godocker.git",
+		"branch": "master",
+		"remote": "origin",
+		"path": "/opt/repositories/godocker",
+		"deploy": "echo deploying"
+	}]
+}
