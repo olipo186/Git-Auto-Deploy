@@ -2,7 +2,7 @@
 Description=GitAutoDeploy
 
 [Service]
-User=root
-Group=root
+User=www-data
+Group=www-data
 WorkingDirectory=/opt/Git-Auto-Deploy/
 ExecStart=/opt/Git-Auto-Deploy/GitAutoDeploy.py
