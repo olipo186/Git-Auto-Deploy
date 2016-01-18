@@ -1,0 +1,8 @@
+[Unit]
+Description=GitAutoDeploy
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/opt/Git-Auto-Deploy/
+ExecStart=/opt/Git-Auto-Deploy/GitAutoDeploy.py
