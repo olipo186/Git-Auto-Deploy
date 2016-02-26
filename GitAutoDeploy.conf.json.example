@@ -17,5 +17,15 @@
 	{
 		"url": "https://github.com/github/gitignore",
 		"path": "~/repositories/gitignore"
-	}]
+	},
+	{
+      "url": "https://api.github.com/repos/wipon/Git-Auto-Deploy.git",
+      "pullrequestfilter": true,
+      "action": "closed",
+      "ref": "testing",
+      "branch": "testing",
+      "remote": "origin",
+      "path": "~/repositories/Git-Auto-Deploy",
+      "deploy": "echo deploying after pull request"
+    }]
 }
