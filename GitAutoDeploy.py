@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 
 import logging
+
 # Initialize loging
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 logger = logging.getLogger()
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+logger.addHandler(consoleHandler)
 
 class Lock():
     """Simple implementation of a mutex lock using the file systems. Works on *nix systems."""
@@ -274,6 +279,7 @@ class GitAutoDeploy(object):
     _instance = None
     _server = None
     _config = None
+    _base_config = None
 
     def __new__(cls, *args, **kwargs):
         """Overload constructor to enable Singleton access"""
@@ -425,14 +431,11 @@ class GitAutoDeploy(object):
 
         return './GitAutoDeploy.conf.json'
 
-    def get_config(self):
+    def get_base_config(self):
         import json
-        import sys
-        import os
-        import re
 
-        if self._config:
-            return self._config
+        if self._base_config:
+            return self._base_config
 
         if not self.config_path:
             self.config_path = self.get_default_config_path()
@@ -445,11 +448,22 @@ class GitAutoDeploy(object):
             raise e
 
         try:
-            self._config = json.loads(config_string)
+            self._base_config = json.loads(config_string)
 
         except Exception as e:
             logger.error("%s file is not valid JSON\n" % self.config_path)
             raise e
+
+        return self._base_config
+
+    def get_config(self):
+        import os
+        import re
+
+        if self._config:
+            return self._config
+
+        self._config = self.get_base_config()
 
         # Translate any ~ in the path into /home/<user>
         if 'pidfilepath' in self._config:
@@ -618,6 +632,17 @@ class GitAutoDeploy(object):
         import socket
         import os
 
+        # Initialize base config
+        self.get_base_config()
+
+        # All logs are recording
+        logger.setLevel(logging.NOTSET)
+
+        # Translate any ~ in the path into /home/<user>
+        fileHandler = logging.FileHandler(os.path.expanduser(self.get_base_config()["logfilepath"]))
+        fileHandler.setFormatter(logFormatter)
+        logger.addHandler(fileHandler)
+
         if '-d' in argv or '--daemon-mode' in argv:
             self.daemon = True
 
@@ -635,20 +660,8 @@ class GitAutoDeploy(object):
                 self.config_path = os.path.realpath(argv[argv.index('--config') + 1])
                 logger.info('Using custom configuration file \'%s\'' % self.config_path)
 
-        # Initialize config
+        # Initialize base config
         self.get_config()
-
-        # All logs are recording
-        logger.setLevel(logging.NOTSET)
-
-        # Translate any ~ in the path into /home/<user>
-        fileHandler = logging.FileHandler(os.path.expanduser(self.get_config()["logfilepath"]))
-        fileHandler.setFormatter(logFormatter)
-        logger.addHandler(fileHandler)
-
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(logFormatter)
-        logger.addHandler(consoleHandler)
 
         if self.daemon:
             logger.info('Starting Git Auto Deploy in daemon mode')
@@ -671,7 +684,7 @@ class GitAutoDeploy(object):
         try:
             self._server = HTTPServer((self.get_config()['host'], self.get_config()['port']), WebhookRequestHandler)
             sa = self._server.socket.getsockname()
-            logger.info("Listening on", sa[0], "port", sa[1])
+            logger.info("Listening on %s port %s", sa[0], sa[1])
             self._server.serve_forever()
 
         except socket.error, e:
