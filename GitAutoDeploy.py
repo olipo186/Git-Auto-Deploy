@@ -63,21 +63,26 @@ class GitWrapper():
         remote = ('remote' in repo_config) and repo_config['remote'] or 'origin'
 
         print "Post push request received"
-        print 'Updating ' + repo_config['path']
 
-        cmd = 'cd "' + repo_config['path'] + '"' \
-              '&& unset GIT_DIR ' + \
-              '&& git fetch ' + remote + \
-              '&& git reset --hard ' + remote + '/' + branch + ' ' + \
-              '&& git submodule init ' + \
-              '&& git submodule update'
+        if 'path' in repo_config:
+            print 'Updating ' + repo_config['path']
 
-        # '&& git update-index --refresh ' +\
+            cmd = 'cd "' + repo_config['path'] + '"' \
+                  '&& unset GIT_DIR ' + \
+                  '&& git fetch ' + remote + \
+                  '&& git reset --hard ' + remote + '/' + branch + ' ' + \
+                  '&& git submodule init ' + \
+                  '&& git submodule update'
 
-        res = call([cmd], shell=True)
-        print 'Pull result: ' + str(res)
+            # '&& git update-index --refresh ' +\
 
-        return int(res)
+            res = call([cmd], shell=True)
+            print 'Pull result: ' + str(res)
+
+            return int(res)
+
+        else:
+            return 0 #everething all right
 
     @staticmethod
     def clone(url, branch, path):
@@ -94,7 +99,8 @@ class GitWrapper():
         """Executes any supplied post-pull deploy command"""
         from subprocess import call
 
-        path = repo_config['path']
+        if 'path' in repo_config:
+            path = repo_config['path']
 
         cmds = []
         if 'deploy' in repo_config:
@@ -109,7 +115,10 @@ class GitWrapper():
         print 'Executing deploy command(s)'
 
         for cmd in cmds:
-            call(['cd "' + path + '" && ' + cmd], shell=True)
+            if 'path' in repo_config:
+                call(['cd "' + path + '" && ' + cmd], shell=True)
+            else:
+                call([cmd], shell=True)
 
 
 from BaseHTTPServer import BaseHTTPRequestHandler
@@ -341,23 +350,25 @@ class GitAutoDeploy(object):
             if repo_config['pullrequestfilter'] and (repo_config['ref'] != ref or repo_config['action'] != action):
                 continue
 
-            running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
-            waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
+            if 'path' in repo_config:
+                running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
+                waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
             try:
 
-                # Attempt to obtain the status_running lock
-                while not running_lock.obtain():
+                if 'path' in repo_config:
+                    # Attempt to obtain the status_running lock
+                    while not running_lock.obtain():
 
-                    # If we're unable, try once to obtain the status_waiting lock
-                    if not waiting_lock.has_lock() and not waiting_lock.obtain():
-                        print "Unable to obtain the status_running lock nor the status_waiting lock. Another process is " \
-                              + "already waiting, so we'll ignore the request."
+                        # If we're unable, try once to obtain the status_waiting lock
+                        if not waiting_lock.has_lock() and not waiting_lock.obtain():
+                            print "Unable to obtain the status_running lock nor the status_waiting lock. Another process is " \
+                                  + "already waiting, so we'll ignore the request."
 
-                        # If we're unable to obtain the waiting lock, ignore the request
-                        break
+                            # If we're unable to obtain the waiting lock, ignore the request
+                            break
 
-                    # Keep on attempting to obtain the status_running lock until we succeed
-                    time.sleep(5)
+                        # Keep on attempting to obtain the status_running lock until we succeed
+                        time.sleep(5)
 
                 n = 4
                 while 0 < n and 0 != GitWrapper.pull(repo_config):
@@ -367,18 +378,20 @@ class GitAutoDeploy(object):
                     GitWrapper.deploy(repo_config)
 
             except Exception as e:
-                print 'Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path']
+                if 'path' in repo_config:
+                    print 'Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path']
                 print e
 
             finally:
 
-                # Release the lock if it's ours
-                if running_lock.has_lock():
-                    running_lock.release()
+                if 'path' in repo_config:
+                    # Release the lock if it's ours
+                    if running_lock.has_lock():
+                        running_lock.release()
 
-                # Release the lock if it's ours
-                if waiting_lock.has_lock():
-                    waiting_lock.release()
+                    # Release the lock if it's ours
+                    if waiting_lock.has_lock():
+                        waiting_lock.release()
 
     def get_default_config_path(self):
         import os
@@ -453,21 +466,23 @@ class GitAutoDeploy(object):
             if 'path' in repo_config:
                 repo_config['path'] = os.path.expanduser(repo_config['path'])
 
-            if not os.path.isdir(repo_config['path']):
-
-                print "Directory %s not found" % repo_config['path']
-                GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'] if 'branch' in repo_config else None, path=repo_config['path'])
-
+            if 'path' in repo_config:
                 if not os.path.isdir(repo_config['path']):
-                    print "Unable to clone %s branch of repository %s" % (repo_config['branch'] if 'branch' in repo_config else "default", repo_config['url'])
-                    sys.exit(2)
 
-                else:
-                    print "Repository %s successfully cloned" % repo_config['url']
+                    print "Directory %s not found" % repo_config['path']
+                    GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'] if 'branch' in repo_config else None, path=repo_config['path'])
 
-            if not os.path.isdir(repo_config['path'] + '/.git'):
-                print "Directory %s is not a Git repository" % repo_config['path']
-                sys.exit(2)
+                    if not os.path.isdir(repo_config['path']):
+                        print "Unable to clone %s branch of repository %s. So repo will not pull. Only deploy command will run(if it exist)" % (repo_config['branch'] if 'branch' in repo_config else "default", repo_config['url'])
+                        #sys.exit(2)
+
+                    else:
+                        print "Repository %s successfully cloned" % repo_config['url']
+                if not os.path.isdir(repo_config['path'] + '/.git'):
+                    print "Directory %s is not a Git repository. So repo will not pull. Only deploy command will run(if it exist)" % repo_config['path']
+                    #sys.exit(2)
+            else:
+                print "'Path' was not found in config. So repo will not pull. Only deploy command will run(if it exist)"
 
         return self._config
 
@@ -633,8 +648,9 @@ class GitAutoDeploy(object):
 
         # Clear any existing lock files, with no regard to possible ongoing processes
         for repo_config in self.get_config()['repositories']:
-            Lock(os.path.join(repo_config['path'], 'status_running')).clear()
-            Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
+            if 'path' in repo_config:
+                Lock(os.path.join(repo_config['path'], 'status_running')).clear()
+                Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
         try:
             self._server = HTTPServer((self.get_config()['host'], self.get_config()['port']), WebhookRequestHandler)
