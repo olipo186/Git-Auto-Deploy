@@ -123,16 +123,17 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         from threading import Timer
 
         # Extract repository URL(s) from incoming request body
-        repo_urls = self.get_repo_urls_from_request()
+        repo_urls, ref, action = self.get_repo_params_from_request()
 
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
 
         # Wait one second before we do git pull (why?)
-        Timer(1.0, GitAutoDeploy.process_repo_urls, [repo_urls]).start()
+        Timer(1.0, GitAutoDeploy.process_repo_urls, (repo_urls, ref, action)).start()
 
-    def get_repo_urls_from_request(self):
+
+    def get_repo_params_from_request(self):
         """Parses the incoming request and extracts all possible URLs to the repository in question. Since repos can
         have both ssh://, git:// and https:// URIs, and we don't know which of them is specified in the config, we need
         to collect and compare them all."""
@@ -145,6 +146,8 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         data = json.loads(body)
 
         repo_urls = []
+        ref = ""
+        action = ""
 
         gitlab_event = self.headers.getheader('X-Gitlab-Event')
         github_event = self.headers.getheader('X-GitHub-Event')
@@ -157,7 +160,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             if not 'repository' in data:
                 print "ERROR - Unable to recognize data format"
-                return repo_urls
+                return repo_urls, ref or "master", action
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_http_url', 'git_ssh_url']:
@@ -171,12 +174,25 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             if not 'repository' in data:
                 print "ERROR - Unable to recognize data format"
-                return repo_urls
+                return repo_urls, ref or "master", action
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_url', 'clone_url', 'ssh_url']:
                 if k in data['repository']:
                     repo_urls.append(data['repository'][k])
+
+            if 'pull_request' in data:
+                if 'base' in data['pull_request']:
+                    if 'ref' in data['pull_request']['base']:
+                        ref = data['pull_request']['base']['ref']
+                        print "Pull request to branch '%s' was fired" % ref
+            elif 'ref' in data:
+                ref = data['ref']
+                print "Push to branch '%s' was fired" % ref
+
+            if 'action' in data:
+                action = data['action']
+                print "Action '%s' was fired" % action
 
         # Assume BitBucket if the User-Agent HTTP header is set to 'Bitbucket-Webhooks/2.0' (or something similar)
         elif user_agent and user_agent.lower().find('bitbucket') != -1:
@@ -185,7 +201,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             if not 'repository' in data:
                 print "ERROR - Unable to recognize data format"
-                return repo_urls
+                return repo_urls, ref or "master", action
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_url', 'clone_url', 'ssh_url']:
@@ -206,7 +222,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             if not 'push_data' in data:
                 print "ERROR - Unable to recognize data format"
-                return repo_urls
+                return repo_urls, ref or "master", action
 
             # Only add repositories if the build is successful. Ignore it in other case.
             if data['build_status'] == "success":
@@ -225,17 +241,16 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             if not 'repository' in data:
                 print "ERROR - Unable to recognize data format"
-                return repo_urls
+                return repo_urls, ref or "master", action
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_http_url', 'git_ssh_url', 'http_url', 'ssh_url']:
                 if k in data['repository']:
                     repo_urls.append(data['repository'][k])
-
         else:
             print "ERROR - Unable to recognize request origin. Don't know how to handle the request."
 
-        return repo_urls
+        return repo_urls, ref or "master", action
 
 
 class GitAutoDeploy(object):
@@ -309,7 +324,7 @@ class GitAutoDeploy(object):
         return mpid
 
     @staticmethod
-    def process_repo_urls(urls):
+    def process_repo_urls(urls, ref, action):
         import os
         import time
 
@@ -322,6 +337,9 @@ class GitAutoDeploy(object):
 
         # Process each matching repository
         for repo_config in repo_configs:
+
+            if repo_config['pullrequestfilter'] and (repo_config['ref'] != ref or repo_config['action'] != action):
+                continue
 
             running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
             waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
