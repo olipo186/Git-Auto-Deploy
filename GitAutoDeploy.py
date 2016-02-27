@@ -5,6 +5,7 @@ import logging
 # Initialize loging
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 logger = logging.getLogger()
+logFilePath = ""
 
 consoleHandler = logging.StreamHandler()
 consoleHandler.setFormatter(logFormatter)
@@ -84,8 +85,11 @@ class GitWrapper():
                   '&& git submodule update'
 
             # '&& git update-index --refresh ' +\
-
-            res = call([cmd], shell=True)
+            if logFilePath:
+                with open(logFilePath, 'a') as logfile:
+                    res = call([cmd], stdout=logfile, stderr=logfile, shell=True)
+            else:
+                res = call([cmd], shell=True)
             logger.info('Pull result: ' + str(res))
 
             return int(res)
@@ -97,10 +101,13 @@ class GitWrapper():
     def clone(url, branch, path):
         from subprocess import call
 
-        if branch:
-            call(['git clone --recursive %s -b %s %s' % (url, branch, path)], shell=True)
+        branchToClone = branch or 'master'
+
+        if logFilePath:
+            with open(logFilePath, 'a') as logfile:
+                call(['git clone --recursive %s -b %s %s' % (url, branchToClone, path)], stdout=logfile, stderr=logfile, shell=True)
         else:
-            call(['git clone --recursive %s %s' % (url, path)], shell=True)
+            call(['git clone --recursive %s -b %s %s' % (url, branchToClone, path)], shell=True)
 
 
     @staticmethod
@@ -123,11 +130,19 @@ class GitWrapper():
 
         logger.info('Executing deploy command(s)')
 
-        for cmd in cmds:
-            if 'path' in repo_config:
-                call(['cd "' + path + '" && ' + cmd], shell=True)
-            else:
-                call([cmd], shell=True)
+        if logFilePath:
+            with open(logFilePath, 'a') as logfile:
+                for cmd in cmds:
+                    if 'path' in repo_config:
+                        call(['cd "' + path + '" && ' + cmd], stdout=logfile, stderr=logfile, shell=True)
+                    else:
+                        call([cmd], stdout=logfile, stderr=logfile, shell=True)
+        else:
+            for cmd in cmds:
+                    if 'path' in repo_config:
+                        call(['cd "' + path + '" && ' + cmd], shell=True)
+                    else:
+                        call([cmd], shell=True)
 
 
 from BaseHTTPServer import BaseHTTPRequestHandler
@@ -534,7 +549,11 @@ class GitAutoDeploy(object):
             if m is not None:
                 port = repository['port']
                 port = '' if port is None else ('-p' + port)
-                call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], shell=True)
+                if logFilePath:
+                    with open(logFilePath, 'a') as logfile:
+                        call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], stdout=logfile, stderr=logfile, shell=True)
+                else:
+                    call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], shell=True)
 
             else:
                 logger.error('Could not find regexp match in path: %s' % url)
@@ -632,6 +651,8 @@ class GitAutoDeploy(object):
         import socket
         import os
 
+        global logFilePath
+
         # Initialize base config
         self.get_base_config()
 
@@ -639,9 +660,11 @@ class GitAutoDeploy(object):
         logger.setLevel(logging.NOTSET)
 
         # Translate any ~ in the path into /home/<user>
-        fileHandler = logging.FileHandler(os.path.expanduser(self.get_base_config()["logfilepath"]))
-        fileHandler.setFormatter(logFormatter)
-        logger.addHandler(fileHandler)
+        if "logfilepath" in self.get_base_config():
+            logFilePath = os.path.expanduser(self.get_base_config()["logfilepath"])
+            fileHandler = logging.FileHandler(logFilePath)
+            fileHandler.setFormatter(logFormatter)
+            logger.addHandler(fileHandler)
 
         if '-d' in argv or '--daemon-mode' in argv:
             self.daemon = True
