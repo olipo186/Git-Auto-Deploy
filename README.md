@@ -22,9 +22,10 @@ Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell comman
 * Make sure that the ```pidfilepath``` path is writable for the user running the script, as well as any other path configured for your repositories.
 * If you don't want to execute ```git pull``` after webhook was fired, you can leave field ```"path"``` empty.
 
-## Continious Delivery via Pell request
+## Continious Delivery via Pull request
 
 ![Workflow](./continious_delivery_process.png)
+
 If you use continious delivery (such as this workflow) you may want to trigger deploy event when pull request is opened or closed.
 You can follow next steps to implement CD process:
 * Set repo "url" to ```"https://api.github.com"```
