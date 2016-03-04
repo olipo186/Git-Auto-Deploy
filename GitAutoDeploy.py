@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 
+import logging
+
+# Initialize loging
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+logger = logging.getLogger()
+logFilePath = ""
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+logger.addHandler(consoleHandler)
 
 class Lock():
     """Simple implementation of a mutex lock using the file systems. Works on *nix systems."""
@@ -16,7 +26,7 @@ class Lock():
         try:
             os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             self._has_lock = True
-            print "Successfully obtained lock: %s" % self.path
+            logger.info("Successfully obtained lock: %s" % self.path)
         except OSError:
             return False
         else:
@@ -29,7 +39,7 @@ class Lock():
             raise Exception("Unable to release lock that is owned by another process")
         try:
             os.remove(self.path)
-            print "Successfully released lock: %s" % self.path
+            logger.info("Successfully released lock: %s" % self.path)
         finally:
             self._has_lock = False
 
@@ -44,7 +54,7 @@ class Lock():
         except OSError:
             pass
         finally:
-            print "Successfully cleared lock: %s" % self.path
+            logger.info("Successfully cleared lock: %s" % self.path)
             self._has_lock = False
 
 
@@ -62,31 +72,42 @@ class GitWrapper():
         branch = ('branch' in repo_config) and repo_config['branch'] or 'master'
         remote = ('remote' in repo_config) and repo_config['remote'] or 'origin'
 
-        print "Post push request received"
-        print 'Updating ' + repo_config['path']
+        logger.info("Post push request received")
 
-        cmd = 'cd "' + repo_config['path'] + '"' \
-              '&& unset GIT_DIR ' + \
-              '&& git fetch ' + remote + \
-              '&& git reset --hard ' + remote + '/' + branch + ' ' + \
-              '&& git submodule init ' + \
-              '&& git submodule update'
+        if 'path' in repo_config:
+            logger.info('Updating ' + repo_config['path'])
 
-        # '&& git update-index --refresh ' +\
+            cmd = 'cd "' + repo_config['path'] + '"' \
+                  '&& unset GIT_DIR ' + \
+                  '&& git fetch ' + remote + \
+                  '&& git reset --hard ' + remote + '/' + branch + ' ' + \
+                  '&& git submodule init ' + \
+                  '&& git submodule update'
 
-        res = call([cmd], shell=True)
-        print 'Pull result: ' + str(res)
+            # '&& git update-index --refresh ' +\
+            if logFilePath:
+                with open(logFilePath, 'a') as logfile:
+                    res = call([cmd], stdout=logfile, stderr=logfile, shell=True)
+            else:
+                res = call([cmd], shell=True)
+            logger.info('Pull result: ' + str(res))
 
-        return int(res)
+            return int(res)
+
+        else:
+            return 0 #everething all right
 
     @staticmethod
     def clone(url, branch, path):
         from subprocess import call
 
-        if branch:
-            call(['git clone --recursive %s -b %s %s' % (url, branch, path)], shell=True)
+        branchToClone = branch or 'master'
+
+        if logFilePath:
+            with open(logFilePath, 'a') as logfile:
+                call(['git clone --recursive %s -b %s %s' % (url, branchToClone, path)], stdout=logfile, stderr=logfile, shell=True)
         else:
-            call(['git clone --recursive %s %s' % (url, path)], shell=True)
+            call(['git clone --recursive %s -b %s %s' % (url, branchToClone, path)], shell=True)
 
 
     @staticmethod
@@ -94,7 +115,8 @@ class GitWrapper():
         """Executes any supplied post-pull deploy command"""
         from subprocess import call
 
-        path = repo_config['path']
+        if 'path' in repo_config:
+            path = repo_config['path']
 
         cmds = []
         if 'deploy' in repo_config:
@@ -106,10 +128,21 @@ class GitWrapper():
         if len(gd[1]) is not 0:
             cmds.append(gd[1])
 
-        print 'Executing deploy command(s)'
+        logger.info('Executing deploy command(s)')
 
-        for cmd in cmds:
-            call(['cd "' + path + '" && ' + cmd], shell=True)
+        if logFilePath:
+            with open(logFilePath, 'a') as logfile:
+                for cmd in cmds:
+                    if 'path' in repo_config:
+                        call(['cd "' + path + '" && ' + cmd], stdout=logfile, stderr=logfile, shell=True)
+                    else:
+                        call([cmd], stdout=logfile, stderr=logfile, shell=True)
+        else:
+            for cmd in cmds:
+                    if 'path' in repo_config:
+                        call(['cd "' + path + '" && ' + cmd], shell=True)
+                    else:
+                        call([cmd], shell=True)
 
 
 from BaseHTTPServer import BaseHTTPRequestHandler
@@ -123,16 +156,17 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         from threading import Timer
 
         # Extract repository URL(s) from incoming request body
-        repo_urls = self.get_repo_urls_from_request()
+        repo_urls, ref, action = self.get_repo_params_from_request()
 
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
 
         # Wait one second before we do git pull (why?)
-        Timer(1.0, GitAutoDeploy.process_repo_urls, [repo_urls]).start()
+        Timer(1.0, GitAutoDeploy.process_repo_urls, (repo_urls, ref, action)).start()
 
-    def get_repo_urls_from_request(self):
+
+    def get_repo_params_from_request(self):
         """Parses the incoming request and extracts all possible URLs to the repository in question. Since repos can
         have both ssh://, git:// and https:// URIs, and we don't know which of them is specified in the config, we need
         to collect and compare them all."""
@@ -145,6 +179,8 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         data = json.loads(body)
 
         repo_urls = []
+        ref = ""
+        action = ""
 
         gitlab_event = self.headers.getheader('X-Gitlab-Event')
         github_event = self.headers.getheader('X-GitHub-Event')
@@ -153,11 +189,11 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Assume GitLab if the X-Gitlab-Event HTTP header is set
         if gitlab_event:
 
-            print "Received '%s' event from GitLab" % gitlab_event
+            logger.info("Received '%s' event from GitLab" % gitlab_event)
 
             if not 'repository' in data:
-                print "ERROR - Unable to recognize data format"
-                return repo_urls
+                logger.error("ERROR - Unable to recognize data format")
+                return repo_urls, ref or "master", action
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_http_url', 'git_ssh_url']:
@@ -167,25 +203,38 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Assume GitHub if the X-GitHub-Event HTTP header is set
         elif github_event:
 
-            print "Received '%s' event from GitHub" % github_event
+            logger.info("Received '%s' event from GitHub" % github_event)
 
             if not 'repository' in data:
-                print "ERROR - Unable to recognize data format"
-                return repo_urls
+                logger.error("ERROR - Unable to recognize data format")
+                return repo_urls, ref or "master", action
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_url', 'clone_url', 'ssh_url']:
                 if k in data['repository']:
                     repo_urls.append(data['repository'][k])
 
+            if 'pull_request' in data:
+                if 'base' in data['pull_request']:
+                    if 'ref' in data['pull_request']['base']:
+                        ref = data['pull_request']['base']['ref']
+                        logger.info("Pull request to branch '%s' was fired" % ref)
+            elif 'ref' in data:
+                ref = data['ref']
+                logger.info("Push to branch '%s' was fired" % ref)
+
+            if 'action' in data:
+                action = data['action']
+                logger.info("Action '%s' was fired" % action)
+
         # Assume BitBucket if the User-Agent HTTP header is set to 'Bitbucket-Webhooks/2.0' (or something similar)
         elif user_agent and user_agent.lower().find('bitbucket') != -1:
 
-            print "Received event from BitBucket"
+            logger.info("Received event from BitBucket")
 
             if not 'repository' in data:
-                print "ERROR - Unable to recognize data format"
-                return repo_urls
+                logger.error("ERROR - Unable to recognize data format")
+                return repo_urls, ref or "master", action
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_url', 'clone_url', 'ssh_url']:
@@ -202,11 +251,11 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Special Case for Gitlab CI
         elif content_type == "application/json" and "build_status" in data:
 
-            print 'Received event from Gitlab CI'
+            logger.info('Received event from Gitlab CI')
 
             if not 'push_data' in data:
-                print "ERROR - Unable to recognize data format"
-                return repo_urls
+                logger.error("ERROR - Unable to recognize data format")
+                return repo_urls, ref or "master", action
 
             # Only add repositories if the build is successful. Ignore it in other case.
             if data['build_status'] == "success":
@@ -214,28 +263,27 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                     if k in data['push_data']['repository']:
                         repo_urls.append(data['push_data']['repository'][k])
             else:
-                print "Gitlab CI build '%d' has status '%s'. Not pull will be done" % (
-                data['build_id'], data['build_status'])
+                logger.warning("Gitlab CI build '%d' has status '%s'. Not pull will be done" % (
+                data['build_id'], data['build_status']))
 
         # Try to find the repository urls and add them as long as the content type is set to JSON at least.
         # This handles old GitLab requests and Gogs requests for example.
         elif content_type == "application/json":
 
-            print "Received event from unknown origin. Assume generic data format."
+            logger.info("Received event from unknown origin. Assume generic data format.")
 
             if not 'repository' in data:
-                print "ERROR - Unable to recognize data format"
-                return repo_urls
+                logger.error("ERROR - Unable to recognize data format")
+                return repo_urls, ref or "master", action
 
             # One repository may posses multiple URLs for different protocols
             for k in ['url', 'git_http_url', 'git_ssh_url', 'http_url', 'ssh_url']:
                 if k in data['repository']:
                     repo_urls.append(data['repository'][k])
-
         else:
-            print "ERROR - Unable to recognize request origin. Don't know how to handle the request."
+            logger.error("ERROR - Unable to recognize request origin. Don't know how to handle the request.")
 
-        return repo_urls
+        return repo_urls, ref or "master", action
 
 
 class GitAutoDeploy(object):
@@ -246,6 +294,7 @@ class GitAutoDeploy(object):
     _instance = None
     _server = None
     _config = None
+    _base_config = None
 
     def __new__(cls, *args, **kwargs):
         """Overload constructor to enable Singleton access"""
@@ -261,13 +310,13 @@ class GitAutoDeploy(object):
 
         pid = GitAutoDeploy.get_pid_on_port(port)
         if pid is False:
-            print 'I don\'t know the number of pid that is using my configured port'
+            logger.warning('I don\'t know the number of pid that is using my configured port')
             return
 
-        print 'Process with pid number %s is using port %s' % (pid, port)
+        logger.info('Process with pid number %s is using port %s' % (pid, port))
         with open("/proc/%s/cmdline" % pid) as f:
             cmdline = f.readlines()
-            print 'cmdline ->', cmdline[0].replace('\x00', ' ')
+            logger.info('cmdline ->', cmdline[0].replace('\x00', ' '))
 
     @staticmethod
     def get_pid_on_port(port):
@@ -309,7 +358,7 @@ class GitAutoDeploy(object):
         return mpid
 
     @staticmethod
-    def process_repo_urls(urls):
+    def process_repo_urls(urls, ref, action):
         import os
         import time
 
@@ -317,29 +366,34 @@ class GitAutoDeploy(object):
         repo_configs = GitAutoDeploy().get_matching_repo_configs(urls)
 
         if len(repo_configs) == 0:
-            print 'Unable to find any of the repository URLs in the config: %s' % ', '.join(urls)
+            logger.warning('Unable to find any of the repository URLs in the config: %s' % ', '.join(urls))
             return
 
         # Process each matching repository
         for repo_config in repo_configs:
 
-            running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
-            waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
+            if repo_config['pullrequestfilter'] and (repo_config['ref'] != ref or repo_config['action'] != action):
+                continue
+
+            if 'path' in repo_config:
+                running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
+                waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
             try:
 
-                # Attempt to obtain the status_running lock
-                while not running_lock.obtain():
+                if 'path' in repo_config:
+                    # Attempt to obtain the status_running lock
+                    while not running_lock.obtain():
 
-                    # If we're unable, try once to obtain the status_waiting lock
-                    if not waiting_lock.has_lock() and not waiting_lock.obtain():
-                        print "Unable to obtain the status_running lock nor the status_waiting lock. Another process is " \
-                              + "already waiting, so we'll ignore the request."
+                        # If we're unable, try once to obtain the status_waiting lock
+                        if not waiting_lock.has_lock() and not waiting_lock.obtain():
+                            logger.error("Unable to obtain the status_running lock nor the status_waiting lock. Another process is " \
+                                  + "already waiting, so we'll ignore the request.")
 
-                        # If we're unable to obtain the waiting lock, ignore the request
-                        break
+                            # If we're unable to obtain the waiting lock, ignore the request
+                            break
 
-                    # Keep on attempting to obtain the status_running lock until we succeed
-                    time.sleep(5)
+                        # Keep on attempting to obtain the status_running lock until we succeed
+                        time.sleep(5)
 
                 n = 4
                 while 0 < n and 0 != GitWrapper.pull(repo_config):
@@ -349,18 +403,20 @@ class GitAutoDeploy(object):
                     GitWrapper.deploy(repo_config)
 
             except Exception as e:
-                print 'Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path']
-                print e
+                if 'path' in repo_config:
+                    logger.error('Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path'])
+                logger.error(e)
 
             finally:
 
-                # Release the lock if it's ours
-                if running_lock.has_lock():
-                    running_lock.release()
+                if 'path' in repo_config:
+                    # Release the lock if it's ours
+                    if running_lock.has_lock():
+                        running_lock.release()
 
-                # Release the lock if it's ours
-                if waiting_lock.has_lock():
-                    waiting_lock.release()
+                    # Release the lock if it's ours
+                    if waiting_lock.has_lock():
+                        waiting_lock.release()
 
     def get_default_config_path(self):
         import os
@@ -385,19 +441,16 @@ class GitAutoDeploy(object):
             for item in os.listdir(dir):
                 if re.match(r"conf(ig)?\.json$", item):
                     path = os.path.realpath(os.path.join(dir, item))
-                    print "Using '%s' as config" % path
+                    logger.info("Using '%s' as config" % path)
                     return path
 
         return './GitAutoDeploy.conf.json'
 
-    def get_config(self):
+    def get_base_config(self):
         import json
-        import sys
-        import os
-        import re
 
-        if self._config:
-            return self._config
+        if self._base_config:
+            return self._base_config
 
         if not self.config_path:
             self.config_path = self.get_default_config_path()
@@ -406,15 +459,26 @@ class GitAutoDeploy(object):
             config_string = open(self.config_path).read()
 
         except Exception as e:
-            print "Could not load %s file\n" % self.config_path
+            logger.warning("Could not load %s file\n" % self.config_path)
             raise e
 
         try:
-            self._config = json.loads(config_string)
+            self._base_config = json.loads(config_string)
 
         except Exception as e:
-            print "%s file is not valid JSON\n" % self.config_path
+            logger.error("%s file is not valid JSON\n" % self.config_path)
             raise e
+
+        return self._base_config
+
+    def get_config(self):
+        import os
+        import re
+
+        if self._config:
+            return self._config
+
+        self._config = self.get_base_config()
 
         # Translate any ~ in the path into /home/<user>
         if 'pidfilepath' in self._config:
@@ -435,21 +499,23 @@ class GitAutoDeploy(object):
             if 'path' in repo_config:
                 repo_config['path'] = os.path.expanduser(repo_config['path'])
 
-            if not os.path.isdir(repo_config['path']):
-
-                print "Directory %s not found" % repo_config['path']
-                GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'] if 'branch' in repo_config else None, path=repo_config['path'])
-
+            if 'path' in repo_config:
                 if not os.path.isdir(repo_config['path']):
-                    print "Unable to clone %s branch of repository %s" % (repo_config['branch'] if 'branch' in repo_config else "default", repo_config['url'])
-                    sys.exit(2)
 
-                else:
-                    print "Repository %s successfully cloned" % repo_config['url']
+                    logger.error("Directory %s not found" % repo_config['path'])
+                    GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'] if 'branch' in repo_config else None, path=repo_config['path'])
 
-            if not os.path.isdir(repo_config['path'] + '/.git'):
-                print "Directory %s is not a Git repository" % repo_config['path']
-                sys.exit(2)
+                    if not os.path.isdir(repo_config['path']):
+                        logger.warning("Unable to clone %s branch of repository %s. So repo will not pull. Only deploy command will run(if it exist)" % (repo_config['branch'] if 'branch' in repo_config else "default", repo_config['url']))
+                        #sys.exit(2)
+
+                    else:
+                        logger.info("Repository %s successfully cloned" % repo_config['url'])
+                if not os.path.isdir(repo_config['path'] + '/.git'):
+                    logger.warning("Directory %s is not a Git repository. So repo will not pull. Only deploy command will run(if it exist)" % repo_config['path'])
+                    #sys.exit(2)
+            else:
+                logger.warning("'Path' was not found in config. So repo will not pull. Only deploy command will run(if it exist)")
 
         return self._config
 
@@ -477,16 +543,20 @@ class GitAutoDeploy(object):
         for repository in self.get_config()['repositories']:
 
             url = repository['url']
-            print "Scanning repository: %s" % url
+            logger.info("Scanning repository: %s" % url)
             m = re.match('.*@(.*?):', url)
 
             if m is not None:
                 port = repository['port']
                 port = '' if port is None else ('-p' + port)
-                call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], shell=True)
+                if logFilePath:
+                    with open(logFilePath, 'a') as logfile:
+                        call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], stdout=logfile, stderr=logfile, shell=True)
+                else:
+                    call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], shell=True)
 
             else:
-                print 'Could not find regexp match in path: %s' % url
+                logger.error('Could not find regexp match in path: %s' % url)
 
     def kill_conflicting_processes(self):
         import os
@@ -494,8 +564,8 @@ class GitAutoDeploy(object):
         pid = GitAutoDeploy.get_pid_on_port(self.get_config()['port'])
 
         if pid is False:
-            print '[KILLER MODE] I don\'t know the number of pid that is using my configured port\n ' \
-                  '[KILLER MODE] Maybe no one? Please, use --force option carefully'
+            logger.error('[KILLER MODE] I don\'t know the number of pid that is using my configured port\n ' \
+                  '[KILLER MODE] Maybe no one? Please, use --force option carefully')
             return False
 
         os.kill(pid, signal.SIGKILL)
@@ -519,7 +589,7 @@ class GitAutoDeploy(object):
     def exit(self):
         import sys
 
-        print '\nGoodbye'
+        logger.info('\nGoodbye')
         self.remove_pid_file()
         sys.exit(0)
 
@@ -581,31 +651,46 @@ class GitAutoDeploy(object):
         import socket
         import os
 
+        global logFilePath
+
+        # Initialize base config
+        self.get_base_config()
+
+        # All logs are recording
+        logger.setLevel(logging.NOTSET)
+
+        # Translate any ~ in the path into /home/<user>
+        if "logfilepath" in self.get_base_config():
+            logFilePath = os.path.expanduser(self.get_base_config()["logfilepath"])
+            fileHandler = logging.FileHandler(logFilePath)
+            fileHandler.setFormatter(logFormatter)
+            logger.addHandler(fileHandler)
+
         if '-d' in argv or '--daemon-mode' in argv:
             self.daemon = True
 
         if '--ssh-keygen' in argv:
-            print 'Scanning repository hosts for ssh keys...'
+            logger.info('Scanning repository hosts for ssh keys...')
             self.ssh_key_scan()
 
         if '--force' in argv:
-            print 'Attempting to kill any other process currently occupying port %s' % self.get_config()['port']
+            logger.info('Attempting to kill any other process currently occupying port %s' % self.get_config()['port'])
             self.kill_conflicting_processes()
 
         if '--config' in argv:
             pos = argv.index('--config')
             if len(argv) > pos + 1:
                 self.config_path = os.path.realpath(argv[argv.index('--config') + 1])
-                print 'Using custom configuration file \'%s\'' % self.config_path
+                logger.info('Using custom configuration file \'%s\'' % self.config_path)
 
-        # Initialize config
+        # Initialize base config
         self.get_config()
 
         if self.daemon:
-            print 'Starting Git Auto Deploy in daemon mode'
+            logger.info('Starting Git Auto Deploy in daemon mode')
             GitAutoDeploy.create_daemon()
         else:
-            print 'Git Auto Deploy started'
+            logger.info('Git Auto Deploy started')
 
         self.create_pid_file()
 
@@ -615,19 +700,20 @@ class GitAutoDeploy(object):
 
         # Clear any existing lock files, with no regard to possible ongoing processes
         for repo_config in self.get_config()['repositories']:
-            Lock(os.path.join(repo_config['path'], 'status_running')).clear()
-            Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
+            if 'path' in repo_config:
+                Lock(os.path.join(repo_config['path'], 'status_running')).clear()
+                Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
         try:
             self._server = HTTPServer((self.get_config()['host'], self.get_config()['port']), WebhookRequestHandler)
             sa = self._server.socket.getsockname()
-            print "Listening on", sa[0], "port", sa[1]
+            logger.info("Listening on %s port %s", sa[0], sa[1])
             self._server.serve_forever()
 
         except socket.error, e:
 
             if not GitAutoDeploy.daemon:
-                print "Error on socket: %s" % e
+                logger.critical("Error on socket: %s" % e)
                 GitAutoDeploy.debug_diagnosis(self.get_config()['port'])
 
             sys.exit(1)
@@ -644,10 +730,10 @@ class GitAutoDeploy(object):
             return
 
         elif signum == 2:
-            print '\nRequested close by keyboard interrupt signal'
+            logger.info('\nRequested close by keyboard interrupt signal')
 
         elif signum == 6:
-            print 'Requested close by SIGABRT (process abort signal). Code 6.'
+            logger.info('Requested close by SIGABRT (process abort signal). Code 6.')
 
         self.exit()
 
