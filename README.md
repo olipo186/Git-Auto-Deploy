@@ -22,29 +22,9 @@ Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell comman
 * Make sure that the ```pidfilepath``` path is writable for the user running the script, as well as any other path configured for your repositories.
 * If you don't want to execute ```git pull``` after webhook was fired, you can leave field ```"path"``` empty.
 
-## Continious Delivery via Pull request
+### Logging
 
-![Workflow](./continious_delivery_process.png)
-
-If you use continious delivery (such as this workflow) you may want to trigger deploy event when pull request is opened or closed.
-You can follow next steps to implement CD process:
-* Set repo "url" to ```"https://api.github.com"```
-* Enable "pullrequestfilter"
-* Configure "action" that you want to listen
-* Configure branch in which pull request trying to merge (called "ref" in configure)
-
-Example
-```
-"url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy",
-"pullrequestfilter": true,
-"action": "closed",
-"ref": "testing",
-"deploy": "echo deploying after pull request"
-```
-
-## Logging
-
-To start logging you can defile ```"logfilepath": "/home/hermes/gitautodeploy.log"```. Note that you can`t see triggered command output when log is defined, only script output. If you leave ```"logfilepath"``` empty - everething will work as usual (without log).
+To start logging you can define ```"logfilepath": "/home/hermes/gitautodeploy.log"```. Note that you can`t see triggered command output when log is defined, only script output. If you leave ```"logfilepath"``` empty - everething will work as usual (without log).
 
 ## Running the application
 ```python GitAutoDeploy.py```
@@ -97,3 +77,23 @@ The easiest way to configure your system to automatically start ```GitAutoDeploy
 * Go to your repository -> Settings -> Webhooks -> Add webhook
 * In "URL", enter your hostname and port (your-host:8001)
 * Hit "Save"
+
+## Continious Delivery via Pull request
+
+![Workflow](./continious_delivery_process.png)
+
+If you use continious delivery (such as this workflow) you may want to trigger deploy event when pull request is opened or closed.
+You can follow next steps to implement CD process:
+* Set repo "url" to ```"https://api.github.com"```
+* Enable "pullrequestfilter"
+* Configure "action" that you want to listen
+* Configure branch in which pull request trying to merge (called "ref" in configure)
+
+Example
+```
+"url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy",
+"pullrequestfilter": true,
+"action": "closed",
+"ref": "testing",
+"deploy": "echo deploying after pull request"
+```
