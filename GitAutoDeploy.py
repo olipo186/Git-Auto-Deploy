@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import logging
+from BaseHTTPServer import BaseHTTPRequestHandler
 
 # Initialize loging
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
@@ -10,6 +11,7 @@ logFilePath = ""
 consoleHandler = logging.StreamHandler()
 consoleHandler.setFormatter(logFormatter)
 logger.addHandler(consoleHandler)
+
 
 class Lock():
     """Simple implementation of a mutex lock using the file systems. Works on *nix systems."""
@@ -95,7 +97,7 @@ class GitWrapper():
             return int(res)
 
         else:
-            return 0 #everething all right
+            return 0  # everething all right
 
     @staticmethod
     def clone(url, branch, path):
@@ -108,7 +110,6 @@ class GitWrapper():
                 call(['git clone --recursive %s -b %s %s' % (url, branchToClone, path)], stdout=logfile, stderr=logfile, shell=True)
         else:
             call(['git clone --recursive %s -b %s %s' % (url, branchToClone, path)], shell=True)
-
 
     @staticmethod
     def deploy(repo_config):
@@ -145,9 +146,6 @@ class GitWrapper():
                         call([cmd], shell=True)
 
 
-from BaseHTTPServer import BaseHTTPRequestHandler
-
-
 class WebhookRequestHandler(BaseHTTPRequestHandler):
     """Extends the BaseHTTPRequestHandler class and handles the incoming HTTP requests."""
 
@@ -164,7 +162,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
         # Wait one second before we do git pull (why?)
         Timer(1.0, GitAutoDeploy.process_repo_urls, (repo_urls, ref, action)).start()
-
 
     def get_repo_params_from_request(self):
         """Parses the incoming request and extracts all possible URLs to the repository in question. Since repos can
@@ -191,7 +188,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             logger.info("Received '%s' event from GitLab" % gitlab_event)
 
-            if not 'repository' in data:
+            if 'repository' not in data:
                 logger.error("ERROR - Unable to recognize data format")
                 return repo_urls, ref or "master", action
 
@@ -205,7 +202,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             logger.info("Received '%s' event from GitHub" % github_event)
 
-            if not 'repository' in data:
+            if 'repository' not in data:
                 logger.error("ERROR - Unable to recognize data format")
                 return repo_urls, ref or "master", action
 
@@ -232,7 +229,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             logger.info("Received event from BitBucket")
 
-            if not 'repository' in data:
+            if 'repository' not in data:
                 logger.error("ERROR - Unable to recognize data format")
                 return repo_urls, ref or "master", action
 
@@ -253,7 +250,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             logger.info('Received event from Gitlab CI')
 
-            if not 'push_data' in data:
+            if 'push_data' not in data:
                 logger.error("ERROR - Unable to recognize data format")
                 return repo_urls, ref or "master", action
 
@@ -264,7 +261,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                         repo_urls.append(data['push_data']['repository'][k])
             else:
                 logger.warning("Gitlab CI build '%d' has status '%s'. Not pull will be done" % (
-                data['build_id'], data['build_status']))
+                    data['build_id'], data['build_status']))
 
         # Try to find the repository urls and add them as long as the content type is set to JSON at least.
         # This handles old GitLab requests and Gogs requests for example.
@@ -272,7 +269,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             logger.info("Received event from unknown origin. Assume generic data format.")
 
-            if not 'repository' in data:
+            if 'repository' not in data:
                 logger.error("ERROR - Unable to recognize data format")
                 return repo_urls, ref or "master", action
 
@@ -386,8 +383,8 @@ class GitAutoDeploy(object):
 
                         # If we're unable, try once to obtain the status_waiting lock
                         if not waiting_lock.has_lock() and not waiting_lock.obtain():
-                            logger.error("Unable to obtain the status_running lock nor the status_waiting lock. Another process is " \
-                                  + "already waiting, so we'll ignore the request.")
+                            logger.error("Unable to obtain the status_running lock nor the status_waiting lock. Another process is " +
+                                         "already waiting, so we'll ignore the request.")
 
                             # If we're unable to obtain the waiting lock, ignore the request
                             break
@@ -490,7 +487,7 @@ class GitAutoDeploy(object):
             # specified in the beginning of the URL. To be able to compare configured Bitbucket
             # repositories with incoming web hook events, this username needs to be stripped away in a
             # copy of the URL.
-            if 'url' in repo_config and not 'bitbucket_username' in repo_config:
+            if 'url' in repo_config and 'bitbucket_username' not in repo_config:
                 regexp = re.search(r"^(https?://)([^@]+)@(bitbucket\.org/)(.+)$", repo_config['url'])
                 if regexp:
                     repo_config['url_without_usernme'] = regexp.group(1) + regexp.group(3) + regexp.group(4)
@@ -507,13 +504,13 @@ class GitAutoDeploy(object):
 
                     if not os.path.isdir(repo_config['path']):
                         logger.warning("Unable to clone %s branch of repository %s. So repo will not pull. Only deploy command will run(if it exist)" % (repo_config['branch'] if 'branch' in repo_config else "default", repo_config['url']))
-                        #sys.exit(2)
+                        # sys.exit(2)
 
                     else:
                         logger.info("Repository %s successfully cloned" % repo_config['url'])
                 if not os.path.isdir(repo_config['path'] + '/.git'):
                     logger.warning("Directory %s is not a Git repository. So repo will not pull. Only deploy command will run(if it exist)" % repo_config['path'])
-                    #sys.exit(2)
+                    # sys.exit(2)
             else:
                 logger.warning("'Path' was not found in config. So repo will not pull. Only deploy command will run(if it exist)")
 
@@ -564,8 +561,8 @@ class GitAutoDeploy(object):
         pid = GitAutoDeploy.get_pid_on_port(self.get_config()['port'])
 
         if pid is False:
-            logger.error('[KILLER MODE] I don\'t know the number of pid that is using my configured port\n ' \
-                  '[KILLER MODE] Maybe no one? Please, use --force option carefully')
+            logger.error('[KILLER MODE] I don\'t know the number of pid that is using my configured port\n ' +
+                         '[KILLER MODE] Maybe no one? Please, use --force option carefully')
             return False
 
         os.kill(pid, signal.SIGKILL)
@@ -611,7 +608,7 @@ class GitAutoDeploy(object):
                 # Spawn second child
                 pid = os.fork()
             except OSError, e:
-                raise Exception, "%s [%d]" % (e.strerror, e.errno)
+                raise Exception("%s [%d]" % (e.strerror, e.errno))
 
             if pid == 0:
                 os.chdir('/')
