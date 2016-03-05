@@ -124,15 +124,15 @@ class GitWrapper():
         
         logger.info('Updating ' + repo_config['path'])
 
-        cmd = 'cd "' + repo_config['path'] + '"' \
-                '&& unset GIT_DIR ' + \
+#        cmd = 'cd "' + repo_config['path'] + '"' \
+        cmd =   'unset GIT_DIR ' + \
                 '&& git fetch ' + repo_config['remote'] + \
                 '&& git reset --hard ' + repo_config['remote'] + '/' + repo_config['branch'] + ' ' + \
                 '&& git submodule init ' + \
                 '&& git submodule update'
 
         # '&& git update-index --refresh ' +\
-        res = ProcessWrapper().call([cmd], shell=True)
+        res = ProcessWrapper().call([cmd], cwd=repo_config['path'], shell=True)
         logger.info('Pull result: ' + str(res))
 
         return int(res)
@@ -140,7 +140,12 @@ class GitWrapper():
     @staticmethod
     def clone(url, branch, path):
         from subprocess import call
-        ProcessWrapper().call(['git clone --recursive %s -b %s %s' % (url, branch, path)], shell=True)
+        ProcessWrapper().call(['git',
+                               'clone',
+                               '--recursive',
+                               url,
+                               '-b', branch,
+                               path], shell=True)
 
     @staticmethod
     def deploy(repo_config):
@@ -162,7 +167,8 @@ class GitWrapper():
 
 
 class WebhookRequestHandler(BaseHTTPRequestHandler):
-    """Extends the BaseHTTPRequestHandler class and handles the incoming HTTP requests."""
+    """Extends the BaseHTTPRequestHandler class and handles the incoming
+    HTTP requests."""
 
     def do_POST(self):
         """Invoked on incoming POST requests"""
@@ -175,9 +181,13 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         # Wait one second before we do git pull (why?)
-        Timer(1.0, GitAutoDeploy.process_repo_urls, (repo_urls, ref, action)).start()
+        Timer(1.0, GitAutoDeploy.process_repo_urls, (repo_urls,
+                                                     ref,
+                                                     action)).start()
 
     def log_message(self, format, *args):
+        """Overloads the default message logging method to allow messages to
+        go through our custom logger instead."""
         import logging
         logger = logging.getLogger()
         logger.info("%s - - [%s] %s\n" % (self.client_address[0],
@@ -185,11 +195,13 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                                           format%args))
 
     def get_repo_params_from_request(self):
-        """Parses the incoming request and extracts all possible URLs to the repository in question. Since repos can
-        have both ssh://, git:// and https:// URIs, and we don't know which of them is specified in the config, we need
-        to collect and compare them all."""
+        """Parses the incoming request and extracts all possible URLs to the
+        repository in question. Since repos can have both ssh://, git:// and
+        https:// URIs, and we don't know which of them is specified in the
+        config, we need to collect and compare them all."""
         import json
         import logging
+
         logger = logging.getLogger()
 
         content_type = self.headers.getheader('content-type')
@@ -742,10 +754,10 @@ class GitAutoDeploy(object):
         default_config_value = 'GAD_CONFIG' in os.environ and os.environ['GAD_CONFIG']
         default_ssh_keygen_value = 'GAD_SSH_KEYGEN' in os.environ
         default_force_value = 'GAD_FORCE' in os.environ
-        default_config_value = 'GAD_PID_FILE' in os.environ and os.environ['GAD_PID_FILE']
-        default_config_value = 'GAD_LOG_FILE' in os.environ and os.environ['GAD_LOG_FILE']
-        default_config_value = 'GAD_HOST' in os.environ and os.environ['GAD_HOST']
-        default_config_value = 'GAD_PORT' in os.environ and int(os.environ['GAD_PORT'])
+        default_pid_file_value = 'GAD_PID_FILE' in os.environ and os.environ['GAD_PID_FILE']
+        default_log_file_value = 'GAD_LOG_FILE' in os.environ and os.environ['GAD_LOG_FILE']
+        default_host_value = 'GAD_HOST' in os.environ and os.environ['GAD_HOST']
+        default_port_value = 'GAD_PORT' in os.environ and int(os.environ['GAD_PORT'])
 
         parser = argparse.ArgumentParser()
 
@@ -792,6 +804,7 @@ class GitAutoDeploy(object):
         parser.add_argument("--port",
                             help="port to bind to",
                             default=default_port_value,
+                            type=int)
 
         args = parser.parse_args()
 
@@ -826,16 +839,16 @@ class GitAutoDeploy(object):
         # Configuration options coming from environment or command line will
         # override those coming from config file
         if args.pid_file:
-            config_data['pidfilepath'] = args.pid_file:
+            config_data['pidfilepath'] = args.pid_file
 
         if args.log_file:
-            config_data['logfilepath'] = args.log_file:
+            config_data['logfilepath'] = args.log_file
 
         if args.host:
-            config_data['host'] = args.host:
+            config_data['host'] = args.host
 
         if args.port:
-            config_data['port'] = args.port:
+            config_data['port'] = args.port
 
         # Extend config data with any repository defined by environment variables
         config_data = self.read_repo_config_from_environment(config_data)
