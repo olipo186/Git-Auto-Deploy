@@ -70,8 +70,6 @@ class Lock():
             self._has_lock = False
 
 
-
-
 class ProcessWrapper():
     """Wraps the subprocess popen method and provides logging."""
 
@@ -100,7 +98,7 @@ class ProcessWrapper():
 
         if stderr:
             for line in stderr.strip().split("\n"):
-                logger.info(line)
+                logger.error(line)
 
         return p.returncode
 
@@ -138,7 +136,6 @@ class GitWrapper():
         logger.info('Pull result: ' + str(res))
 
         return int(res)
-
 
     @staticmethod
     def clone(url, branch, path):
@@ -179,6 +176,13 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
         # Wait one second before we do git pull (why?)
         Timer(1.0, GitAutoDeploy.process_repo_urls, (repo_urls, ref, action)).start()
+
+    def log_message(self, format, *args):
+        import logging
+        logger = logging.getLogger()
+        logger.info("%s - - [%s] %s\n" % (self.client_address[0],
+                                          self.log_date_time_string(),
+                                          format%args))
 
     def get_repo_params_from_request(self):
         """Parses the incoming request and extracts all possible URLs to the repository in question. Since repos can
@@ -510,9 +514,6 @@ class GitAutoDeploy(object):
 
         return data
 
-    def get_config(self):
-        return self._config
-
     def init_config(self, config_data):
         import os
         import re
@@ -599,20 +600,17 @@ class GitAutoDeploy(object):
         """Iterates over the various repo URLs provided as argument (git://,
         ssh:// and https:// for the repo) and compare them to any repo URL
         specified in the config"""
-        
-        import logging
-        logger = logging.getLogger()
-        config = self.get_config()
-        configs = []
 
+        configs = []
         for url in urls:
-            for repo_config in config['repositories']:
+            for repo_config in self._config['repositories']:
                 if repo_config in configs:
                     continue
                 if repo_config['url'] == url:
                     configs.append(repo_config)
                 elif 'url_without_usernme' in repo_config and repo_config['url_without_usernme'] == url:
                     configs.append(repo_config)
+
         return configs
 
     def ssh_key_scan(self):
@@ -620,7 +618,7 @@ class GitAutoDeploy(object):
         import logging
         logger = logging.getLogger()
 
-        for repository in self.get_config()['repositories']:
+        for repository in self._config['repositories']:
 
             url = repository['url']
             logger.info("Scanning repository: %s" % url)
@@ -639,7 +637,7 @@ class GitAutoDeploy(object):
         import logging
         logger = logging.getLogger()
 
-        pid = GitAutoDeploy.get_pid_on_port(self.get_config()['port'])
+        pid = GitAutoDeploy.get_pid_on_port(self._config['port'])
 
         if pid is False:
             logger.error('[KILLER MODE] I don\'t know the number of pid that is using my configured port\n ' +
@@ -652,23 +650,21 @@ class GitAutoDeploy(object):
     def create_pid_file(self):
         import os
 
-        with open(self.get_config()['pidfilepath'], 'w') as f:
+        with open(self._config['pidfilepath'], 'w') as f:
             f.write(str(os.getpid()))
 
     def read_pid_file(self):
-        with open(self.get_config()['pidfilepath'], 'r') as f:
+        with open(self._config['pidfilepath'], 'r') as f:
             return f.readlines()
 
     def remove_pid_file(self):
         import os
-
-        os.remove(self.get_config()['pidfilepath'])
+        os.remove(self._config['pidfilepath'])
 
     def exit(self):
         import sys
         import logging
         logger = logging.getLogger()
-
         logger.info('\nGoodbye')
         self.remove_pid_file()
         sys.exit(0)
@@ -678,7 +674,7 @@ class GitAutoDeploy(object):
         import os
 
         try:
-            # Spawn first child
+            # Spawn first child. Returns 0 in the child and pid in the parent.
             pid = os.fork()
         except OSError, e:
             raise Exception("%s [%d]" % (e.strerror, e.errno))
@@ -690,6 +686,7 @@ class GitAutoDeploy(object):
             try:
                 # Spawn second child
                 pid = os.fork()
+                
             except OSError, e:
                 raise Exception("%s [%d]" % (e.strerror, e.errno))
 
@@ -702,25 +699,6 @@ class GitAutoDeploy(object):
         else:
             # Kill parent of first child
             os._exit(0)
-
-        import resource
-
-        maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
-        if maxfd == resource.RLIM_INFINITY:
-            maxfd = 1024
-
-        # Close all file descriptors
-        for fd in range(0, maxfd):
-            try:
-                os.close(fd)
-            except OSError:
-                # Ignore errors if fd isn't opened
-                pass
-
-        # Redirect standard input, output and error to devnull since we won't have a terminal
-        os.open(os.devnull, os.O_RDWR)
-        os.dup2(0, 1)
-        os.dup2(0, 2)
 
         return 0
 
@@ -741,6 +719,8 @@ class GitAutoDeploy(object):
             consoleHandler = logging.StreamHandler()
             consoleHandler.setFormatter(logFormatter)
             logger.addHandler(consoleHandler)
+        else:
+            logger.addHandler(logging.NullHandler())
 
         # All logs are recording
         logger.setLevel(logging.NOTSET)
@@ -769,7 +749,7 @@ class GitAutoDeploy(object):
             fileHandler = logging.FileHandler(log_file_path)
             fileHandler.setFormatter(logFormatter)
             logger.addHandler(fileHandler)
-        
+
         if '-d' in argv or '--daemon-mode' in argv:
             self.daemon = True
 
@@ -778,12 +758,18 @@ class GitAutoDeploy(object):
             self.ssh_key_scan()
 
         if '--force' in argv:
-            logger.info('Attempting to kill any other process currently occupying port %s' % self.get_config()['port'])
+            logger.info('Attempting to kill any other process currently occupying port %s' % self._config['port'])
             self.kill_conflicting_processes()
 
         # Clone all repos once initially
         self.clone_all_repos()
 
+
+        # Set default stdout and stderr to our logging interface (that writes
+        # to file and console depending on user preference)
+        sys.stdout = LogInterface(logger.info)
+        sys.stderr = LogInterface(logger.error)
+        
         if self.daemon:
             logger.info('Starting Git Auto Deploy in daemon mode')
             GitAutoDeploy.create_daemon()
@@ -792,13 +778,8 @@ class GitAutoDeploy(object):
 
         self.create_pid_file()
 
-        # Set default stdout and stderr to our logging interface (that writes
-        # to file and console depending on user preference)
-        sys.stdout = LogInterface(logger.info)
-        sys.stderr = LogInterface(logger.error)
-
         # Clear any existing lock files, with no regard to possible ongoing processes
-        for repo_config in self.get_config()['repositories']:
+        for repo_config in self._config['repositories']:
 
             # Do we have a physical repository?
             if 'path' in repo_config:
@@ -806,7 +787,7 @@ class GitAutoDeploy(object):
                 Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
         try:
-            self._server = HTTPServer((self.get_config()['host'], self.get_config()['port']), WebhookRequestHandler)
+            self._server = HTTPServer((self._config['host'], self._config['port']), WebhookRequestHandler)
             sa = self._server.socket.getsockname()
             logger.info("Listening on %s port %s", sa[0], sa[1])
             self._server.serve_forever()
@@ -815,7 +796,7 @@ class GitAutoDeploy(object):
 
             if not GitAutoDeploy.daemon:
                 logger.critical("Error on socket: %s" % e)
-                GitAutoDeploy.debug_diagnosis(self.get_config()['port'])
+                GitAutoDeploy.debug_diagnosis(self._config['port'])
 
             sys.exit(1)
 
