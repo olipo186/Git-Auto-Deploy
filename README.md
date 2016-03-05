@@ -78,24 +78,8 @@ The easiest way to configure your system to automatically start ```GitAutoDeploy
 * In "URL", enter your hostname and port (your-host:8001)
 * Hit "Save"
 
-## Continious Delivery via Pull request
+# Example workflows
 
-![Workflow](./docs/continious_delivery_process.png)
+## Continuous Delivery via Pull requests (GitHub only)
 
-If you use continious delivery (such as this workflow) you may want to trigger deploy event when pull request is opened or closed.
-You can follow next steps to implement CD process:
-* Set repo "url" to ```"https://api.github.com"```
-* Add filter type "pull-request-filter" as described below
-* Configure "action" that you want to listen
-* Configure branch in which pull request trying to merge (variable "ref" below)
-
-Example
-```"url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy",
-"deploy": "echo deploying after pull request",
-"filters": [
-{
-    "type": "pull-request-filter",
-    "action": "closed",
-    "ref": "testing-branch"
-}]
-```
+It's possible to configure Git-Auto-Deploy to trigger when pull requests are opened or closed on GitHub. To read more about this workflow and how to configure Git-Aut-Deploy here: [Continuous Delivery via Pull requests](./docs/Continuous Delivery via Pull requests.md)
