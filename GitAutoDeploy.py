@@ -774,22 +774,22 @@ class GitAutoDeploy(object):
                             default=default_force_value,
                             action="store_true")
 
-        parser.add_argument("-p", "--pid-file",
+        parser.add_argument("--pid-file",
                             help="specify a custom pid file",
                             default=default_pid_file_value,
                             type=str)
 
-        parser.add_argument("-l", "--log-file",
+        parser.add_argument("--log-file",
                             help="specify a log file",
                             default=default_log_file_value,
                             type=str)
 
-        parser.add_argument("-h", "--host",
+        parser.add_argument("--host",
                             help="address to bind to",
                             default=default_host_value,
                             type=str)
 
-        parser.add_argument("-p", "--port",
+        parser.add_argument("--port",
                             help="port to bind to",
                             default=default_port_value,
 

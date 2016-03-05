@@ -38,10 +38,10 @@ Command line option    | Environment variable | Config attribute | Description
 --ssh-keygen           | GAD_SSH_KEYGEN       |                  | Scan repository hosts for ssh keys
 --force                | GAD_FORCE            |                  | Kill any process using the configured port
 --config (-c) <path>   | GAD_CONFIG           |                  | Custom configuration file
---pid-file (-p) <path> | GAD_PID_FILE         | pidfilepath      | Specify a custom pid file
---log-file (-l) <path> | GAD_LOG_FILE         | logfilepath      | Specify a log file
---host (-h) <host>     | GAD_HOST             | host             | Address to bind to
---port (-p) <port>     | GAD_PORT             | port             | Port to bind to
+--pid-file <path>      | GAD_PID_FILE         | pidfilepath      | Specify a custom pid file
+--log-file <path>      | GAD_LOG_FILE         | logfilepath      | Specify a log file
+--host <host>          | GAD_HOST             | host             | Address to bind to
+--port <port>          | GAD_PORT             | port             | Port to bind to
 
 ## Start automatically on boot
 
