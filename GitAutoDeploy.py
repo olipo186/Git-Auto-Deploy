@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 
-import logging
 from BaseHTTPServer import BaseHTTPRequestHandler
 
-# Initialize loging
-logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-logger = logging.getLogger()
-logFilePath = ""
 
-consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logFormatter)
-logger.addHandler(consoleHandler)
+class LogInterface(object):
+    """Interface that functions as a stdout and stderr handler and directs the
+    output to the logging module, which in turn will output to either console,
+    file or both."""
+
+    def __init__(self, *args, **kwargs):
+        import logging
+        logger = logging.getLogger()
+        self._logger = logging.getLogger()
+
+    def write(self, msg):
+        self._logger.info(msg)
 
 
 class Lock():
@@ -24,6 +28,8 @@ class Lock():
 
     def obtain(self):
         import os
+        import logging
+        logger = logging.getLogger()
 
         try:
             os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
@@ -36,6 +42,8 @@ class Lock():
 
     def release(self):
         import os
+        import logging
+        logger = logging.getLogger()
 
         if not self._has_lock:
             raise Exception("Unable to release lock that is owned by another process")
@@ -50,6 +58,8 @@ class Lock():
 
     def clear(self):
         import os
+        import logging
+        logger = logging.getLogger()
 
         try:
             os.remove(self.path)
@@ -70,51 +80,44 @@ class GitWrapper():
     def pull(repo_config):
         """Pulls the latest version of the repo from the git server"""
         from subprocess import call
-
-        branch = ('branch' in repo_config) and repo_config['branch'] or 'master'
-        remote = ('remote' in repo_config) and repo_config['remote'] or 'origin'
-
+        import logging
+        
+        logger = logging.getLogger()
         logger.info("Post push request received")
 
-        if 'path' in repo_config:
-            logger.info('Updating ' + repo_config['path'])
+        # Only pull if there is actually a local copy of the repository
+        if 'path' not in repo_config:
+            logger.info('No local repository path configured, no pull will occure')
+            return 0
+        
+        logger.info('Updating ' + repo_config['path'])
 
-            cmd = 'cd "' + repo_config['path'] + '"' \
-                  '&& unset GIT_DIR ' + \
-                  '&& git fetch ' + remote + \
-                  '&& git reset --hard ' + remote + '/' + branch + ' ' + \
-                  '&& git submodule init ' + \
-                  '&& git submodule update'
+        cmd = 'cd "' + repo_config['path'] + '"' \
+                '&& unset GIT_DIR ' + \
+                '&& git fetch ' + repo_config['remote'] + \
+                '&& git reset --hard ' + repo_config['remote'] + '/' + repo_config['branch'] + ' ' + \
+                '&& git submodule init ' + \
+                '&& git submodule update'
 
-            # '&& git update-index --refresh ' +\
-            if logFilePath:
-                with open(logFilePath, 'a') as logfile:
-                    res = call([cmd], stdout=logfile, stderr=logfile, shell=True)
-            else:
-                res = call([cmd], shell=True)
-            logger.info('Pull result: ' + str(res))
+        # '&& git update-index --refresh ' +\
+        res = call([cmd], stdout=LogInterface(), stderr=LogInterface(), shell=True)
+        logger.info('Pull result: ' + str(res))
 
-            return int(res)
+        return int(res)
 
-        else:
-            return 0  # everething all right
 
     @staticmethod
     def clone(url, branch, path):
         from subprocess import call
-
         branchToClone = branch or 'master'
-
-        if logFilePath:
-            with open(logFilePath, 'a') as logfile:
-                call(['git clone --recursive %s -b %s %s' % (url, branchToClone, path)], stdout=logfile, stderr=logfile, shell=True)
-        else:
-            call(['git clone --recursive %s -b %s %s' % (url, branchToClone, path)], shell=True)
+        call(['git clone --recursive %s -b %s %s' % (url, branchToClone, path)], stdout=LogInterface(), stderr=LogInterface(), shell=True)
 
     @staticmethod
     def deploy(repo_config):
         """Executes any supplied post-pull deploy command"""
         from subprocess import call
+        import logging
+        logger = logging.getLogger()
 
         if 'path' in repo_config:
             path = repo_config['path']
@@ -125,11 +128,7 @@ class GitWrapper():
         cwd = (repo_config['path'] if 'path' in repo_config else None)
 
         for cmd in repo_config['deploy_commands']:
-            if logFilePath:
-                with open(logFilePath, 'a') as logfile:
-                    call([cmd], cwd=cwd, stdout=logfile, stderr=logfile, shell=True)
-            else:
-                call([cmd], cwd=cwd, shell=True)
+            call([cmd], cwd=cwd, stdout=LogInterface(), stderr=LogInterface(), shell=True)
 
 
 class WebhookRequestHandler(BaseHTTPRequestHandler):
@@ -154,6 +153,8 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         have both ssh://, git:// and https:// URIs, and we don't know which of them is specified in the config, we need
         to collect and compare them all."""
         import json
+        import logging
+        logger = logging.getLogger()
 
         content_type = self.headers.getheader('content-type')
         length = int(self.headers.getheader('content-length'))
@@ -292,6 +293,9 @@ class GitAutoDeploy(object):
 
     @staticmethod
     def debug_diagnosis(port):
+        import logging
+        logger = logging.getLogger()
+        
         if GitAutoDeploy.debug is False:
             return
 
@@ -348,6 +352,8 @@ class GitAutoDeploy(object):
     def process_repo_urls(urls, ref, action):
         import os
         import time
+        import logging
+        logger = logging.getLogger()
 
         # Get a list of configured repositories that matches the incoming web hook reqeust
         repo_configs = GitAutoDeploy().get_matching_repo_configs(urls)
@@ -423,6 +429,8 @@ class GitAutoDeploy(object):
     def get_default_config_path(self):
         import os
         import re
+        import logging
+        logger = logging.getLogger()
 
         if self.config_path:
             return self.config_path
@@ -450,6 +458,8 @@ class GitAutoDeploy(object):
 
     def get_base_config(self):
         import json
+        import logging
+        logger = logging.getLogger()
 
         if self._base_config:
             return self._base_config
@@ -476,6 +486,8 @@ class GitAutoDeploy(object):
     def get_config(self):
         import os
         import re
+        import logging
+        logger = logging.getLogger()
 
         if self._config:
             return self._config
@@ -532,6 +544,8 @@ class GitAutoDeploy(object):
         configured paths."""
         import os
         import re
+        import logging
+        logger = logging.getLogger()
 
         # Iterate over all configured repositories
         for repo_config in self._config['repositories']:
@@ -558,7 +572,9 @@ class GitAutoDeploy(object):
         """Iterates over the various repo URLs provided as argument (git://,
         ssh:// and https:// for the repo) and compare them to any repo URL
         specified in the config"""
-
+        
+        import logging
+        logger = logging.getLogger()
         config = self.get_config()
         configs = []
 
@@ -575,6 +591,8 @@ class GitAutoDeploy(object):
     def ssh_key_scan(self):
         import re
         from subprocess import call
+        import logging
+        logger = logging.getLogger()
 
         for repository in self.get_config()['repositories']:
 
@@ -585,17 +603,15 @@ class GitAutoDeploy(object):
             if m is not None:
                 port = repository['port']
                 port = '' if port is None else ('-p' + port)
-                if logFilePath:
-                    with open(logFilePath, 'a') as logfile:
-                        call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], stdout=logfile, stderr=logfile, shell=True)
-                else:
-                    call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], shell=True)
+                call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], stdout=LogInterface(), stderr=LogInterface(), shell=True)
 
             else:
                 logger.error('Could not find regexp match in path: %s' % url)
 
     def kill_conflicting_processes(self):
         import os
+        import logging
+        logger = logging.getLogger()
 
         pid = GitAutoDeploy.get_pid_on_port(self.get_config()['port'])
 
@@ -624,6 +640,8 @@ class GitAutoDeploy(object):
 
     def exit(self):
         import sys
+        import logging
+        logger = logging.getLogger()
 
         logger.info('\nGoodbye')
         self.remove_pid_file()
@@ -686,19 +704,28 @@ class GitAutoDeploy(object):
         from BaseHTTPServer import HTTPServer
         import socket
         import os
-
-        global logFilePath
+        import logging
 
         # Initialize base config
         self.get_base_config()
+
+        # Set up logging
+        logger = logging.getLogger()
+        logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
+        
+        # Enable console output?
+        if '-q' not in argv and '--quiet' not in argv:
+            consoleHandler = logging.StreamHandler()
+            consoleHandler.setFormatter(logFormatter)
+            logger.addHandler(consoleHandler)
 
         # All logs are recording
         logger.setLevel(logging.NOTSET)
 
         # Translate any ~ in the path into /home/<user>
-        if "logfilepath" in self.get_base_config():
-            logFilePath = os.path.expanduser(self.get_base_config()["logfilepath"])
-            fileHandler = logging.FileHandler(logFilePath)
+        if 'logfilepath' in self.get_base_config():
+            log_file_path = os.path.expanduser(self.get_base_config()['logfilepath'])
+            fileHandler = logging.FileHandler(log_file_path)
             fileHandler.setFormatter(logFormatter)
             logger.addHandler(fileHandler)
 
@@ -721,7 +748,7 @@ class GitAutoDeploy(object):
 
         # Initialize base config
         self.get_config()
-        
+
         # Clone all repos once initially
         self.clone_all_repos()
 
@@ -733,9 +760,10 @@ class GitAutoDeploy(object):
 
         self.create_pid_file()
 
-        # Suppress output
-        if '-q' in argv or '--quiet' in argv:
-            sys.stdout = open(os.devnull, 'w')
+        # Set default stdout and stderr to our logging interface (that writes
+        # to file and console depending on user preference)
+        sys.stdout = LogInterface()
+        sys.stderr = LogInterface()
 
         # Clear any existing lock files, with no regard to possible ongoing processes
         for repo_config in self.get_config()['repositories']:
@@ -764,6 +792,8 @@ class GitAutoDeploy(object):
             self._server.socket.close()
 
     def signal_handler(self, signum, frame):
+        import logging
+        logger = logging.getLogger()
         self.stop()
 
         if signum == 1:
