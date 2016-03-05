@@ -742,6 +742,10 @@ class GitAutoDeploy(object):
         default_config_value = 'GAD_CONFIG' in os.environ and os.environ['GAD_CONFIG']
         default_ssh_keygen_value = 'GAD_SSH_KEYGEN' in os.environ
         default_force_value = 'GAD_FORCE' in os.environ
+        default_config_value = 'GAD_PID_FILE' in os.environ and os.environ['GAD_PID_FILE']
+        default_config_value = 'GAD_LOG_FILE' in os.environ and os.environ['GAD_LOG_FILE']
+        default_config_value = 'GAD_HOST' in os.environ and os.environ['GAD_HOST']
+        default_config_value = 'GAD_PORT' in os.environ and int(os.environ['GAD_PORT'])
 
         parser = argparse.ArgumentParser()
 
@@ -756,7 +760,7 @@ class GitAutoDeploy(object):
                             action="store_true")
 
         parser.add_argument("-c", "--config",
-                            help="custom configuration file path",
+                            help="custom configuration file",
                             default=default_config_value,
                             type=str)
 
@@ -766,9 +770,28 @@ class GitAutoDeploy(object):
                             action="store_true")
 
         parser.add_argument("--force",
-                            help="attempt to kill any process that is occupying the configured port",
+                            help="kill any process using the configured port",
                             default=default_force_value,
                             action="store_true")
+
+        parser.add_argument("-p", "--pid-file",
+                            help="specify a custom pid file",
+                            default=default_pid_file_value,
+                            type=str)
+
+        parser.add_argument("-l", "--log-file",
+                            help="specify a log file",
+                            default=default_log_file_value,
+                            type=str)
+
+        parser.add_argument("-h", "--host",
+                            help="address to bind to",
+                            default=default_host_value,
+                            type=str)
+
+        parser.add_argument("-p", "--port",
+                            help="port to bind to",
+                            default=default_port_value,
 
         args = parser.parse_args()
 
@@ -799,6 +822,20 @@ class GitAutoDeploy(object):
 
         # Read config data from json file
         config_data = self.read_json_file(config_file_path)
+
+        # Configuration options coming from environment or command line will
+        # override those coming from config file
+        if args.pid_file:
+            config_data['pidfilepath'] = args.pid_file:
+
+        if args.log_file:
+            config_data['logfilepath'] = args.log_file:
+
+        if args.host:
+            config_data['host'] = args.host:
+
+        if args.port:
+            config_data['port'] = args.port:
 
         # Extend config data with any repository defined by environment variables
         config_data = self.read_repo_config_from_environment(config_data)
