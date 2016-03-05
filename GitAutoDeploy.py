@@ -504,6 +504,42 @@ class GitAutoDeploy(object):
 
         return data
 
+    def read_repo_config_from_environment(self, config_data):
+        """Look for repository config in any defined environment variables. If
+        found, import to main config."""
+        import logging
+        import os
+
+        if 'GAD_REPO_URL' not in os.environ:
+            return config_data
+
+        logger = logging.getLogger()
+
+        repo_config = {
+            'url': os.environ['GAD_REPO_URL']
+        }
+        
+        logger.info("Added configuration for '%s' found environment variables" % os.environ['GAD_REPO_URL'])
+
+        if 'GAD_REPO_BRANCH' in os.environ:
+            repo_config['branch'] = os.environ['GAD_REPO_BRANCH']
+
+        if 'GAD_REPO_REMOTE' in os.environ:
+            repo_config['remote'] = os.environ['GAD_REPO_REMOTE']
+
+        if 'GAD_REPO_PATH' in os.environ:
+            repo_config['path'] = os.environ['GAD_REPO_PATH']
+
+        if 'GAD_REPO_DEPLOY' in os.environ:
+            repo_config['deploy'] = os.environ['GAD_REPO_DEPLOY']
+
+        if not 'repositories' in config_data:
+            config_data['repositories'] = []
+
+        config_data['repositories'].append(repo_config)
+
+        return config_data
+
     def init_config(self, config_data):
         import os
         import re
@@ -709,18 +745,18 @@ class GitAutoDeploy(object):
 
         parser = argparse.ArgumentParser()
 
+        parser.add_argument("-d", "--daemon-mode",
+                            help="run in background (daemon mode)",
+                            default=default_daemon_mode_value,
+                            action="store_true")
+
         parser.add_argument("-q", "--quiet",
                             help="supress console output",
                             default=default_quiet_value,
                             action="store_true")
 
-        parser.add_argument("-d", "--daemon-mode",
-                            help="start in daemon mode",
-                            default=default_daemon_mode_value,
-                            action="store_true")
-
         parser.add_argument("-c", "--config",
-                            help="config file",
+                            help="custom configuration file path",
                             default=default_config_value,
                             type=str)
 
@@ -730,7 +766,7 @@ class GitAutoDeploy(object):
                             action="store_true")
 
         parser.add_argument("--force",
-                            help="kill any process that occupies the configured port",
+                            help="attempt to kill any process that is occupying the configured port",
                             default=default_force_value,
                             action="store_true")
 
@@ -760,10 +796,13 @@ class GitAutoDeploy(object):
         # Try to find a config file on the file system
         if not config_file_path:
             config_file_path = self.find_config_file_path()
-        
+
         # Read config data from json file
         config_data = self.read_json_file(config_file_path)
-        
+
+        # Extend config data with any repository defined by environment variables
+        config_data = self.read_repo_config_from_environment(config_data)
+
         # Initialize config using config file data
         self.init_config(config_data)
 
