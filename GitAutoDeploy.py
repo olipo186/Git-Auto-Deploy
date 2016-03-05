@@ -119,31 +119,17 @@ class GitWrapper():
         if 'path' in repo_config:
             path = repo_config['path']
 
-        cmds = []
-        if 'deploy' in repo_config:
-            cmds.append(repo_config['deploy'])
-
-        gd = GitAutoDeploy().get_config()['global_deploy']
-        if len(gd[0]) is not 0:
-            cmds.insert(0, gd[0])
-        if len(gd[1]) is not 0:
-            cmds.append(gd[1])
-
         logger.info('Executing deploy command(s)')
+        
+        # Use repository path as default cwd when executing deploy commands
+        cwd = (repo_config['path'] if 'path' in repo_config else None)
 
-        if logFilePath:
-            with open(logFilePath, 'a') as logfile:
-                for cmd in cmds:
-                    if 'path' in repo_config:
-                        call(['cd "' + path + '" && ' + cmd], stdout=logfile, stderr=logfile, shell=True)
-                    else:
-                        call([cmd], stdout=logfile, stderr=logfile, shell=True)
-        else:
-            for cmd in cmds:
-                    if 'path' in repo_config:
-                        call(['cd "' + path + '" && ' + cmd], shell=True)
-                    else:
-                        call([cmd], shell=True)
+        for cmd in repo_config['deploy_commands']:
+            if logFilePath:
+                with open(logFilePath, 'a') as logfile:
+                    call([cmd], cwd=cwd, stdout=logfile, stderr=logfile, shell=True)
+            else:
+                call([cmd], cwd=cwd, shell=True)
 
 
 class WebhookRequestHandler(BaseHTTPRequestHandler):
@@ -283,6 +269,10 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         return repo_urls, ref or "master", action
 
 
+# Used to describe when a filter does not match a request
+class FilterMatchError(Exception): pass
+
+
 class GitAutoDeploy(object):
     config_path = None
     debug = True
@@ -369,28 +359,45 @@ class GitAutoDeploy(object):
         # Process each matching repository
         for repo_config in repo_configs:
 
-            if repo_config['pullrequestfilter'] and (repo_config['ref'] != ref or repo_config['action'] != action):
+            try:
+                # Verify that all filters matches the request if specified
+                if 'filters' in repo_config:
+                    for filter in repo_config['filters']:
+                        if filter['type'] == 'pull-request-filter':
+                            if filter['ref'] == ref and filter['action'] == action:
+                                continue
+                            raise FilterMatchError()
+                        else:
+                            logger.error('Unrecognized filter: ' % filter)
+                            raise FilterMatchError()
+                            
+            except FilterMatchError as e:
                 continue
-
-            if 'path' in repo_config:
-                running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
-                waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
+            
+            
+            # In case there is no path configured for the repository, no pull will
+            # be made.
+            if not 'path' in repo_config:
+                GitWrapper.deploy(repo_config)
+                continue
+            
+            running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
+            waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
             try:
 
-                if 'path' in repo_config:
-                    # Attempt to obtain the status_running lock
-                    while not running_lock.obtain():
+                # Attempt to obtain the status_running lock
+                while not running_lock.obtain():
 
-                        # If we're unable, try once to obtain the status_waiting lock
-                        if not waiting_lock.has_lock() and not waiting_lock.obtain():
-                            logger.error("Unable to obtain the status_running lock nor the status_waiting lock. Another process is " +
-                                         "already waiting, so we'll ignore the request.")
+                    # If we're unable, try once to obtain the status_waiting lock
+                    if not waiting_lock.has_lock() and not waiting_lock.obtain():
+                        logger.error("Unable to obtain the status_running lock nor the status_waiting lock. Another process is " +
+                                        "already waiting, so we'll ignore the request.")
 
-                            # If we're unable to obtain the waiting lock, ignore the request
-                            break
+                        # If we're unable to obtain the waiting lock, ignore the request
+                        break
 
-                        # Keep on attempting to obtain the status_running lock until we succeed
-                        time.sleep(5)
+                    # Keep on attempting to obtain the status_running lock until we succeed
+                    time.sleep(5)
 
                 n = 4
                 while 0 < n and 0 != GitWrapper.pull(repo_config):
@@ -400,20 +407,18 @@ class GitAutoDeploy(object):
                     GitWrapper.deploy(repo_config)
 
             except Exception as e:
-                if 'path' in repo_config:
-                    logger.error('Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path'])
+                logger.error('Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path'])
                 logger.error(e)
 
             finally:
 
-                if 'path' in repo_config:
-                    # Release the lock if it's ours
-                    if running_lock.has_lock():
-                        running_lock.release()
+                # Release the lock if it's ours
+                if running_lock.has_lock():
+                    running_lock.release()
 
-                    # Release the lock if it's ours
-                    if waiting_lock.has_lock():
-                        waiting_lock.release()
+                # Release the lock if it's ours
+                if waiting_lock.has_lock():
+                    waiting_lock.release()
 
     def get_default_config_path(self):
         import os
@@ -483,6 +488,30 @@ class GitAutoDeploy(object):
 
         for repo_config in self._config['repositories']:
 
+            # Setup branch if missing
+            if 'branch' not in repo_config:
+                repo_config['branch'] = "master"
+
+            # Setup remote if missing
+            if 'remote' not in repo_config:
+                repo_config['remote'] = "origin"
+
+            # Setup deploy commands list if not present
+            if 'deploy_commands' not in repo_config:
+                repo_config['deploy_commands'] = []
+
+            # Check if any global pre deploy commands is specified
+            if len(self._config['global_deploy'][0]) is not 0:
+                repo_config['deploy_commands'].insert(0, self._config['global_deploy'][0])
+
+            # Check if any repo specific deploy command is specified
+            if 'deploy' in repo_config:
+                repo_config['deploy_commands'].append(repo_config['deploy'])
+
+            # Check if any global post deploy command is specified
+            if len(self._config['global_deploy'][1]) is not 0:
+                repo_config['deploy_commands'].append(self._config['global_deploy'][1])
+
             # If a Bitbucket repository is configured using the https:// URL, a username is usually
             # specified in the beginning of the URL. To be able to compare configured Bitbucket
             # repositories with incoming web hook events, this username needs to be stripped away in a
@@ -496,29 +525,39 @@ class GitAutoDeploy(object):
             if 'path' in repo_config:
                 repo_config['path'] = os.path.expanduser(repo_config['path'])
 
-            if 'path' in repo_config:
-                if not os.path.isdir(repo_config['path']):
-
-                    logger.error("Directory %s not found" % repo_config['path'])
-                    GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'] if 'branch' in repo_config else None, path=repo_config['path'])
-
-                    if not os.path.isdir(repo_config['path']):
-                        logger.warning("Unable to clone %s branch of repository %s. So repo will not pull. Only deploy command will run(if it exist)" % (repo_config['branch'] if 'branch' in repo_config else "default", repo_config['url']))
-                        # sys.exit(2)
-
-                    else:
-                        logger.info("Repository %s successfully cloned" % repo_config['url'])
-                if not os.path.isdir(repo_config['path'] + '/.git'):
-                    logger.warning("Directory %s is not a Git repository. So repo will not pull. Only deploy command will run(if it exist)" % repo_config['path'])
-                    # sys.exit(2)
-            else:
-                logger.warning("'Path' was not found in config. So repo will not pull. Only deploy command will run(if it exist)")
-
         return self._config
 
+    def clone_all_repos(self):
+        """Iterates over all configured repositories and clones them to their
+        configured paths."""
+        import os
+        import re
+
+        # Iterate over all configured repositories
+        for repo_config in self._config['repositories']:
+            
+            # Only clone repositories with a configured path
+            if 'path' not in repo_config:
+                logger.info("Repository %s will not be cloned (no path configured)" % repo_config['url'])
+                continue
+            
+            if os.path.isdir(repo_config['path']) and os.path.isdir(repo_config['path']+'/.git'):
+                logger.info("Repository %s already present" % repo_config['url'])
+                continue
+
+            # Clone repository
+            GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'], path=repo_config['path'])
+            
+            if os.path.isdir(repo_config['path']):
+                logger.info("Repository %s successfully cloned" % repo_config['url'])
+            else:
+                logger.error("Unable to clone %s branch of repository %s" % (repo_config['branch'], repo_config['url']))
+
+
     def get_matching_repo_configs(self, urls):
-        """Iterates over the various repo URLs provided as argument (git://, ssh:// and https:// for the repo) and
-        compare them to any repo URL specified in the config"""
+        """Iterates over the various repo URLs provided as argument (git://,
+        ssh:// and https:// for the repo) and compare them to any repo URL
+        specified in the config"""
 
         config = self.get_config()
         configs = []
@@ -682,6 +721,9 @@ class GitAutoDeploy(object):
 
         # Initialize base config
         self.get_config()
+        
+        # Clone all repos once initially
+        self.clone_all_repos()
 
         if self.daemon:
             logger.info('Starting Git Auto Deploy in daemon mode')
@@ -697,6 +739,8 @@ class GitAutoDeploy(object):
 
         # Clear any existing lock files, with no regard to possible ongoing processes
         for repo_config in self.get_config()['repositories']:
+
+            # Do we have a physical repository?
             if 'path' in repo_config:
                 Lock(os.path.join(repo_config['path'], 'status_running')).clear()
                 Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()

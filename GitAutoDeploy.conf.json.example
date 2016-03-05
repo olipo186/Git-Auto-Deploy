@@ -1,14 +1,14 @@
 {
-    "pidfilepath": "~/.gitautodeploy.pid",
-    "logfilepath": "~/gitautodeploy.log",
-    "host": "0.0.0.0",
-    "port": 8001,
-    "global_deploy": [
-      "echo Deploy started!",
-      "echo Deploy completed!"
-    ],
-    "repositories":
-    [{
+  "pidfilepath": "~/.gitautodeploy.pid",
+  "logfilepath": "~/gitautodeploy.log",
+  "host": "0.0.0.0",
+  "port": 8001,
+  "global_deploy": [
+    "echo Deploy started!",
+    "echo Deploy completed!"
+  ],
+  "repositories": [
+    {
       "url": "https://github.com/olipo186/Git-Auto-Deploy.git",
       "branch": "master",
       "remote": "origin",
@@ -21,9 +21,14 @@
     },
     {
       "url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy",
-      "pullrequestfilter": true,
-      "action": "closed",
-      "ref": "testing",
-      "deploy": "echo deploying after pull request"
-    }]
+      "deploy": "echo deploying after pull request",
+      "filters": [
+        {
+          "type": "pull-request-filter",
+          "action": "closed",
+          "ref": "testing-branch"
+        }
+      ]
+    }
+  ]
 }
