@@ -32,7 +32,7 @@ To start logging you can define ```"logfilepath": "/home/hermes/gitautodeploy.lo
 ## Command line options
 
 Command line option  | Environment variable | Description
--------------------- | --------------------------------------------------------------------
+-------------------- | -------------------- | ---------------------------------------------
 --daemon-mode (-d)   | GAD_DAEMON_MODE      | |Run in background (daemon mode)
 --quiet (-q)         | GAD_QUIET            | Supress console output
 --ssh-keygen         | GAD_SSH_KEYGEN       | Scan repository hosts for ssh keys
