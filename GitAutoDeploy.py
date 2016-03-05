@@ -18,7 +18,8 @@ class LogInterface(object):
 
 
 class Lock():
-    """Simple implementation of a mutex lock using the file systems. Works on *nix systems."""
+    """Simple implementation of a mutex lock using the file systems. Works on
+    *nix systems."""
 
     path = None
     _has_lock = False
@@ -104,7 +105,8 @@ class ProcessWrapper():
 
 
 class GitWrapper():
-    """Wraps the git client. Currently uses git through shell command invocations."""
+    """Wraps the git client. Currently uses git through shell command
+    invocations."""
 
     def __init__(self):
         pass
@@ -665,7 +667,11 @@ class GitAutoDeploy(object):
             if m is not None:
                 port = repository['port']
                 port = '' if port is None else ('-p' + port)
-                ProcessWrapper().call(['ssh-keyscan -t ecdsa,rsa ' + port + ' ' + m.group(1) + ' >> $HOME/.ssh/known_hosts'], shell=True)
+                ProcessWrapper().call(['ssh-keyscan -t ecdsa,rsa ' +
+                                       port + ' ' +
+                                       m.group(1) +
+                                       ' >> ' +
+                                       '$HOME/.ssh/known_hosts'], shell=True)
 
             else:
                 logger.error('Could not find regexp match in path: %s' % url)
@@ -678,8 +684,9 @@ class GitAutoDeploy(object):
         pid = GitAutoDeploy.get_pid_on_port(self._config['port'])
 
         if pid is False:
-            logger.error('[KILLER MODE] I don\'t know the number of pid that is using my configured port\n ' +
-                         '[KILLER MODE] Maybe no one? Please, use --force option carefully')
+            logger.error('[KILLER MODE] I don\'t know the number of pid ' +
+                         'that is using my configured port\n[KILLER MODE] ' +
+                         'Maybe no one? Please, use --force option carefully')
             return False
 
         os.kill(pid, signal.SIGKILL)
@@ -896,7 +903,9 @@ class GitAutoDeploy(object):
                 Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
         try:
-            self._server = HTTPServer((self._config['host'], self._config['port']), WebhookRequestHandler)
+            self._server = HTTPServer((self._config['host'],
+                                       self._config['port']),
+                                      WebhookRequestHandler)
             sa = self._server.socket.getsockname()
             logger.info("Listening on %s port %s", sa[0], sa[1])
             self._server.serve_forever()
