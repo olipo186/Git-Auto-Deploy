@@ -78,8 +78,8 @@ The easiest way to configure your system to automatically start ```GitAutoDeploy
 * In "URL", enter your hostname and port (your-host:8001)
 * Hit "Save"
 
-## Example workflows
+# Example workflows
 
-# Continuous Delivery via Pull requests (GitHub only)
+## Continuous Delivery via Pull requests (GitHub only)
 
 It's possible to configure Git-Auto-Deploy to trigger when pull requests are opened or closed on GitHub. To read more about this workflow and how to configure Git-Aut-Deploy here: [Continuous Delivery via Pull requests](./docs/Continuous Delivery via Pull requests.md)
