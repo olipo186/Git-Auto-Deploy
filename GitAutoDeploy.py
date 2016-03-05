@@ -311,10 +311,6 @@ class FilterMatchError(Exception): pass
 
 
 class GitAutoDeploy(object):
-    config_path = None
-    debug = True
-    daemon = False
-
     _instance = None
     _server = None
     _config = None
@@ -330,9 +326,6 @@ class GitAutoDeploy(object):
     def debug_diagnosis(port):
         import logging
         logger = logging.getLogger()
-        
-        if GitAutoDeploy.debug is False:
-            return
 
         pid = GitAutoDeploy.get_pid_on_port(port)
         if pid is False:
@@ -469,9 +462,6 @@ class GitAutoDeploy(object):
         import logging
         logger = logging.getLogger()
 
-        if self.config_path:
-            return self.config_path
-
         # Look for a custom config file if no path is provided as argument
         target_directories = [
             os.path.dirname(os.path.realpath(__file__)),  # Script path
@@ -502,14 +492,14 @@ class GitAutoDeploy(object):
             json_string = open(file_path).read()
 
         except Exception as e:
-            logger.warning("Could not load %s file\n" % file_path)
+            logger.critical("Could not load %s file\n" % file_path)
             raise e
 
         try:
             data = json.loads(json_string)
 
         except Exception as e:
-            logger.error("%s file is not valid JSON\n" % file_path)
+            logger.critical("%s file is not valid JSON\n" % file_path)
             raise e
 
         return data
@@ -703,35 +693,57 @@ class GitAutoDeploy(object):
         return 0
 
     def run(self):
-        from sys import argv
         import sys
         from BaseHTTPServer import HTTPServer
         import socket
         import os
         import logging
+        import argparse
+        
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument("-q", "--quiet",
+                            help="supress console output",
+                            action="store_true")
+
+        parser.add_argument("-d", "--daemon-mode",
+                            help="start in daemon mode",
+                            action="store_true")
+
+        parser.add_argument("-c", "--config",
+                            help="config file",
+                            type=str)
+
+        parser.add_argument("--ssh-keygen",
+                            help="scan repository hosts for ssh keys",
+                            action="store_true")
+
+        parser.add_argument("--force",
+                            help="kill any process that occupies the configured port",
+                            action="store_true")
+
+        args = parser.parse_args()
 
         # Set up logging
         logger = logging.getLogger()
         logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
-        
+
         # Enable console output?
-        if '-q' not in argv and '--quiet' not in argv:
+        if args.quiet:
+            logger.addHandler(logging.NullHandler())
+        else:
             consoleHandler = logging.StreamHandler()
             consoleHandler.setFormatter(logFormatter)
             logger.addHandler(consoleHandler)
-        else:
-            logger.addHandler(logging.NullHandler())
 
         # All logs are recording
         logger.setLevel(logging.NOTSET)
 
         # Look for log file path provided in argument
         config_file_path = None
-        if '--config' in argv:
-            pos = argv.index('--config')
-            if len(argv) > pos + 1:
-                config_file_path = os.path.realpath(argv[argv.index('--config') + 1])
-                logger.info('Using custom configuration file \'%s\'' % config_file_path)
+        if args.config:
+            config_file_path = os.path.realpath(args.config)
+            logger.info('Using custom configuration file \'%s\'' % config_file_path)
 
         # Try to find a config file on the file system
         if not config_file_path:
@@ -750,27 +762,23 @@ class GitAutoDeploy(object):
             fileHandler.setFormatter(logFormatter)
             logger.addHandler(fileHandler)
 
-        if '-d' in argv or '--daemon-mode' in argv:
-            self.daemon = True
-
-        if '--ssh-keygen' in argv:
+        if args.ssh_keygen:
             logger.info('Scanning repository hosts for ssh keys...')
             self.ssh_key_scan()
 
-        if '--force' in argv:
+        if args.force:
             logger.info('Attempting to kill any other process currently occupying port %s' % self._config['port'])
             self.kill_conflicting_processes()
 
         # Clone all repos once initially
         self.clone_all_repos()
 
-
         # Set default stdout and stderr to our logging interface (that writes
         # to file and console depending on user preference)
         sys.stdout = LogInterface(logger.info)
         sys.stderr = LogInterface(logger.error)
         
-        if self.daemon:
+        if args.daemon_mode:
             logger.info('Starting Git Auto Deploy in daemon mode')
             GitAutoDeploy.create_daemon()
         else:
@@ -794,7 +802,7 @@ class GitAutoDeploy(object):
 
         except socket.error, e:
 
-            if not GitAutoDeploy.daemon:
+            if not args.daemon_mode:
                 logger.critical("Error on socket: %s" % e)
                 GitAutoDeploy.debug_diagnosis(self._config['port'])
 
