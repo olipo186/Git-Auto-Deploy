@@ -699,27 +699,39 @@ class GitAutoDeploy(object):
         import os
         import logging
         import argparse
-        
+
+        # Attempt to retrieve default config values from environment variables
+        default_quiet_value = 'GAD_QUIET' in os.environ
+        default_daemon_mode_value = 'GAD_DAEMON_MODE' in os.environ
+        default_config_value = 'GAD_CONFIG' in os.environ and os.environ['GAD_CONFIG']
+        default_ssh_keygen_value = 'GAD_SSH_KEYGEN' in os.environ
+        default_force_value = 'GAD_FORCE' in os.environ
+
         parser = argparse.ArgumentParser()
 
         parser.add_argument("-q", "--quiet",
                             help="supress console output",
+                            default=default_quiet_value,
                             action="store_true")
 
         parser.add_argument("-d", "--daemon-mode",
                             help="start in daemon mode",
+                            default=default_daemon_mode_value,
                             action="store_true")
 
         parser.add_argument("-c", "--config",
                             help="config file",
+                            default=default_config_value,
                             type=str)
 
         parser.add_argument("--ssh-keygen",
                             help="scan repository hosts for ssh keys",
+                            default=default_ssh_keygen_value,
                             action="store_true")
 
         parser.add_argument("--force",
                             help="kill any process that occupies the configured port",
+                            default=default_force_value,
                             action="store_true")
 
         args = parser.parse_args()
