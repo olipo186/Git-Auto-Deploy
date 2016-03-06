@@ -9,6 +9,7 @@ setup(name='git-auto-deploy',
       entry_points={
           'console_scripts': [
               'gad-server = gitautodeploy.__main__:main'
+              'gad-generate-config = gitautodeploy.__main__:main'
           ]
       },
       description = "Deploy your GitHub, GitLab or Bitbucket projects automatically on Git push events or webhooks.",

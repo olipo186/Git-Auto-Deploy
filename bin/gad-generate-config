@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+
+if __name__ == '__main__':
+    import sys
+    import os
+    sys.path.append(os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../')))
+    from gitautodeploy.cli import generate_config
+    generate_config()

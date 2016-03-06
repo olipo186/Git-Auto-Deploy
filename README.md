@@ -17,7 +17,7 @@ Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell comman
 
 ## Configuration
 
-* Copy ```GitAutoDeploy.conf.json.example``` to ```GitAutoDeploy.conf.json```
+* Copy ```GitAutoDeploy.conf.json.sample``` to ```GitAutoDeploy.conf.json```
 * Modify ```GitAutoDeploy.conf.json``` to match your project setup
 * Make sure that the ```pidfilepath``` path is writable for the user running the script, as well as any other path configured for your repositories.
 * If you don't want to execute ```git pull``` after webhook was fired, you can leave field ```"path"``` empty.
