@@ -31,11 +31,17 @@ To start logging you can define ```"logfilepath": "/home/hermes/gitautodeploy.lo
 
 ## Command line options
 
---daemon-mode (-d) Run in background (daemon mode)
---quiet (-q) Suppress all output
---ssh-keygen
---force
---config <path> Specify custom configuration file
+Command line option    | Environment variable | Config attribute | Description
+---------------------- | -------------------- | ---------------- | --------------------------
+--daemon-mode (-d)     | GAD_DAEMON_MODE      |                  | Run in background (daemon mode)
+--quiet (-q)           | GAD_QUIET            |                  | Supress console output
+--ssh-keygen           | GAD_SSH_KEYGEN       |                  | Scan repository hosts for ssh keys
+--force                | GAD_FORCE            |                  | Kill any process using the configured port
+--config (-c) <path>   | GAD_CONFIG           |                  | Custom configuration file
+--pid-file <path>      | GAD_PID_FILE         | pidfilepath      | Specify a custom pid file
+--log-file <path>      | GAD_LOG_FILE         | logfilepath      | Specify a log file
+--host <host>          | GAD_HOST             | host             | Address to bind to
+--port <port>          | GAD_PORT             | port             | Port to bind to
 
 ## Start automatically on boot
 
