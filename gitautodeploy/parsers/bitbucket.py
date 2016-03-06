@@ -1,4 +1,4 @@
-from WebhookRequestParser import WebhookRequestParser
+from common import WebhookRequestParser
 
 class BitBucketRequestParser(WebhookRequestParser):
 
