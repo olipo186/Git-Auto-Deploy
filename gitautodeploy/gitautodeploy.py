@@ -484,7 +484,7 @@ class GitAutoDeploy(object):
         import sys
         import logging
         logger = logging.getLogger()
-        logger.info('\nGoodbye')
+        logger.info('Goodbye')
         self.remove_pid_file()
         sys.exit(0)
 
@@ -708,7 +708,7 @@ class GitAutoDeploy(object):
             return
 
         elif signum == 2:
-            logger.info('\nRequested close by keyboard interrupt signal')
+            logger.info('Requested close by keyboard interrupt signal')
 
         elif signum == 6:
             logger.info('Requested close by SIGABRT (process abort signal). Code 6.')
