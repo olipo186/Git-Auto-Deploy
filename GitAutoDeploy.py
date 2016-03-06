@@ -141,13 +141,7 @@ class GitWrapper():
 
     @staticmethod
     def clone(url, branch, path):
-        from subprocess import call
-        ProcessWrapper().call(['git',
-                               'clone',
-                               '--recursive',
-                               url,
-                               '-b', branch,
-                               path], shell=True)
+        ProcessWrapper().call(['git clone --recursive ' + url + ' -b ' + branch + ' ' + path], shell=True)
 
     @staticmethod
     def deploy(repo_config):
