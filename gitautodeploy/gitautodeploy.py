@@ -176,6 +176,9 @@ class GitAutoDeploy(object):
         if 'pidfilepath' in self._config:
             self._config['pidfilepath'] = os.path.expanduser(self._config['pidfilepath'])
 
+        if 'repositories' not in self._config:
+            self._config['repositories'] = []
+
         for repo_config in self._config['repositories']:
 
             # Setup branch if missing
