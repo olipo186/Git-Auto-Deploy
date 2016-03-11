@@ -68,3 +68,4 @@ GitAutoDeploy.conf.json
 # Ignore
 deb_dist
 *.tar.gz
+MANIFEST

@@ -6,10 +6,10 @@ setup(name='git-auto-deploy',
       author='Oliver Poignant',
       author_email='oliver@poignant.se',
       packages = find_packages(),
+      package_data={'gitautodeploy': ['data/*']},
       entry_points={
           'console_scripts': [
-              'gad-server = gitautodeploy.__main__:main',
-              'gad-generate-config = gitautodeploy.cli:generate_config'
+              'git-auto-deploy = gitautodeploy.__main__:main'
           ]
       },
       description = "Deploy your GitHub, GitLab or Bitbucket projects automatically on Git push events or webhooks.",

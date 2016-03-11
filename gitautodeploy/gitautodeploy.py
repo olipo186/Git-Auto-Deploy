@@ -94,11 +94,13 @@ class GitAutoDeploy(object):
         # Add current CWD if not identical to script path
         if not os.getcwd() in target_directories:
             target_directories.append(os.getcwd())
-
+        
         target_directories.reverse()
 
         # Look for a *conf.json or *config.json
         for dir in target_directories:
+            if not os.access(dir, os.R_OK):
+                continue
             for item in os.listdir(dir):
                 if re.match(r".*conf(ig)?\.json$", item):
                     path = os.path.realpath(os.path.join(dir, item))
@@ -106,10 +108,11 @@ class GitAutoDeploy(object):
                     return path
 
         return
-
+    
     def read_json_file(self, file_path):
         import json
         import logging
+        import re
         logger = logging.getLogger()
         
         try:
@@ -120,7 +123,19 @@ class GitAutoDeploy(object):
             raise e
 
         try:
-            data = json.loads(json_string)
+            # Remove commens from JSON (makes sample config options easier)
+            regex = r'\s*(#|\/{2}).*$'
+            regex_inline = r'(:?(?:\s)*([A-Za-z\d\.{}]*)|((?<=\").*\"),?)(?:\s)*(((#|(\/{2})).*)|)$'
+            lines = json_string.split('\n')
+
+            for index, line in enumerate(lines):
+                if re.search(regex, line):
+                    if re.search(r'^' + regex, line, re.IGNORECASE):
+                        lines[index] = ""
+                    elif re.search(regex_inline, line):
+                        lines[index] = re.sub(regex_inline, r'\1', line)
+                        
+            data = json.loads('\n'.join(lines))
 
         except Exception as e:
             logger.critical("%s file is not valid JSON\n" % file_path)
