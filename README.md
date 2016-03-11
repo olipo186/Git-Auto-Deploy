@@ -1,14 +1,14 @@
 # What is it?
 
-GitAutoDeploy.py consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. This application allows you to continuously and automatically deploy you projects each time you push new commits to your repository.</p>
+Git-Auto-Deploy consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. This application allows you to continuously and automatically deploy you projects each time you push new commits to your repository.</p>
 
 ![workflow](https://cloud.githubusercontent.com/assets/1056476/9344294/d3bc32a4-4607-11e5-9a44-5cd9b22e61d9.png)
 
 # How does it work?
 
-When commits are pushed to your Git repository, the Git server will notify ```GitAutoDeploy.py``` by sending a HTTP POST request with a JSON body to a pre configured URL (your-host:8001). The JSON body contains detailed information about the repository and what event that triggered the request. GitAutoDeploy.py parses and validates the request, and if all goes well it issues a ```git pull```.
+When commits are pushed to your Git repository, the Git server will notify ```Git-Auto-Deploy``` by sending a HTTP POST request with a JSON body to a pre configured URL (your-host:8001). The JSON body contains detailed information about the repository and what event that triggered the request. ```Git-Auto-Deploy``` parses and validates the request, and if all goes well it issues a ```git pull```.
 
-Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell command upon each successful ```git pull```, which can be used to trigger custom build actions or test scripts.</p>
+Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command upon each successful ```git pull```, which can be used to trigger custom build actions or test scripts.</p>
 
 # Getting started
 ## Dependencies
@@ -27,7 +27,7 @@ Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell comman
 To start logging you can define ```"logfilepath": "/home/hermes/gitautodeploy.log"```. Note that you can`t see triggered command output when log is defined, only script output. If you leave ```"logfilepath"``` empty - everething will work as usual (without log).
 
 ## Running the application
-```python GitAutoDeploy.py```
+```python gitautodeploy```
 
 ## Command line options
 
@@ -46,9 +46,9 @@ Command line option    | Environment variable | Config attribute | Description
 ## Start automatically on boot
 
 ### Crontab
-The easiest way to configure your system to automatically start ```GitAutoDeploy.py``` after a reboot is through crontab. Open crontab in edit mode using ```crontab -e``` and add the following:
+The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is through crontab. Open crontab in edit mode using ```crontab -e``` and add the following:
 
-```@reboot /usr/bin/python /path/to/GitAutoDeploy.py --daemon-mode --quiet```
+```@reboot /usr/bin/python /path/to/gitautodeploy --daemon-mode --quiet```
 
 ### Debian and Sys-V like init system.
 
