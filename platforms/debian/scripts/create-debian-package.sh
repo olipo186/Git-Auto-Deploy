@@ -22,7 +22,7 @@ PACKAGE_VERSION=`python setup.py --version`
 # Generate a Debian source package
 echo
 echo "** Generating a Debian source package **"
-python setup.py --command-packages=stdeb.command sdist_dsc
+python setup.py --command-packages=stdeb.command sdist_dsc -x platforms/debian/stdeb.cfg
 
 # Path to newly generated deb_dist directory
 TARGET=`readlink -f "$PROJECT_PATH/deb_dist/$PACKAGE_NAME-$PACKAGE_VERSION"`
