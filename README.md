@@ -10,13 +10,40 @@ When commits are pushed to your Git repository, the Git server will notify ```Gi
 
 Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command upon each successful ```git pull```, which can be used to trigger custom build actions or test scripts.</p>
 
+Table of contents
+=================
+
+  * [What is it?](#what-is-it)
+  * [How does it work?](#how-does-it-work)
+  * [Table of contents](#table-of-contents)
+  * [Getting started](#getting-started)
+  * [Dependencies](#dependencies)
+  * [Install from repository (recommended)](#install-from-repository-recommended)
+    * [Download and install](#download-and-install)
+    * [Configure](#configure)
+    * [Running the application](#running-the-application)
+    * [Starting automatically on boot](#starting-automatically-on-boot)
+      * [Using crontab](#using-crontab)
+  * [Install as a python module (experimental)](#install-as-a-python-module-experimental)
+    * [Download and install](#download-and-install-1)
+    * [Configure](#configure-1)
+    * [Running the application](#running-the-application-1)
+    * [Starting automatically on boot](#starting-automatically-on-boot-1)
+      * [Using crontab](#using-crontab-1)
+  * [Install as a debian package (experimental)](#install-as-a-debian-package-experimental)
+    * [Download and install](#download-and-install-2)
+    * [Configure](#configure-2)
+    * [Running the application](#running-the-application-2)
+    * [Starting automatically on boot](#starting-automatically-on-boot-2)
+      * [Using crontab](#using-crontab-2)
+
 # Getting started
 
 ## Dependencies
 * Git (tested on version 2.5.0)
 * Python (tested on version 2.7)
 
-## Install manually from the repository (recommended)
+## Install from repository (recommended)
 
 ### Download and install
 
@@ -25,11 +52,11 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
 
 ### Configure
 
-Make a copy of the sample configuration file and modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md) in the documentation section.
+Make a copy of the sample configuration file and modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
 
     cp config.json.sample config.json
 
-Tip: Make sure that the ```pidfilepath``` path is writable for the user running the script, as well as any other path configured for your repositories.
+Tip: Make sure that the path specified in ```pidfilepath``` is writable for the user running the script, as well as any other path configured for your repositories.
 
 ### Running the application
 
@@ -37,13 +64,15 @@ Run the application my invoking ```python``` and referencing the ```gitautodeplo
 
     python gitautodeploy
 
-### Start automatically on boot using crontab
+### Start automatically on boot
+
+#### Using crontab
 
 The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is using crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
-## Install as a python module using pip (experimental)
+## Install as a python module (experimental)
 
 ### Download and install
 
@@ -68,7 +97,7 @@ Once ```Git-Auto-Deploy``` has been installed as a python module, it can be star
 
 ### Configure
 
-Copy the content of [config.json.sample](./config.json.sample) and save it anywhere you like, for example ```~/git-auto-deploy.conf.json```. Modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md) in the documentation section.
+Copy the content of [config.json.sample](./config.json.sample) and save it anywhere you like, for example ```~/git-auto-deploy.conf.json```. Modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
  [](./docs/Configuration.md)
 
 ### Running the application
@@ -78,7 +107,9 @@ Run the application using the executable ```git-auto-deploy``` which has been pr
 
     git-auto-deploy --config ~/git-auto-deploy.conf.json
 
-### Start automatically on boot using crontab
+### Start automatically on boot
+
+#### Using crontab
 
 The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is using crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
 
