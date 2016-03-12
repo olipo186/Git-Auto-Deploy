@@ -24,6 +24,11 @@ Table of contents
       * [Running the application](#running-the-application)
       * [Starting automatically on boot](#starting-automatically-on-boot)
         * [Using crontab](#using-crontab)
+    * [Command line options](#command-line-options)
+    * [Configuring external services](#configuring-external-services)
+      * [GitHub](#github)
+      * [GitLab](#gitlab)
+      * [BitBucket](#bitbucket)
   * [Alternative installation methods](#alternative-installation-methods)
     * [Install as a python module (experimental)](#install-as-a-python-module-experimental)
       * [Download and install](#download-and-install-1)
@@ -73,7 +78,7 @@ The easiest way to configure your system to automatically start ```Git-Auto-Depl
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
-# Command line options
+## Command line options
 
 Command line option    | Environment variable | Config attribute | Description
 ---------------------- | -------------------- | ---------------- | --------------------------
@@ -87,20 +92,20 @@ Command line option    | Environment variable | Config attribute | Description
 --host <host>          | GAD_HOST             | host             | Address to bind to
 --port <port>          | GAD_PORT             | port             | Port to bind to
 
-# Setting up external services
+## Configuring external services
 To make your git provider send notifications to ```Git-Auto-Deploy``` you will need to provide the hostname and port for your ```Git-Auto-Deploy``` instance. Instructions for the most common git providers is listed below.
 
-## GitHub
+### GitHub
 * Go to your repository -> Settings -> Webhooks and Services -> Add webhook</li>
 * In "Payload URL", enter your hostname and port (your-host:8001)
 * Hit "Add webhook"
 
-## GitLab
+### GitLab
 * Go to your repository -> Settings -> Web hooks
 * In "URL", enter your hostname and port (your-host:8001)
 * Hit "Add Web Hook"
 
-## Bitbucket
+### Bitbucket
 * Go to your repository -> Settings -> Webhooks -> Add webhook
 * In "URL", enter your hostname and port (your-host:8001)
 * Hit "Save"
