@@ -411,23 +411,45 @@ class GitAutoDeploy(object):
         for repo_config in repo_configs:
 
             try:
-                # Verify that all filters matches the request if specified
+                # Verify that all filters matches the request (if any filters are specified)
                 if 'filters' in repo_config:
                     for filter in repo_config['filters']:
-                        if 'type' in filter and filter['type'] == 'pull-request-filter':
-                            if filter['ref'] == ref and filter['action'] == action:
+
+                        # Filter with both action and ref?
+                        if 'action' in filter and 'ref' in filter:
+
+                            if filter['action'] == action and filter['ref'] == ref:
+                                # This filter is a match, OK to proceed
                                 continue
+
                             raise FilterMatchError()
-                        else:
-                            if 'action' in filter and filter['action'] != action:
-                                raise FilterMatchError()
-                            if 'ref' in filter and filter['ref'] != ref:
-                                raise FilterMatchError()
-                            
+
+                        # Filter with only action?
+                        if 'action' in filter:
+
+                            if filter['action'] == action:
+                                # This filter is a match, OK to proceed
+                                continue
+
+                            raise FilterMatchError()
+
+                        # Filter with only ref?
+                        if 'ref' in filter:
+
+                            if filter['ref'] == ref:
+                                # This filter is a match, OK to proceed
+                                continue
+
+                            raise FilterMatchError()
+
+                        # Filter does not match, do not process this repo config
+                        raise FilterMatchError()
+
             except FilterMatchError as e:
+
+                # Filter does not match, do not process this repo config
                 continue
-            
-            
+
             # In case there is no path configured for the repository, no pull will
             # be made.
             if not 'path' in repo_config:
