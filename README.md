@@ -17,25 +17,26 @@ Table of contents
   * [How does it work?](#how-does-it-work)
   * [Table of contents](#table-of-contents)
   * [Getting started](#getting-started)
-  * [Dependencies](#dependencies)
-  * [Install from repository (recommended)](#install-from-repository-recommended)
-    * [Download and install](#download-and-install)
-    * [Configure](#configure)
-    * [Running the application](#running-the-application)
-    * [Starting automatically on boot](#starting-automatically-on-boot)
-      * [Using crontab](#using-crontab)
-  * [Install as a python module (experimental)](#install-as-a-python-module-experimental)
-    * [Download and install](#download-and-install-1)
-    * [Configure](#configure-1)
-    * [Running the application](#running-the-application-1)
-    * [Starting automatically on boot](#starting-automatically-on-boot-1)
-      * [Using crontab](#using-crontab-1)
-  * [Install as a debian package (experimental)](#install-as-a-debian-package-experimental)
-    * [Download and install](#download-and-install-2)
-    * [Configure](#configure-2)
-    * [Running the application](#running-the-application-2)
-    * [Starting automatically on boot](#starting-automatically-on-boot-2)
-      * [Using crontab](#using-crontab-2)
+    * [Dependencies](#dependencies)
+    * [Install from repository (recommended)](#install-from-repository-recommended)
+      * [Download and install](#download-and-install)
+      * [Configuration](#configuration)
+      * [Running the application](#running-the-application)
+      * [Starting automatically on boot](#starting-automatically-on-boot)
+        * [Using crontab](#using-crontab)
+  * [Alternative installation methods](#alternative-installation-methods)
+    * [Install as a python module (experimental)](#install-as-a-python-module-experimental)
+      * [Download and install](#download-and-install-1)
+      * [Configuration](#configuration-1)
+      * [Running the application](#running-the-application-1)
+      * [Starting automatically on boot](#starting-automatically-on-boot-1)
+        * [Using crontab](#using-crontab-1)
+    * [Install as a debian package (experimental)](#install-as-a-debian-package-experimental)
+      * [Download and install](#download-and-install-2)
+      * [Configuration](#configuration-2)
+      * [Running the application](#running-the-application-2)
+      * [Starting automatically on boot](#starting-automatically-on-boot-2)
+        * [Using crontab](#using-crontab-2)
 
 # Getting started
 
@@ -50,7 +51,7 @@ Table of contents
     git clone https://github.com/olipo186/Git-Auto-Deploy.git
     cd Git-Auto-Deploy
 
-### Configure
+### Configuration
 
 Make a copy of the sample configuration file and modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
 
@@ -71,6 +72,8 @@ Run the application my invoking ```python``` and referencing the ```gitautodeplo
 The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is using crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
+
+# Alternative installation methods
 
 ## Install as a python module (experimental)
 
@@ -95,7 +98,7 @@ You may need to run the above commands with `sudo`.
 
 Once ```Git-Auto-Deploy``` has been installed as a python module, it can be started using the executable ```git-auto-deploy```. During installation with pip, the executable is usually installed in ```/usr/local/bin/git-auto-deploy```. This can vary depending on platform.
 
-### Configure
+### Configuration
 
 Copy the content of [config.json.sample](./config.json.sample) and save it anywhere you like, for example ```~/git-auto-deploy.conf.json```. Modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
  [](./docs/Configuration.md)
@@ -121,7 +124,7 @@ When installing with pip, the executable ```git-auto-deploy``` is usually instal
 
 ### Download and install
 
-### Configure
+### Configuration
 
 ### Running the application
 
