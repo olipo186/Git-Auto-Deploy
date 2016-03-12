@@ -22,8 +22,7 @@ Table of contents
       * [Download and install](#download-and-install)
       * [Configuration](#configuration)
       * [Running the application](#running-the-application)
-      * [Starting automatically on boot](#starting-automatically-on-boot)
-        * [Using crontab](#using-crontab)
+      * [Starting automatically on boot using crontab](#starting-automatically-on-boot-using-crontab)
     * [Command line options](#command-line-options)
     * [Configuring external services](#configuring-external-services)
       * [GitHub](#github)
@@ -31,17 +30,7 @@ Table of contents
       * [BitBucket](#bitbucket)
   * [Alternative installation methods](#alternative-installation-methods)
     * [Install as a python module (experimental)](#install-as-a-python-module-experimental)
-      * [Download and install](#download-and-install-1)
-      * [Configuration](#configuration-1)
-      * [Running the application](#running-the-application-1)
-      * [Starting automatically on boot](#starting-automatically-on-boot-1)
-        * [Using crontab](#using-crontab-1)
     * [Install as a debian package (experimental)](#install-as-a-debian-package-experimental)
-      * [Download and install](#download-and-install-2)
-      * [Configuration](#configuration-2)
-      * [Running the application](#running-the-application-2)
-      * [Starting automatically on boot](#starting-automatically-on-boot-2)
-        * [Using crontab](#using-crontab-2)
 
 # Getting started
 
@@ -70,9 +59,7 @@ Run the application my invoking ```python``` and referencing the ```gitautodeplo
 
     python gitautodeploy
 
-### Start automatically on boot
-
-#### Using crontab
+### Start automatically on boot using crontab
 
 The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is using crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
 
