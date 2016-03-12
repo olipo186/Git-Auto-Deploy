@@ -73,6 +73,38 @@ The easiest way to configure your system to automatically start ```Git-Auto-Depl
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
+# Command line options
+
+Command line option    | Environment variable | Config attribute | Description
+---------------------- | -------------------- | ---------------- | --------------------------
+--daemon-mode (-d)     | GAD_DAEMON_MODE      |                  | Run in background (daemon mode)
+--quiet (-q)           | GAD_QUIET            |                  | Supress console output
+--ssh-keygen           | GAD_SSH_KEYGEN       |                  | Scan repository hosts for ssh keys
+--force                | GAD_FORCE            |                  | Kill any process using the configured port
+--config (-c) <path>   | GAD_CONFIG           |                  | Custom configuration file
+--pid-file <path>      | GAD_PID_FILE         | pidfilepath      | Specify a custom pid file
+--log-file <path>      | GAD_LOG_FILE         | logfilepath      | Specify a log file
+--host <host>          | GAD_HOST             | host             | Address to bind to
+--port <port>          | GAD_PORT             | port             | Port to bind to
+
+# Setting up external services
+To make your git provider send notifications to ```Git-Auto-Deploy``` you will need to provide the hostname and port for your ```Git-Auto-Deploy``` instance. Instructions for the most common git providers is listed below.
+
+## GitHub
+* Go to your repository -> Settings -> Webhooks and Services -> Add webhook</li>
+* In "Payload URL", enter your hostname and port (your-host:8001)
+* Hit "Add webhook"
+
+## GitLab
+* Go to your repository -> Settings -> Web hooks
+* In "URL", enter your hostname and port (your-host:8001)
+* Hit "Add Web Hook"
+
+## Bitbucket
+* Go to your repository -> Settings -> Webhooks -> Add webhook
+* In "URL", enter your hostname and port (your-host:8001)
+* Hit "Save"
+
 # Alternative installation methods
 
 ## Install as a python module (experimental)
@@ -128,30 +160,14 @@ When installing with pip, the executable ```git-auto-deploy``` is usually instal
 
 ### Running the application
 
-### Start automatically on boot
+# Start automatically on boot
 
-# Command line options
-
-Command line option    | Environment variable | Config attribute | Description
----------------------- | -------------------- | ---------------- | --------------------------
---daemon-mode (-d)     | GAD_DAEMON_MODE      |                  | Run in background (daemon mode)
---quiet (-q)           | GAD_QUIET            |                  | Supress console output
---ssh-keygen           | GAD_SSH_KEYGEN       |                  | Scan repository hosts for ssh keys
---force                | GAD_FORCE            |                  | Kill any process using the configured port
---config (-c) <path>   | GAD_CONFIG           |                  | Custom configuration file
---pid-file <path>      | GAD_PID_FILE         | pidfilepath      | Specify a custom pid file
---log-file <path>      | GAD_LOG_FILE         | logfilepath      | Specify a log file
---host <host>          | GAD_HOST             | host             | Address to bind to
---port <port>          | GAD_PORT             | port             | Port to bind to
-
-## Start automatically on boot
-
-### Crontab
+## Crontab
 The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is through crontab. Open crontab in edit mode using ```crontab -e``` and add the following:
 
 ```@reboot /usr/bin/python /path/to/gitautodeploy --daemon-mode --quiet```
 
-### Debian and Sys-V like init system.
+## Debian and Sys-V like init system.
 
 * Copy file ```initfiles/debianLSBInitScripts/gitautodeploy``` to ```/etc/init.d/```
 * Make it executable: ```chmod 755 /etc/init.d/gitautodeploy```
@@ -159,7 +175,7 @@ The easiest way to configure your system to automatically start ```Git-Auto-Depl
 * This init script assumes that you have ```GitAutoDeploy.py``` installed in ```/opt/Git-Auto-Deploy/``` and that the ```pidfilepath``` config option is set to ```/var/run/gitautodeploy.pid```. If this is not the case, edit the ```gitautodeploy``` init script and modify ```DAEMON```, ```PWD``` and ```PIDFILE```.
 * Now you need to add the correct symbolic link to your specific runlevel dir to get the script executed on each start up. On Debian_Sys-V just do ```update-rc.d gitautodeploy defaults```
 
-### Systemd
+## Systemd
 
 * Copy file ```initfiles/systemd/gitautodeploy.service``` to ```/etc/systemd/system```
 * Also you need to make ```GitAutoDeploy.py``` executable (if it isn't already): ```chmod 755 GitAutoDeploy.py```
@@ -168,22 +184,6 @@ The easiest way to configure your system to automatically start ```Git-Auto-Depl
 * now reload daemons ```systemctl daemon-reload```
 * Fire it up ```systemctl start gitautodeploy```
 * Make is start on system boot ```systemctl enable gitautodeploy```
-
-## Configure GitHub
-
-* Go to your repository -> Settings -> Webhooks and Services -> Add webhook</li>
-* In "Payload URL", enter your hostname and port (your-host:8001)
-* Hit "Add webhook"
-
-## Configure GitLab
-* Go to your repository -> Settings -> Web hooks
-* In "URL", enter your hostname and port (your-host:8001)
-* Hit "Add Web Hook"
-
-## Configure Bitbucket
-* Go to your repository -> Settings -> Webhooks -> Add webhook
-* In "URL", enter your hostname and port (your-host:8001)
-* Hit "Save"
 
 # Example workflows
 
