@@ -67,12 +67,12 @@ The easiest way to configure your system to automatically start ```Git-Auto-Depl
 
 ## Command line options
 
+Below is a summarized list of the most common command line options. For a full list of available command line options, invoke the application with the argument ```--help``` or read the documentation article about [all avaialble command line options, environment variables and config attributes](./docs/Configuration.md).
+
 Command line option    | Environment variable | Config attribute | Description
 ---------------------- | -------------------- | ---------------- | --------------------------
 --daemon-mode (-d)     | GAD_DAEMON_MODE      |                  | Run in background (daemon mode)
 --quiet (-q)           | GAD_QUIET            |                  | Supress console output
---ssh-keygen           | GAD_SSH_KEYGEN       |                  | Scan repository hosts for ssh keys
---force                | GAD_FORCE            |                  | Kill any process using the configured port
 --config (-c) <path>   | GAD_CONFIG           |                  | Custom configuration file
 --pid-file <path>      | GAD_PID_FILE         | pidfilepath      | Specify a custom pid file
 --log-file <path>      | GAD_LOG_FILE         | logfilepath      | Specify a log file
