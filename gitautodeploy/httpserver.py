@@ -39,6 +39,8 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Could be GitHubParser, GitLabParser or other
         repo_configs, ref, action = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
 
+        logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
+
         #if success:
         #    print "Successfullt handled request using %s" % ServiceHandler.__name__
         #else:
@@ -126,14 +128,37 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 # Verify that all filters matches the request if specified
                 if 'filters' in repo_config:
                     for filter in repo_config['filters']:
-                        if filter['type'] == 'pull-request-filter':
-                            if filter['ref'] == ref and filter['action'] == action:
+
+                        # Filter with both action and ref?
+                        if 'action' in filter and 'ref' in filter:
+
+                            if filter['action'] == action and filter['ref'] == ref:
+                                # This filter is a match, OK to proceed
                                 continue
+
                             raise FilterMatchError()
-                        else:
-                            logger.error('Unrecognized filter: ' % filter)
+
+                        # Filter with only action?
+                        if 'action' in filter:
+
+                            if filter['action'] == action:
+                                # This filter is a match, OK to proceed
+                                continue
+
                             raise FilterMatchError()
-                            
+
+                        # Filter with only ref?
+                        if 'ref' in filter:
+
+                            if filter['ref'] == ref:
+                                # This filter is a match, OK to proceed
+                                continue
+
+                            raise FilterMatchError()
+
+                        # Filter does not match, do not process this repo config
+                        raise FilterMatchError()
+
             except FilterMatchError as e:
                 continue
             

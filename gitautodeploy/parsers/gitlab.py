@@ -26,6 +26,14 @@ class GitLabRequestParser(WebhookRequestParser):
             if k in data['repository']:
                 repo_urls.append(data['repository'][k])
 
+        # extract the branch
+        if 'ref' in data:
+            ref = data['ref']
+
+        # set the action
+        if 'object_kind' in data:
+            action = data['object_kind']
+
         # Get a list of configured repositories that matches the incoming web hook reqeust
         repo_configs = self.get_matching_repo_configs(repo_urls)
 
