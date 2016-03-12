@@ -228,6 +228,14 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 if k in data['repository']:
                     repo_urls.append(data['repository'][k])
 
+            # extract the branch
+            if 'ref' in data:
+                ref = data['ref']
+
+            # set the action
+            if 'object_kind' in data:
+                action = data['object_kind']
+
         # Assume GitHub if the X-GitHub-Event HTTP header is set
         elif github_event:
 
@@ -311,6 +319,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         else:
             logger.error("ERROR - Unable to recognize request origin. Don't know how to handle the request.")
 
+        logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
         return repo_urls, ref or "master", action
 
 
@@ -405,13 +414,15 @@ class GitAutoDeploy(object):
                 # Verify that all filters matches the request if specified
                 if 'filters' in repo_config:
                     for filter in repo_config['filters']:
-                        if filter['type'] == 'pull-request-filter':
+                        if 'type' in filter and filter['type'] == 'pull-request-filter':
                             if filter['ref'] == ref and filter['action'] == action:
                                 continue
                             raise FilterMatchError()
                         else:
-                            logger.error('Unrecognized filter: ' % filter)
-                            raise FilterMatchError()
+                            if 'action' in filter and filter['action'] != action:
+                                raise FilterMatchError()
+                            if 'ref' in filter and filter['ref'] != ref:
+                                raise FilterMatchError()
                             
             except FilterMatchError as e:
                 continue

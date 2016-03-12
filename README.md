@@ -22,6 +22,8 @@ Additionally, ```GitAutoDeploy.py``` can be configured to execute a shell comman
 * Make sure that the ```pidfilepath``` path is writable for the user running the script, as well as any other path configured for your repositories.
 * If you don't want to execute ```git pull``` after webhook was fired, you can leave field ```"path"``` empty.
 
+See the [Configuration](./docs/Configuration.md) documentation for more details.
+
 ### Logging
 
 To start logging you can define ```"logfilepath": "/home/hermes/gitautodeploy.log"```. Note that you can`t see triggered command output when log is defined, only script output. If you leave ```"logfilepath"``` empty - everething will work as usual (without log).
