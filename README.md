@@ -12,23 +12,6 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
 
 # Getting started
 
-  * [Getting started](#getting-started)
-    * [Dependencies](#dependencies)
-    * [Install from repository (recommended)](#install-from-repository-recommended)
-      * [Download and install](#download-and-install)
-      * [Configuration](#configuration)
-      * [Running the application](#running-the-application)
-      * [Start automatically on boot using crontab](#start-automatically-on-boot)
-    * [Alternative installation methods](#alternative-installation-methods)
-      * [Install as a python module (experimental)](./docs/Install as a python module.md)
-      * [Install as a debian package (experimental)](./docs/Install as a debian package.md)
-      * [Start automatically on boot (init.d and systemd)](./docs/Start automatically on boot.md)
-    * [Command line options](#command-line-options)
-    * [Getting webhooks from git](#getting-webhooks-from-git)
-      * [GitHub](#github)
-      * [GitLab](#gitlab)
-      * [BitBucket](#bitbucket)
-
 ## Dependencies
 * Git (tested on version 2.5.0)
 * Python (tested on version 2.7)
@@ -82,26 +65,25 @@ Command line option    | Environment variable | Config attribute | Description
 --host <host>          | GAD_HOST             | host             | Address to bind to
 --port <port>          | GAD_PORT             | port             | Port to bind to
 
-## Getting webhooks from git
+## Getting webhooks from GitHub, GitLab or Bitbucket
 To make your git provider send notifications to ```Git-Auto-Deploy``` you will need to provide the hostname and port for your ```Git-Auto-Deploy``` instance. Instructions for the most common git providers is listed below.
 
-### GitHub
+**GitHub**
 * Go to your repository -> Settings -> Webhooks and Services -> Add webhook</li>
 * In "Payload URL", enter your hostname and port (your-host:8001)
 * Hit "Add webhook"
 
-### GitLab
+**GitLab**
 * Go to your repository -> Settings -> Web hooks
 * In "URL", enter your hostname and port (your-host:8001)
 * Hit "Add Web Hook"
 
-### Bitbucket
+**Bitbucket**
 * Go to your repository -> Settings -> Webhooks -> Add webhook
 * In "URL", enter your hostname and port (your-host:8001)
 * Hit "Save"
 
-
-# Example workflows
+# Read more
 
 ## Continuous Delivery via Pull requests (GitHub only)
 

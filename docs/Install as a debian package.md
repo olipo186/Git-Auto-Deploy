@@ -5,6 +5,7 @@ Below is instructions on how to create a debian (.deb) package using stdeb. You 
 ### Install dependencies
 
 Install stdeb and other dependencies
+
     apt-get install python-stdeb fakeroot python-all
 
 ### Download and build
@@ -25,6 +26,7 @@ Install stdeb and other dependencies
 ### Install
 
 When installing the package, a sample configuration file and a init.d start up script will be created.
+
     dpkg -i git-auto-deploy-<version>.deb
 
 ### Configuration
@@ -34,4 +36,5 @@ When installing the package, a sample configuration file and a init.d start up s
 ### Running the application
 
     service git-auto-deploy start
+    service git-auto-deploy status
     
