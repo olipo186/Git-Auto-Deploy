@@ -414,24 +414,19 @@ class GitAutoDeploy(object):
             try:
                 # Verify that all filters matches the request (if any filters are specified)
                 if 'filters' in repo_config:
-                    filter_matched = True;
 
                     # at least one filter must match
                     for filter in repo_config['filters']:
 
                         # all options specified in the filter must match
                         for filter_key, filter_value in filter.iteritems():
-                            # support for earlier version so it's non-breaking functionality.
+
+                            # support for earlier version so it's non-breaking functionality
                             if filter_key == 'action' and filter_value == action:
                                 continue
 
                             if filter_key not in data or filter_value != data[filter_key]:
-                                filter_matched = False
-                                continue
-
-                    if not filter_matched:
-                        logger.info ("No filter matched")
-                        raise FilterMatchError()
+                                raise FilterMatchError()
 
             except FilterMatchError as e:
 
