@@ -1,6 +1,6 @@
-## Install as a python module (experimental)
+# Install as a python module (experimental)
 
-### Download and install
+## Download and install
 
 Install using [pip](http://www.pip-installer.org/en/latest/), a package manager for Python, by running the following command.
 
@@ -21,21 +21,19 @@ You may need to run the above commands with `sudo`.
 
 Once ```Git-Auto-Deploy``` has been installed as a python module, it can be started using the executable ```git-auto-deploy```. During installation with pip, the executable is usually installed in ```/usr/local/bin/git-auto-deploy```. This can vary depending on platform.
 
-### Configuration
+## Configuration
 
 Copy the content of [config.json.sample](./config.json.sample) and save it anywhere you like, for example ```~/git-auto-deploy.conf.json```. Modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
  [](./docs/Configuration.md)
 
-### Running the application
+## Running the application
 
 Run the application using the executable ```git-auto-deploy``` which has been provided by pip. Provide the path to your configuration file as a command line argument.
  referencing the ```gitautodeploy``` module (the directory ```Git-Auto-Deploy/gitautodeploy```).
 
     git-auto-deploy --config ~/git-auto-deploy.conf.json
 
-### Start automatically on boot
-
-#### Using crontab
+## Start automatically on boot using crontab
 
 The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is using crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
 

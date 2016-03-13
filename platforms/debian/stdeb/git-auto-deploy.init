@@ -14,7 +14,7 @@
 NAME="git-auto-deploy"
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="GitAutodeploy"
-DAEMON="/usr/bin/git-auto-deploy"
+DAEMON=$(which $NAME)
 DAEMON_UID="git-auto-deploy"
 DAEMON_GID="git-auto-deploy"
 RUNDIR=/var/run/$NAME
@@ -24,7 +24,7 @@ OPTIONS="--daemon-mode --pid-file $PIDFILE --config /etc/$NAME.conf.json"
 SCRIPTNAME="/etc/init.d/$NAME"
 
 # Exit if the package is not installed
-#[ -x $DAEMON ] || echo "$name is not installed" && exit 0
+#[ -x $DAEMON ] || echo "$NAME is not installed" && exit 0
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh

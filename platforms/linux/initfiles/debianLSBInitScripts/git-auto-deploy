@@ -20,12 +20,12 @@ DAEMON_GID=root
 RUNDIR=/var/run/$NAME
 PIDFILE=/var/run/$NAME.pid
 PWD=/opt/Git-Auto-Deploy/
-OPTIONS="--daemon-mode --quiet --pid-file /var/run/gitautodeploy.pid --log-file /var/log/gitautodeploy.log"
+OPTIONS="--daemon-mode --quiet --pid-file /var/run/git-auto-deploy.pid --log-file /var/log/git-auto-deploy.log"
 USER=root
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
-[ -x $DAEMON ] || exit 0
+#[ -x $DAEMON ] || echo "$NAME is not installed" && exit 0
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
