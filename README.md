@@ -65,26 +65,24 @@ Command line option    | Environment variable | Config attribute | Description
 --host <host>          | GAD_HOST             | host             | Address to bind to
 --port <port>          | GAD_PORT             | port             | Port to bind to
 
-## Getting webhooks from GitHub, GitLab or Bitbucket
+## Getting webhooks from git
 To make your git provider send notifications to ```Git-Auto-Deploy``` you will need to provide the hostname and port for your ```Git-Auto-Deploy``` instance. Instructions for the most common git providers is listed below.
 
 **GitHub**
-* Go to your repository -> Settings -> Webhooks and Services -> Add webhook</li>
-* In "Payload URL", enter your hostname and port (your-host:8001)
-* Hit "Add webhook"
+1. Go to your repository -> Settings -> Webhooks and Services -> Add webhook</li>
+2. In "Payload URL", enter your hostname and port (your-host:8001)
+3. Hit "Add webhook"
 
 **GitLab**
-* Go to your repository -> Settings -> Web hooks
-* In "URL", enter your hostname and port (your-host:8001)
-* Hit "Add Web Hook"
+1. Go to your repository -> Settings -> Web hooks
+2. In "URL", enter your hostname and port (your-host:8001)
+3. Hit "Add Web Hook"
 
 **Bitbucket**
-* Go to your repository -> Settings -> Webhooks -> Add webhook
-* In "URL", enter your hostname and port (your-host:8001)
-* Hit "Save"
+1. Go to your repository -> Settings -> Webhooks -> Add webhook
+2. In "URL", enter your hostname and port (your-host:8001)
+3. Hit "Save"
 
-# Read more
+# More documentation
 
-## Continuous Delivery via Pull requests (GitHub only)
-
-It's possible to configure Git-Auto-Deploy to trigger when pull requests are opened or closed on GitHub. To read more about this workflow and how to configure Git-Aut-Deploy here: [Continuous Delivery via Pull requests](./docs/Continuous Delivery via Pull requests.md)
+[Have a look in the *docs* directory](./docs), where you'll find more detailed documentation on configurations, alternative installation methods and example workflows.
