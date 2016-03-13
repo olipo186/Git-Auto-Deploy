@@ -4,7 +4,7 @@
 
 Install using [pip](http://www.pip-installer.org/en/latest/), a package manager for Python, by running the following command.
 
-    pip install pip install --upgrade https://github.com/olipo186/Git-Auto-Deploy/archive/master.tar.gz
+    pip install git-auto-deploy
 
 If you don't have pip installed, try installing it by running this from the command
 line:
