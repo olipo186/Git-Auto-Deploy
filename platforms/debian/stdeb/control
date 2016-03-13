@@ -1,0 +1,17 @@
+Source: git-auto-deploy
+Maintainer: Oliver Poignant <oliver@poignant.se>
+Section: python
+Priority: optional
+Build-Depends: python-all (>= 2.6.6-3), debhelper (>= 7)
+Standards-Version: 3.9.1
+
+
+
+Package: git-auto-deploy
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: Deploy your GitHub, GitLab or Bitbucket projects automatical
+ GitAutoDeploy consists of a HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. This application allows you to continuously and automatically deploy you projects each time you push new commits to your repository.
+
+
+

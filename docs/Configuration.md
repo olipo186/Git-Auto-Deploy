@@ -1,5 +1,25 @@
-# Configuration
-The configuration file is formatted in `JSON`. The possible root elements are 
+# Command line options and environment variables
+
+```Git-Auto-Deploy``` supports a number of configurable options. Some of them are available using command line options, where others are only configurable from the config file. Below is a list of the options made available from the command line. Every command line option has also a corresponding environemnt variable. In the cases where a corresponding config file attribute is available, that attribute name is listed.
+
+There is also support for supplying configuration options for up to one repository using environmetn variables. Variable names and descriptios are available in the section (Repository configuration using environment variables)[#eepository-configuration-using-environment-variables].
+
+The list of available command line options can also be seen by invoke the application with the argument ```--help```.
+
+Command line option    | Environment variable | Config attribute | Description
+---------------------- | -------------------- | ---------------- | --------------------------
+--daemon-mode (-d)     | GAD_DAEMON_MODE      |                  | Run in background (daemon mode)
+--quiet (-q)           | GAD_QUIET            |                  | Supress console output
+--config (-c) <path>   | GAD_CONFIG           |                  | Custom configuration file
+--pid-file <path>      | GAD_PID_FILE         | pidfilepath      | Specify a custom pid file
+--log-file <path>      | GAD_LOG_FILE         | logfilepath      | Specify a log file
+--host <host>          | GAD_HOST             | host             | Address to bind to
+--port <port>          | GAD_PORT             | port             | Port to bind to
+--force                | GAD_FORCE            |                  | Kill any process using the configured port
+--ssh-keygen           | GAD_SSH_KEYGEN       |                  | Scan repository hosts for ssh keys
+
+# Configuration file options
+The configuration file is formatted according to a `JSON` inspired format, with the additional feature of supporting inline comments. The possible root elements are 
 as follow:
 
  - **pidfilepath**: The path where `pid` files are kept.
@@ -130,3 +150,15 @@ Execute script upon GitLab CI successful build of `master` branch.
   ]
 }
 ```
+
+# Repository configuration using environment variables
+
+It's possible to configure up to one repository using environment variables. This can be useful in some specific use cases where a full config file is undesired.
+
+Environment variable | Description
+-------------------- | --------------------------
+GAD_REPO_URL         | Repository URL
+GAD_REPO_BRANCH      |
+GAD_REPO_REMOTE      |
+GAD_REPO_PATH        | Path to where ```Git-Auto-Deploy``` should clone and pull repository
+GAD_REPO_DEPLOY      | Deploy command

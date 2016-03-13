@@ -64,3 +64,8 @@ GitAutoDeploy.conf.json
 .DS_Store
 ._.DS_Store
 .fuse*
+
+# Ignore
+deb_dist
+*.tar.gz
+MANIFEST

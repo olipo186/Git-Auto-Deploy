@@ -11,21 +11,20 @@
 
 # Author: JA Nache <nache.nache@gmail.com>
 
-NAME=gitautodeploy
+NAME="git-auto-deploy"
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="GitAutodeploy"
-DAEMON=/opt/Git-Auto-Deploy/GitAutoDeploy.py
-DAEMON_UID=root
-DAEMON_GID=root
+DAEMON=$(which $NAME)
+DAEMON_UID="git-auto-deploy"
+DAEMON_GID="git-auto-deploy"
 RUNDIR=/var/run/$NAME
-PIDFILE=/var/run/$NAME.pid
-PWD=/opt/Git-Auto-Deploy/
-OPTIONS="--daemon-mode"
-USER=root
-SCRIPTNAME=/etc/init.d/$NAME
+PIDFILE=/var/run/$NAME/$NAME.pid
+#PWD=/opt/Git-Auto-Deploy/
+OPTIONS="--daemon-mode --pid-file $PIDFILE --config /etc/$NAME.conf.json"
+SCRIPTNAME="/etc/init.d/$NAME"
 
 # Exit if the package is not installed
-[ -x $DAEMON ] || exit 0
+#[ -x $DAEMON ] || echo "$NAME is not installed" && exit 0
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
@@ -54,6 +53,7 @@ check_start_daemon() {
 #
 do_start()
 {
+    echo "Starting.."
 	# Return
 	#   0 if daemon has been started
 	#   1 if daemon was already running
@@ -68,10 +68,10 @@ do_start()
 		chmod g-w,o-rwx $RUNDIR
 	fi
 
-	start-stop-daemon --start --quiet --chdir $PWD --pidfile $PIDFILE --startas $DAEMON \
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --startas $DAEMON \
 		--name $NAME --test > /dev/null \
 		|| return 1
-	start-stop-daemon --start --quiet --chdir $PWD --pidfile $PIDFILE --startas $DAEMON \
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --startas $DAEMON \
 		--name $NAME --umask 0027 --chuid $DAEMON_UID:$DAEMON_GID -- $OPTIONS \
 		|| return 2
 }
@@ -81,6 +81,7 @@ do_start()
 #
 do_stop()
 {
+    echo "Stopping.."
 	# Return
 	#   0 if daemon has been stopped
 	#   1 if daemon was already stopped
@@ -94,6 +95,7 @@ do_stop()
 #
 do_reload()
 {
+    echo "Reloading.."
 	start-stop-daemon --stop -s 1 --pidfile $PIDFILE
 }
 
