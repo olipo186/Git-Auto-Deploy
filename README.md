@@ -20,8 +20,11 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
       * [Running the application](#running-the-application)
       * [Start automatically on boot using crontab](#start-automatically-on-boot)
     * [Alternative installation methods](#alternative-installation-methods)
+      * [Install as a python module (experimental)](./docs/Install as a python module.md)
+      * [Install as a debian package (experimental)](./docs/Install as a debian package.md)
+      * [Start automatically on boot (init.d and systemd)](./docs/Start automatically on boot.md)
     * [Command line options](#command-line-options)
-    * [Configuring external services](#configuring-external-services)
+    * [Getting webhooks from git](#getting-webhooks-from-git)
       * [GitHub](#github)
       * [GitLab](#gitlab)
       * [BitBucket](#bitbucket)
@@ -57,12 +60,13 @@ The easiest way to configure your system to automatically start ```Git-Auto-Depl
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
-*Tip:* You can also configure ```Git-Auto-Deploy``` to start automatically using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about other starting automatically using init.d or systemd](./docs/Start automatically on boot.md)
+*Tip:* You can also configure ```Git-Auto-Deploy``` to start automatically using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
 
 ## Alternative installation methods
 
 * [Install as a python module (experimental)](./docs/Install as a python module.md)
 * [Install as a debian package (experimental)](./docs/Install as a debian package.md)
+* [Start automatically on boot (init.d and systemd)](./docs/Start automatically on boot.md)
 
 ## Command line options
 
@@ -78,7 +82,7 @@ Command line option    | Environment variable | Config attribute | Description
 --host <host>          | GAD_HOST             | host             | Address to bind to
 --port <port>          | GAD_PORT             | port             | Port to bind to
 
-## Configuring external services
+## Getting webhooks from git
 To make your git provider send notifications to ```Git-Auto-Deploy``` you will need to provide the hostname and port for your ```Git-Auto-Deploy``` instance. Instructions for the most common git providers is listed below.
 
 ### GitHub
