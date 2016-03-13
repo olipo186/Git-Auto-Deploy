@@ -171,7 +171,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         from threading import Timer
 
         # Extract repository URL(s) from incoming request body
-        repo_urls, ref, action = self.get_repo_params_from_request()
+        repo_urls, ref, action, data = self.get_repo_params_from_request()
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
@@ -179,7 +179,8 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Wait one second before we do git pull (why?)
         Timer(1.0, GitAutoDeploy.process_repo_urls, (repo_urls,
                                                      ref,
-                                                     action)).start()
+                                                     action, 
+                                                     data)).start()
 
     def log_message(self, format, *args):
         """Overloads the default message logging method to allow messages to
@@ -320,7 +321,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             logger.error("ERROR - Unable to recognize request origin. Don't know how to handle the request.")
 
         logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
-        return repo_urls, ref or "master", action
+        return repo_urls, ref or "master", action, data
 
 
 # Used to describe when a filter does not match a request
@@ -394,7 +395,7 @@ class GitAutoDeploy(object):
         return mpid
 
     @staticmethod
-    def process_repo_urls(urls, ref, action):
+    def process_repo_urls(urls, ref, action, data):
         import os
         import time
         import logging
@@ -413,36 +414,23 @@ class GitAutoDeploy(object):
             try:
                 # Verify that all filters matches the request (if any filters are specified)
                 if 'filters' in repo_config:
+                    filter_matched = True;
+
+                    # at least one filter must match
                     for filter in repo_config['filters']:
 
-                        # Filter with both action and ref?
-                        if 'action' in filter and 'ref' in filter:
-
-                            if filter['action'] == action and filter['ref'] == ref:
-                                # This filter is a match, OK to proceed
+                        # all options specified in the filter must match
+                        for filter_key, filter_value in filter.iteritems():
+                            # support for earlier version so it's non-breaking functionality.
+                            if filter_key == 'action' and filter_value == action:
                                 continue
 
-                            raise FilterMatchError()
-
-                        # Filter with only action?
-                        if 'action' in filter:
-
-                            if filter['action'] == action:
-                                # This filter is a match, OK to proceed
+                            if filter_key not in data or filter_value != data[filter_key]:
+                                filter_matched = False
                                 continue
 
-                            raise FilterMatchError()
-
-                        # Filter with only ref?
-                        if 'ref' in filter:
-
-                            if filter['ref'] == ref:
-                                # This filter is a match, OK to proceed
-                                continue
-
-                            raise FilterMatchError()
-
-                        # Filter does not match, do not process this repo config
+                    if not filter_matched:
+                        logger.info ("No filter matched")
                         raise FilterMatchError()
 
             except FilterMatchError as e:
