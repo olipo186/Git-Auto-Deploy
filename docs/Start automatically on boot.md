@@ -24,6 +24,11 @@ Now you need to add the correct symbolic link to your specific runlevel dir to g
 
     update-rc.d git-auto-deploy defaults
 
+Fire it up and verify;
+
+    service git-auto-deploy start
+    service git-auto-deploy status
+
 ## Systemd
 
 Copy the sample systemd service file ```git-auto-deploy.service``` into ```/etc/systemd/system```;
