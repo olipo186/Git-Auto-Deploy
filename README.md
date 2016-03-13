@@ -10,12 +10,8 @@ When commits are pushed to your Git repository, the Git server will notify ```Gi
 
 Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command upon each successful ```git pull```, which can be used to trigger custom build actions or test scripts.</p>
 
-Table of contents
-=================
+# Getting started
 
-  * [What is it?](#what-is-it)
-  * [How does it work?](#how-does-it-work)
-  * [Table of contents](#table-of-contents)
   * [Getting started](#getting-started)
     * [Dependencies](#dependencies)
     * [Install from repository (recommended)](#install-from-repository-recommended)
@@ -29,8 +25,6 @@ Table of contents
       * [GitHub](#github)
       * [GitLab](#gitlab)
       * [BitBucket](#bitbucket)
-
-# Getting started
 
 ## Dependencies
 * Git (tested on version 2.5.0)
