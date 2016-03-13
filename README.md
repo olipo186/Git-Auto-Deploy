@@ -23,14 +23,12 @@ Table of contents
       * [Configuration](#configuration)
       * [Running the application](#running-the-application)
       * [Starting automatically on boot using crontab](#starting-automatically-on-boot-using-crontab)
+    * [Alternative installation methods](#alternative-installation-methods)
     * [Command line options](#command-line-options)
     * [Configuring external services](#configuring-external-services)
       * [GitHub](#github)
       * [GitLab](#gitlab)
       * [BitBucket](#bitbucket)
-  * [Alternative installation methods](#alternative-installation-methods)
-    * [Install as a python module (experimental)](#install-as-a-python-module-experimental)
-    * [Install as a debian package (experimental)](#install-as-a-debian-package-experimental)
 
 # Getting started
 
@@ -65,6 +63,11 @@ The easiest way to configure your system to automatically start ```Git-Auto-Depl
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
+## Alternative installation methods
+
+* [Install as a python module (experimental)](./docs/Install as a python module.md)
+* [Install as a debian package (experimental)](./docs/Install as a debian package.md)
+
 ## Command line options
 
 Below is a summarized list of the most common command line options. For a full list of available command line options, invoke the application with the argument ```--help``` or read the documentation article about [all avaialble command line options, environment variables and config attributes](./docs/Configuration.md).
@@ -96,61 +99,6 @@ To make your git provider send notifications to ```Git-Auto-Deploy``` you will n
 * Go to your repository -> Settings -> Webhooks -> Add webhook
 * In "URL", enter your hostname and port (your-host:8001)
 * Hit "Save"
-
-# Alternative installation methods
-
-## Install as a python module (experimental)
-
-### Download and install
-
-Install using [pip](http://www.pip-installer.org/en/latest/), a package manager for Python, by running the following command.
-
-    pip install pip install --upgrade https://github.com/olipo186/Git-Auto-Deploy/archive/master.tar.gz
-
-If you don't have pip installed, try installing it by running this from the command
-line:
-
-    curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
-
-Or, you can [download the source code
-(ZIP)](https://github.com/olipo186/Git-Auto-Deploy/zipball/master "Git-Auto-Deploy
-source code") for `Git-Auto-Deploy` and then run:
-
-    python setup.py install
-
-You may need to run the above commands with `sudo`.
-
-Once ```Git-Auto-Deploy``` has been installed as a python module, it can be started using the executable ```git-auto-deploy```. During installation with pip, the executable is usually installed in ```/usr/local/bin/git-auto-deploy```. This can vary depending on platform.
-
-### Configuration
-
-Copy the content of [config.json.sample](./config.json.sample) and save it anywhere you like, for example ```~/git-auto-deploy.conf.json```. Modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
- [](./docs/Configuration.md)
-
-### Running the application
-
-Run the application using the executable ```git-auto-deploy``` which has been provided by pip. Provide the path to your configuration file as a command line argument.
- referencing the ```gitautodeploy``` module (the directory ```Git-Auto-Deploy/gitautodeploy```).
-
-    git-auto-deploy --config ~/git-auto-deploy.conf.json
-
-### Start automatically on boot
-
-#### Using crontab
-
-The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is using crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
-
-When installing with pip, the executable ```git-auto-deploy``` is usually installed in ```/usr/local/bin/git-auto-deploy```. It is a good idea to verify the path to ```git-auto-deploy``` before adding the entry below.
-
-    @reboot /usr/local/bin/git-auto-deploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
-
-## Installation as a debian package (experimental)
-
-### Download and install
-
-### Configuration
-
-### Running the application
 
 # Start automatically on boot
 
