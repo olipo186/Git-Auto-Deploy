@@ -11,7 +11,7 @@
 
 # Author: JA Nache <nache.nache@gmail.com>
 
-NAME=gitautodeploy
+NAME="git-auto-deploy"
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="GitAutodeploy"
 DAEMON="/usr/bin/env python /opt/Git-Auto-Deploy/gitautodeploy"

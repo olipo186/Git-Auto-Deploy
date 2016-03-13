@@ -18,7 +18,7 @@ Copy the sample init script into ```/etc/init.d/``` and make it executable.
     cp platforms/linux/initfiles/debianLSBInitScripts/git-auto-deploy /etc/init.d/
     chmod 755 /etc/init.d/git-auto-deploy
 
-The init script assumes that you have ```Git-Auto-Deploy``` installed in ```/opt/Git-Auto-Deploy/``` and that the ```pidfilepath``` config option is set to ```/var/run/git-auto-deploy.pid```. If this is not the case, edit the ```git-auto-deploy``` init script and modify ```DAEMON```, ```PWD``` and ```PIDFILE```.
+**Important:** The init script assumes that you have ```Git-Auto-Deploy``` installed in ```/opt/Git-Auto-Deploy/``` and that the ```pidfilepath``` config option is set to ```/var/run/git-auto-deploy.pid```. If this is not the case, edit the ```git-auto-deploy``` init script and modify ```DAEMON```, ```PWD``` and ```PIDFILE```.
 
 Now you need to add the correct symbolic link to your specific runlevel dir to get the script executed on each start up. On Debian_Sys-V just do;
 
@@ -41,7 +41,7 @@ Now, reload daemons and fire ut up;
     systemctl daemon-reload
     systemctl start git-auto-deploy
 
-Make is start automaticallt on system boot
+Make is start automatically on system boot;
 
     systemctl enable gitautodeploy
     
