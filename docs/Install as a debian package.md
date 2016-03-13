@@ -1,4 +1,4 @@
-## Installation as a debian package (experimental)
+## Install as a debian package (experimental)
 
 ### Download and install
 
