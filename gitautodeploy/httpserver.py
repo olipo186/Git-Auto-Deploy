@@ -53,7 +53,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Wait one second before we do git pull (why?)
         Timer(1.0, self.process_repositories, (repo_configs,
                                                ref,
-                                               action)).start()
+                                               action, request_body)).start()
 
     def log_message(self, format, *args):
         """Overloads the default message logging method to allow messages to
@@ -112,7 +112,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         return
 
 
-    def process_repositories(self, repo_configs, ref, action):
+    def process_repositories(self, repo_configs, ref, action, request_body):
         import os
         import time
         import logging
@@ -120,48 +120,32 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         from lock import Lock
         
         logger = logging.getLogger()
+        data = json.loads(request_body)
 
         # Process each matching repository
         for repo_config in repo_configs:
 
             try:
-                # Verify that all filters matches the request if specified
+                # Verify that all filters matches the request (if any filters are specified)
                 if 'filters' in repo_config:
+
+                    # at least one filter must match
                     for filter in repo_config['filters']:
 
-                        # Filter with both action and ref?
-                        if 'action' in filter and 'ref' in filter:
+                        # all options specified in the filter must match
+                        for filter_key, filter_value in filter.iteritems():
 
-                            if filter['action'] == action and filter['ref'] == ref:
-                                # This filter is a match, OK to proceed
+                            # support for earlier version so it's non-breaking functionality
+                            if filter_key == 'action' and filter_value == action:
                                 continue
 
-                            raise FilterMatchError()
-
-                        # Filter with only action?
-                        if 'action' in filter:
-
-                            if filter['action'] == action:
-                                # This filter is a match, OK to proceed
-                                continue
-
-                            raise FilterMatchError()
-
-                        # Filter with only ref?
-                        if 'ref' in filter:
-
-                            if filter['ref'] == ref:
-                                # This filter is a match, OK to proceed
-                                continue
-
-                            raise FilterMatchError()
-
-                        # Filter does not match, do not process this repo config
-                        raise FilterMatchError()
+                            if filter_key not in data or filter_value != data[filter_key]:
+                                raise FilterMatchError()
 
             except FilterMatchError as e:
+
+                # Filter does not match, do not process this repo config
                 continue
-            
             
             # In case there is no path configured for the repository, no pull will
             # be made.
