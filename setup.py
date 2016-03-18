@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='git-auto-deploy',
-      version='0.2.0',
+      version='0.2.1',
       url='https://github.com/olipo186/Git-Auto-Deploy',
       author='Oliver Poignant',
       author_email='oliver@poignant.se',
