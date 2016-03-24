@@ -9,3 +9,6 @@ python setup.py --command-packages=stdeb.command sdist_dsc bdist_deb
 
 # Debianize
 python setup.py --command-packages=stdeb.command debianize
+
+# deb source
+add-apt-repository ppa:olipo186/git-auto-deploy

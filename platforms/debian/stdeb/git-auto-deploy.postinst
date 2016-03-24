@@ -14,9 +14,9 @@ addgroup --system $GAD_GID
 adduser $GAD_UID $GAD_GID
 
 # Create config dir
-mkdir -p $CONF_DIR
-chown -R $GAD_UID:$GAD_GID $CONF_DIR
-chmod 750 $CONF_DIR
+#mkdir -p $CONF_DIR
+#chown -R $GAD_UID:$GAD_GID $CONF_DIR
+#chmod 750 $CONF_DIR
 
 # Create log file
 touch /var/log/$NAME.log
