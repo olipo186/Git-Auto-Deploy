@@ -14,14 +14,12 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
 
 ## Install from repository (recommended)
 
-Before installing ```Git-Auto-Deploy```, make sure Python (tested on version 2.7) and Git (tested on version 2.5.0) is installed on your system.
+When installing ```Git-Auto-Deploy``` from the repository, you'll need to make sure that Python (tested on version 2.7) and Git (tested on version 2.5.0) is installed on your system.
 
-### Download and install
+Clone the repository and go into the repository root
 
     git clone https://github.com/olipo186/Git-Auto-Deploy.git
     cd Git-Auto-Deploy
-
-### Configuration
 
 Make a copy of the sample configuration file and modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
 
@@ -29,15 +27,11 @@ Make a copy of the sample configuration file and modify it to match your project
 
 *Tip:* Make sure that the path specified in ```pidfilepath``` is writable for the user running the script, as well as any other path configured for your repositories.
 
-### Running the application
-
 Run the application my invoking ```python``` and referencing the ```gitautodeploy``` module (the directory ```Git-Auto-Deploy/gitautodeploy```).
 
     python gitautodeploy
 
-### Start automatically on boot
-
-The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is using crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
+To start ```Git-Auto-Deploy``` automatically after a reboot, you can use crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
