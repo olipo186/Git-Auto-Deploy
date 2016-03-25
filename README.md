@@ -18,16 +18,16 @@ You can install ```Git-Auto-Deploy``` in multiple ways. Below are instructions f
 
 When installing ```Git-Auto-Deploy``` from the repository, you'll need to make sure that Python (tested on version 2.7) and Git (tested on version 2.5.0) is installed on your system.
 
-First, clone the repository and go into the root.
+Clone the repository.
 
     git clone https://github.com/olipo186/Git-Auto-Deploy.git
+
+Copy of the sample config and modify it. [Read more about the configuration options](./docs/Configuration.md). Make sure that ```pidfilepath``` is writable for the user running the script, as well as all paths configured for your repositories.
+
     cd Git-Auto-Deploy
-
-Make a copy of the sample configuration file and modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md). Make sure that the path specified in ```pidfilepath``` is writable for the user running the script, as well as any other path configured for your repositories.
-
     cp config.json.sample config.json
 
-Run the application my invoking ```python``` and referencing the ```gitautodeploy``` module (the directory ```Git-Auto-Deploy/gitautodeploy```).
+Start ```Git-Auto-Deploy```.
 
     python gitautodeploy
 
@@ -35,7 +35,7 @@ To start ```Git-Auto-Deploy``` automatically on boot, you can use crontab. Open 
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
-*Tip:* You can also configure ```Git-Auto-Deploy``` to start automatically using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
+*Tip:* You can also configure ```Git-Auto-Deploy``` to start on boot using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
 
 ## Install from PPA (recommended for debian systems)
 
