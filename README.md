@@ -12,13 +12,13 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
 
 # Getting started
 
-```Git-Auto-Deploy``` can be installed in multiple ways. Below are instructions for the most common methods.
+You can install ```Git-Auto-Deploy``` in multiple ways. Below are instructions for the most common methods.
 
 ## Install from repository (recommended)
 
 When installing ```Git-Auto-Deploy``` from the repository, you'll need to make sure that Python (tested on version 2.7) and Git (tested on version 2.5.0) is installed on your system.
 
-Clone the repository and go into the repository root
+First, clone the repository and go into the root.
 
     git clone https://github.com/olipo186/Git-Auto-Deploy.git
     cd Git-Auto-Deploy
@@ -31,7 +31,7 @@ Run the application my invoking ```python``` and referencing the ```gitautodeplo
 
     python gitautodeploy
 
-To start ```Git-Auto-Deploy``` automatically after a reboot, you can use crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
+To start ```Git-Auto-Deploy``` automatically on boot, you can use crontab. Open crontab in edit mode using ```crontab -e``` and add the entry below.
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
@@ -39,12 +39,12 @@ To start ```Git-Auto-Deploy``` automatically after a reboot, you can use crontab
 
 ## Install from PPA (recommended for debian systems)
 
-Add our PPA repository
+Add our PPA repository.
 
     sudo add-apt-repository ppa:olipo186/git-auto-deploy
     sudo apt-get update
 
-Install ```Git-Auto-Deploy``` using apt
+Install ```Git-Auto-Deploy``` using apt.
 
     sudo apt-get install git-auto-deploy
 
@@ -52,7 +52,7 @@ Modify the configuration file to match your project setup. [Read more about the 
 
     nano /etc/git-auto-deploy.conf.json
 
-Start ```Git-Auto-Deploy``` and check it's status
+Start ```Git-Auto-Deploy``` and check it's status.
 
     service git-auto-deploy start
     service git-auto-deploy status
