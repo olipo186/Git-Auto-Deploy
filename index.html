@@ -37,25 +37,15 @@
 <a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting started</h1>
 
 <h2>
-<a id="dependencies" class="anchor" href="#dependencies" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dependencies</h2>
-
-<ul>
-<li>Git (tested on version 2.5.0)</li>
-<li>Python (tested on version 2.7)</li>
-</ul>
-
-<h2>
 <a id="install-from-repository-recommended" class="anchor" href="#install-from-repository-recommended" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install from repository (recommended)</h2>
 
-<h3>
-<a id="download-and-install" class="anchor" href="#download-and-install" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Download and install</h3>
+<p>When installing <code>Git-Auto-Deploy</code> from the repository, you'll need to make sure that Python (tested on version 2.7) and Git (tested on version 2.5.0) is installed on your system.</p>
+
+<p>Clone the repository and go into the repository root</p>
 
 <pre><code>git clone https://github.com/olipo186/Git-Auto-Deploy.git
 cd Git-Auto-Deploy
 </code></pre>
-
-<h3>
-<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h3>
 
 <p>Make a copy of the sample configuration file and modify it to match your project setup. <a href="./docs/Configuration.md">Read more about the configuration options</a>.</p>
 
@@ -64,23 +54,42 @@ cd Git-Auto-Deploy
 
 <p><em>Tip:</em> Make sure that the path specified in <code>pidfilepath</code> is writable for the user running the script, as well as any other path configured for your repositories.</p>
 
-<h3>
-<a id="running-the-application" class="anchor" href="#running-the-application" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Running the application</h3>
-
 <p>Run the application my invoking <code>python</code> and referencing the <code>gitautodeploy</code> module (the directory <code>Git-Auto-Deploy/gitautodeploy</code>).</p>
 
 <pre><code>python gitautodeploy
 </code></pre>
 
-<h3>
-<a id="start-automatically-on-boot" class="anchor" href="#start-automatically-on-boot" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Start automatically on boot</h3>
-
-<p>The easiest way to configure your system to automatically start <code>Git-Auto-Deploy</code> after a reboot is using crontab. Open crontab in edit mode using <code>crontab -e</code> and add the entry below.</p>
+<p>To start <code>Git-Auto-Deploy</code> automatically after a reboot, you can use crontab. Open crontab in edit mode using <code>crontab -e</code> and add the entry below.</p>
 
 <pre><code>@reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 </code></pre>
 
 <p><em>Tip:</em> You can also configure <code>Git-Auto-Deploy</code> to start automatically using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. <a href="./docs/Start%20automatically%20on%20boot.md">Read more about starting Git-Auto-Deploy automatically using init.d or systemd</a>.</p>
+
+<h2>
+<a id="install-from-ppa-recommended-for-debian-systems" class="anchor" href="#install-from-ppa-recommended-for-debian-systems" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install from PPA (recommended for debian systems)</h2>
+
+<p>Add our PPA repository</p>
+
+<pre><code>sudo add-apt-repository ppa:olipo186/git-auto-deploy
+sudo apt-get update
+</code></pre>
+
+<p>Install <code>Git-Auto-Deploy</code> using apt</p>
+
+<pre><code>sudo apt-get install git-auto-deploy
+</code></pre>
+
+<p>Modify the configuration file to match your project setup. <a href="./docs/Configuration.md">Read more about the configuration options</a>.</p>
+
+<pre><code>nano /etc/git-auto-deploy.conf.json
+</code></pre>
+
+<p>Start <code>Git-Auto-Deploy</code> and check it's status</p>
+
+<pre><code>service git-auto-deploy start
+service git-auto-deploy status
+</code></pre>
 
 <h2>
 <a id="alternative-installation-methods" class="anchor" href="#alternative-installation-methods" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Alternative installation methods</h2>
