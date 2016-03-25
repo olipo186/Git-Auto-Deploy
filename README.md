@@ -12,6 +12,8 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
 
 # Getting started
 
+```Git-Auto-Deploy``` can be installed in multiple ways. Below are instructions for the most common methods.
+
 ## Install from repository (recommended)
 
 When installing ```Git-Auto-Deploy``` from the repository, you'll need to make sure that Python (tested on version 2.7) and Git (tested on version 2.5.0) is installed on your system.
@@ -21,11 +23,9 @@ Clone the repository and go into the repository root
     git clone https://github.com/olipo186/Git-Auto-Deploy.git
     cd Git-Auto-Deploy
 
-Make a copy of the sample configuration file and modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
+Make a copy of the sample configuration file and modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md). Make sure that the path specified in ```pidfilepath``` is writable for the user running the script, as well as any other path configured for your repositories.
 
     cp config.json.sample config.json
-
-*Tip:* Make sure that the path specified in ```pidfilepath``` is writable for the user running the script, as well as any other path configured for your repositories.
 
 Run the application my invoking ```python``` and referencing the ```gitautodeploy``` module (the directory ```Git-Auto-Deploy/gitautodeploy```).
 
