@@ -27,7 +27,7 @@ Copy of the sample config and modify it. [Read more about the configuration opti
     cd Git-Auto-Deploy
     cp config.json.sample config.json
 
-Start ```Git-Auto-Deploy```.
+Start ```Git-Auto-Deploy``` manually using;
 
     python gitautodeploy
 
@@ -35,7 +35,7 @@ To start ```Git-Auto-Deploy``` automatically on boot, open crontab in edit mode 
 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
-*Tip:* You can also configure ```Git-Auto-Deploy``` to start on boot using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
+You can also configure ```Git-Auto-Deploy``` to start on boot using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
 
 ## Install from PPA (recommended for debian systems)
 
