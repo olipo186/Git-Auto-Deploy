@@ -29,7 +29,7 @@ Copy of the sample config and modify it. [Read more about the configuration opti
 
 Start ```Git-Auto-Deploy``` manually using;
 
-    python gitautodeploy
+    python gitautodeploy --config config.json
 
 To start ```Git-Auto-Deploy``` automatically on boot, open crontab in edit mode using ```crontab -e``` and add the entry below.
 
