@@ -23,8 +23,7 @@ Once ```Git-Auto-Deploy``` has been installed as a python module, it can be star
 
 ## Configuration
 
-Copy the content of [config.json.sample](./config.json.sample) and save it anywhere you like, for example ```~/git-auto-deploy.conf.json```. Modify it to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
- [](./docs/Configuration.md)
+Copy the content of [config.json.sample](../config.json.sample) and save it anywhere you like, for example ```~/git-auto-deploy.conf.json```. Modify it to match your project setup. [Read more about the configuration options](../docs/Configuration.md).
 
 ## Running the application
 

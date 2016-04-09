@@ -375,6 +375,8 @@ class GitAutoDeploy(object):
         default_config_value = 'GAD_CONFIG' in os.environ and os.environ['GAD_CONFIG'] or None
         default_ssh_keygen_value = 'GAD_SSH_KEYGEN' in os.environ or False
         default_force_value = 'GAD_FORCE' in os.environ or False
+        default_use_ssl = 'GAD_SSL' in os.environ or False
+        default_ssl_pem_file_path = 'GAD_SSL_PEM_FILE' in os.environ and os.environ['GAD_SSL_PEM_FILE'] or '~/.gitautodeploy.pem'
         default_pid_file_value = 'GAD_PID_FILE' in os.environ and os.environ['GAD_PID_FILE'] or '~/.gitautodeploy.pid'
         default_log_file_value = 'GAD_LOG_FILE' in os.environ and os.environ['GAD_LOG_FILE'] or None
         default_host_value = 'GAD_HOST' in os.environ and os.environ['GAD_HOST'] or '0.0.0.0'
@@ -426,6 +428,16 @@ class GitAutoDeploy(object):
                             help="port to bind to",
                             default=default_port_value,
                             type=int)
+
+        parser.add_argument("--ssl",
+                            help="use ssl",
+                            default=default_use_ssl,
+                            action="store_true")
+
+        parser.add_argument("--ssl-pem",
+                            help="path to ssl pem file",
+                            default=default_ssl_pem_file_path,
+                            type=str)
 
         args = parser.parse_args()
 
@@ -503,7 +515,7 @@ class GitAutoDeploy(object):
         # to file and console depending on user preference)
         sys.stdout = LogInterface(logger.info)
         sys.stderr = LogInterface(logger.error)
-        
+
         if args.daemon_mode:
             logger.info('Starting Git Auto Deploy in daemon mode')
             GitAutoDeploy.create_daemon()
@@ -525,6 +537,12 @@ class GitAutoDeploy(object):
             self._server = HTTPServer((self._config['host'],
                                        self._config['port']),
                                       WebhookRequestHandler)
+            if args.ssl:
+                import ssl
+                logger.info("enabling ssl")
+                self._server.socket = ssl.wrap_socket(self._server.socket,
+                                                      certfile=os.path.expanduser(args.ssl_pem),
+                                                      server_side=True)
             sa = self._server.socket.getsockname()
             logger.info("Listening on %s port %s", sa[0], sa[1])
             self._server.serve_forever()

@@ -118,6 +118,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         import logging
         from wrappers import GitWrapper
         from lock import Lock
+        import json
         
         logger = logging.getLogger()
         data = json.loads(request_body)
