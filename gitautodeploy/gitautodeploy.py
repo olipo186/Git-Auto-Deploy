@@ -410,22 +410,22 @@ class GitAutoDeploy(object):
 
         parser.add_argument("--pid-file",
                             help="specify a custom pid file",
-                            default=default_pid_file_value,
+                            #default=default_pid_file_value,
                             type=str)
 
         parser.add_argument("--log-file",
                             help="specify a log file",
-                            default=default_log_file_value,
+                            #default=default_log_file_value,
                             type=str)
 
         parser.add_argument("--host",
                             help="address to bind to",
-                            default=default_host_value,
+                            #default=default_host_value,
                             type=str)
 
         parser.add_argument("--port",
                             help="port to bind to",
-                            default=default_port_value,
+                            #default=default_port_value,
                             type=int)
 
         parser.add_argument("--ssl",
@@ -472,19 +472,29 @@ class GitAutoDeploy(object):
             logger.info('No configuration file found or specified. Using default values.')
             config_data = {}
 
-        # Configuration options coming from environment or command line will
-        # override those coming from config file
+        # Pid file config
         if args.pid_file:
             config_data['pidfilepath'] = args.pid_file
+        elif not 'pidfilepath' in config_data:
+            config_data['pidfilepath'] = default_pid_file_value
 
+        # Log file config
         if args.log_file:
             config_data['logfilepath'] = args.log_file
+        elif not 'logfilepath' in config_data:
+            config_data['logfilepath'] = default_log_file_value
 
-        if args.host:
-            config_data['host'] = args.host
-
+        # Port config
         if args.port:
             config_data['port'] = args.port
+        elif not 'port' in config_data:
+            config_data['port'] = default_port_value
+
+        # Host config
+        if args.host:
+            config_data['host'] = args.host
+        elif not 'host' in config_data:
+            config_data['host'] = default_host_value
 
         # Extend config data with any repository defined by environment variables
         config_data = self.read_repo_config_from_environment(config_data)
