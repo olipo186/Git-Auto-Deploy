@@ -37,7 +37,7 @@ class GitLabRequestParser(WebhookRequestParser):
         # Get a list of configured repositories that matches the incoming web hook reqeust
         repo_configs = self.get_matching_repo_configs(repo_urls)
 
-        return repo_configs, ref or "master", action
+        return repo_configs, ref or "master", action, repo_urls
 
 
 class GitLabCIRequestParser(WebhookRequestParser):
@@ -71,4 +71,4 @@ class GitLabCIRequestParser(WebhookRequestParser):
         # Get a list of configured repositories that matches the incoming web hook reqeust
         repo_configs = self.get_matching_repo_configs(repo_urls)
 
-        return repo_configs, ref or "master", action
+        return repo_configs, ref or "master", action, repo_urls

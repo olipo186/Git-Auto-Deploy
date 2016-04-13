@@ -37,7 +37,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             return
 
         # Could be GitHubParser, GitLabParser or other
-        repo_configs, ref, action = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
+        repo_configs, ref, action, repo_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
 
         logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
 
