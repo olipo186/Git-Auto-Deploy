@@ -19,8 +19,9 @@ DAEMON_UID=root
 DAEMON_GID=root
 RUNDIR=/var/run/$NAME
 PIDFILE=/var/run/$NAME.pid
+LOGFILE=/var/log/$NAME.log
 PWD=/opt/Git-Auto-Deploy/
-OPTIONS="--daemon-mode --quiet --pid-file /var/run/git-auto-deploy.pid --log-file /var/log/git-auto-deploy.log"
+OPTIONS="--daemon-mode --quiet --pid-file $PIDFILE --log-file $LOGFILE"
 USER=root
 SCRIPTNAME=/etc/init.d/$NAME
 
