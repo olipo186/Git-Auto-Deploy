@@ -8,8 +8,11 @@ prefix = /opt/Git-Auto-Deploy/
 
 PYTHON       ?= python2
 
-# Default debian dist (override using make <target> DIST=<debian dist>)
-DIST=trusty
+# Debian distos to create packages for
+DISTROS= \
+    xenial \
+    trusty \
+	precise
 
 # Package name and version
 PACKAGE_NAME=$(shell python setup.py --name)
@@ -43,25 +46,37 @@ clean-deb:
 
 # Usage: make deb-source [DIST=<debian dist>]
 deb-source: clean-deb
-	# Make a debian source package using stdeb
-	python setup.py --command-packages=stdeb.command sdist_dsc -x platforms/debian/stdeb.cfg --dist-dir dist/deb --debian-version $(DIST) --suite $(DIST)
-	# Copy debian package config files
-	cp -vr platforms/debian/stdeb/* dist/deb/$(PACKAGE_NAME)-$(PACKAGE_VERSION)/debian/
+	@- $(foreach DIST,$(DISTROS), \
+		echo "Creating deb source package for dist $(DIST)" ; \
+		echo "Make a debian source package using stdeb" ; \
+		python setup.py --command-packages=stdeb.command sdist_dsc -x platforms/debian/stdeb.cfg --dist-dir dist/deb --debian-version $(DIST) --suite $(DIST) --upstream-version-suffix "~$(DIST)" ; \
+		echo "Copy debian package config files" ; \
+		cp -vr platforms/debian/stdeb/* dist/deb/$(PACKAGE_NAME)-$(PACKAGE_VERSION)~$(DIST)/debian/ ; \
+	)
 
 deb: clean-deb deb-source
-	# Build .deb package (without signing)
-	cd dist/deb/$(PACKAGE_NAME)-$(PACKAGE_VERSION); \
-	dpkg-buildpackage -rfakeroot -uc -us
+	@- $(foreach DIST,$(DISTROS), \
+		echo "Creating unsigned deb package for dist $(DIST)" ; \
+		echo "Build .deb package (without signing)" ; \
+		cd dist/deb/$(PACKAGE_NAME)-$(PACKAGE_VERSION)~$(DIST) ; \
+		dpkg-buildpackage -rfakeroot -uc -us ; \
+		cd ../../../ ; \
+	)
 
 signed-deb: clean-deb deb-source
-	# Build .deb package (signed)
-	cd dist/deb/$(PACKAGE_NAME)-$(PACKAGE_VERSION); \
-	debuild -S -sa
+	@- $(foreach DIST,$(DISTROS), \
+		echo "Creating signed deb package for dist $(DIST)" ; \
+		echo "Build .deb package (signed)" ; \
+		cd dist/deb/$(PACKAGE_NAME)-$(PACKAGE_VERSION)~$(DIST) ; \
+		debuild -S -sa ; \
+		cd ../../../ ; \
+	)
 
 upload-deb: clean-deb signed-deb
-	# Upload signed debian package to ppa
-	#cd dist/deb/$(PACKAGE_NAME)-$(PACKAGE_VERSION); \
-	dput ppa:olipo186/$(PACKAGE_NAME) dist/deb/$(PACKAGE_NAME)_$(PACKAGE_VERSION)-$(DIST)_source.changes
+	@- $(foreach DIST,$(DISTROS), \
+		echo "Upload signed debian package to ppa for dist $(DIST)" ; \
+		dput ppa:olipo186/$(PACKAGE_NAME) dist/deb/$(PACKAGE_NAME)_$(PACKAGE_VERSION)~$(DIST)-$(DIST)_source.changes ; \
+	)
 
 
 #initsystem:
