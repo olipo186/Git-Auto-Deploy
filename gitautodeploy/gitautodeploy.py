@@ -502,8 +502,8 @@ class GitAutoDeploy(object):
         # Initialize config using config file data
         self.init_config(config_data)
 
-        # Translate any ~ in the path into /home/<user>
-        if 'logfilepath' in self._config:
+        if 'logfilepath' in self._config and self._config['logfilepath']:
+            # Translate any ~ in the path into /home/<user>
             log_file_path = os.path.expanduser(self._config['logfilepath'])
             fileHandler = logging.FileHandler(log_file_path)
             fileHandler.setFormatter(logFormatter)
