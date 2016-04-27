@@ -19,8 +19,9 @@ DAEMON_UID="git-auto-deploy"
 DAEMON_GID="git-auto-deploy"
 RUNDIR=/var/run/$NAME
 PIDFILE=/var/run/$NAME/$NAME.pid
+LOGFILE=/var/log/$NAME.log
 #PWD=/opt/Git-Auto-Deploy/
-OPTIONS="--daemon-mode --pid-file $PIDFILE --config /etc/$NAME.conf.json"
+OPTIONS="--daemon-mode --pid-file $PIDFILE --log-file $LOGFILE --config /etc/$NAME.conf.json"
 SCRIPTNAME="/etc/init.d/$NAME"
 
 # Exit if the package is not installed

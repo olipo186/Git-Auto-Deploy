@@ -445,7 +445,7 @@ class GitAutoDeploy(object):
         logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
 
         # Enable console output?
-        if args.quiet:
+        if args.quiet or args.daemon_mode:
             logger.addHandler(logging.NullHandler())
         else:
             consoleHandler = logging.StreamHandler()
