@@ -15,10 +15,12 @@ class LogInterface(object):
 class GitAutoDeploy(object):
     _instance = None
     _server = None
-    _config = None
+    _config = {}
+    _port = None
+    _pid = None
 
     def __new__(cls, *args, **kwargs):
-        """Overload constructor to enable Singleton access"""
+        """Overload constructor to enable singleton access"""
         if not cls._instance:
             cls._instance = super(GitAutoDeploy, cls).__new__(
                 cls, *args, **kwargs)
@@ -31,7 +33,7 @@ class GitAutoDeploy(object):
 
         pid = GitAutoDeploy.get_pid_on_port(port)
         if pid is False:
-            logger.warning('I don\'t know the number of pid that is using my configured port')
+            logger.warning('Unable to determine what PID is using port %s' % port)
             return
 
         logger.info('Process with PID %s is using port %s' % (pid, port))
@@ -87,6 +89,9 @@ class GitAutoDeploy(object):
         from wrappers import GitWrapper
         logger = logging.getLogger()
 
+        if not 'repositories' in self._config:
+            return
+
         # Iterate over all configured repositories
         for repo_config in self._config['repositories']:
 
@@ -134,14 +139,13 @@ class GitAutoDeploy(object):
     def kill_conflicting_processes(self):
         import os
         import logging
+        import signal
         logger = logging.getLogger()
 
         pid = GitAutoDeploy.get_pid_on_port(self._config['port'])
 
         if pid is False:
-            logger.error('[KILLER MODE] I don\'t know the number of pid ' +
-                         'that is using my configured port\n[KILLER MODE] ' +
-                         'Maybe no one? Please, use --force option carefully')
+            logger.warning('No process is currently using port %s.' % self._config['port'])
             return False
 
         os.kill(pid, signal.SIGKILL)
@@ -159,14 +163,26 @@ class GitAutoDeploy(object):
 
     def remove_pid_file(self):
         import os
-        os.remove(self._config['pidfilepath'])
+        import errno
+        if 'pidfilepath' in self._config and self._config['pidfilepath']:
+            try:
+                os.remove(self._config['pidfilepath'])
+            except OSError, e:
+                if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
+                    raise
 
-    def exit(self):
+    def close(self):
         import sys
         import logging
         logger = logging.getLogger()
         logger.info('Goodbye')
         self.remove_pid_file()
+        sys.stdout = self._default_stdout
+        sys.stderr = self._default_stderr
+
+    def exit(self):
+        import sys
+        self.close()
         sys.exit(0)
 
     @staticmethod
@@ -201,8 +217,8 @@ class GitAutoDeploy(object):
 
         return 0
 
-    def run(self, config):
-        """Start an instance of GAD based on the provided config object."""
+    def setup(self, config):
+        """Setup an instance of GAD based on the provided config object."""
         import sys
         from BaseHTTPServer import HTTPServer
         import socket
@@ -248,6 +264,8 @@ class GitAutoDeploy(object):
 
         # Set default stdout and stderr to our logging interface (that writes
         # to file and console depending on user preference)
+        self._default_stdout = sys.stdout
+        self._default_stderr = sys.stderr
         sys.stdout = LogInterface(logger.info)
         sys.stderr = LogInterface(logger.error)
 
@@ -257,6 +275,7 @@ class GitAutoDeploy(object):
         else:
             logger.info('Git Auto Deploy started')
 
+        self._pid = os.getpid()
         self.create_pid_file()
 
         # Clear any existing lock files, with no regard to possible ongoing processes
@@ -272,6 +291,7 @@ class GitAutoDeploy(object):
             self._server = HTTPServer((self._config['host'],
                                        self._config['port']),
                                       WebhookRequestHandler)
+
             if 'ssl' in self._config and self._config['ssl']:
                 import ssl
                 logger.info("enabling ssl")
@@ -280,7 +300,9 @@ class GitAutoDeploy(object):
                                                       server_side=True)
             sa = self._server.socket.getsockname()
             logger.info("Listening on %s port %s", sa[0], sa[1])
-            self._server.serve_forever()
+
+            # Actual port bound to (nessecary when OS picks randomly free port)
+            self._port = sa[1]
 
         except socket.error, e:
 
@@ -288,6 +310,28 @@ class GitAutoDeploy(object):
             GitAutoDeploy.debug_diagnosis(self._config['port'])
 
             sys.exit(1)
+
+    def run(self):
+        """Start listening for incoming requests."""
+        import sys
+        import socket
+        import logging
+
+        # Set up logging
+        logger = logging.getLogger()
+
+        try:
+            self._server.serve_forever()
+
+        except socket.error, e:
+            logger.critical("Error on socket: %s" % e)
+            sys.exit(1)
+        
+        except KeyboardInterrupt, e:
+            logger.info('Requested close by keyboard interrupt signal')
+            self.stop()
+            self.exit()
+
 
     def stop(self):
         if self._server is not None:
@@ -299,7 +343,8 @@ class GitAutoDeploy(object):
         self.stop()
 
         if signum == 1:
-            self.run(self._config)
+            self.setup(self._config)
+            self.run()
             return
 
         elif signum == 2:
@@ -367,4 +412,5 @@ def main():
     # Initialize config by expanding with missing values
     init_config(config)
 
-    app.run(config)
+    app.setup(config)
+    app.run()
