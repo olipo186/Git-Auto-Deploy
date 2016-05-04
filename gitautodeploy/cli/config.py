@@ -217,10 +217,10 @@ def init_config(config):
     logger = logging.getLogger()
 
     # Translate any ~ in the path into /home/<user>
-    if 'pidfilepath' in config:
+    if 'pidfilepath' in config and config['pidfilepath']:
         config['pidfilepath'] = os.path.expanduser(config['pidfilepath'])
 
-    if 'logfilepath' in config:
+    if 'logfilepath' in config and config['logfilepath']:
         config['logfilepath'] = os.path.expanduser(config['logfilepath'])
 
     if 'repositories' not in config:
