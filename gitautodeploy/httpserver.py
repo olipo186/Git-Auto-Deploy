@@ -16,17 +16,26 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         import logging
 
         logger = logging.getLogger()
+        logger.info('Incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
 
         content_type = self.headers.getheader('content-type')
         content_length = int(self.headers.getheader('content-length'))
         request_body = self.rfile.read(content_length)
-        
+
         # Extract request headers and make all keys to lowercase (makes them easier to compare)
         request_headers = dict(self.headers)
         request_headers = dict((k.lower(), v) for k, v in request_headers.iteritems())
 
-        ServiceRequestParser = self.figure_out_service_from_request(request_headers, request_body)
-        
+        try:
+            ServiceRequestParser = self.figure_out_service_from_request(request_headers, request_body)
+
+        except ValueError, e:
+            self.send_response(400)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            logger.warning('Unable to process incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
+            return
+
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
@@ -35,6 +44,8 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         if not ServiceRequestParser:
             logger.error('Unable to find appropriate handler for request. The source service is not supported.')
             return
+
+        logger.info('Using %s to handle the request.' % ServiceRequestParser.__name__)
 
         # Could be GitHubParser, GitLabParser or other
         repo_configs, ref, action, repo_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
@@ -73,6 +84,9 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
         logger = logging.getLogger()
         data = json.loads(request_body)
+
+        if not isinstance(data, dict):
+            raise ValueError("Invalid JSON object")
 
         user_agent = 'user-agent' in request_headers and request_headers['user-agent']
         content_type = 'content-type' in request_headers and request_headers['content-type']

@@ -337,6 +337,7 @@ class GitAutoDeploy(object):
 
     def stop(self):
         if self._server is not None:
+            self._server.shutdown()
             self._server.socket.close()
 
     def signal_handler(self, signum, frame):
