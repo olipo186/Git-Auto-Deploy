@@ -13,6 +13,7 @@ def get_config_defaults():
     config['logfilepath'] = None
     config['host'] = '0.0.0.0'
     config['port'] = 8001
+    config['intercept-stdout'] = True
 
     return config
 

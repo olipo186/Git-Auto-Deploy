@@ -177,8 +177,9 @@ class GitAutoDeploy(object):
         logger = logging.getLogger()
         logger.info('Goodbye')
         self.remove_pid_file()
-        sys.stdout = self._default_stdout
-        sys.stderr = self._default_stderr
+        if 'intercept-stdout' in self._config and self._config['intercept-stdout']:
+            sys.stdout = self._default_stdout
+            sys.stderr = self._default_stderr
 
     def exit(self):
         import sys
@@ -264,10 +265,11 @@ class GitAutoDeploy(object):
 
         # Set default stdout and stderr to our logging interface (that writes
         # to file and console depending on user preference)
-        self._default_stdout = sys.stdout
-        self._default_stderr = sys.stderr
-        sys.stdout = LogInterface(logger.info)
-        sys.stderr = LogInterface(logger.error)
+        if 'intercept-stdout' in self._config and self._config['intercept-stdout']:
+            self._default_stdout = sys.stdout
+            self._default_stderr = sys.stderr
+            sys.stdout = LogInterface(logger.info)
+            sys.stderr = LogInterface(logger.error)
 
         if 'daemon-mode' in self._config and self._config['daemon-mode']:
             logger.info('Starting Git Auto Deploy in daemon mode')
