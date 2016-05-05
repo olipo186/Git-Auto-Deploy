@@ -313,7 +313,7 @@ class GitAutoDeploy(object):
 
             sys.exit(1)
 
-    def run(self):
+    def serve_forever(self):
         """Start listening for incoming requests."""
         import sys
         import socket
@@ -324,6 +324,27 @@ class GitAutoDeploy(object):
 
         try:
             self._server.serve_forever()
+
+        except socket.error, e:
+            logger.critical("Error on socket: %s" % e)
+            sys.exit(1)
+        
+        except KeyboardInterrupt, e:
+            logger.info('Requested close by keyboard interrupt signal')
+            self.stop()
+            self.exit()
+
+    def handle_request(self):
+        """Start listening for incoming requests."""
+        import sys
+        import socket
+        import logging
+
+        # Set up logging
+        logger = logging.getLogger()
+
+        try:
+            self._server.handle_request()
 
         except socket.error, e:
             logger.critical("Error on socket: %s" % e)
@@ -347,7 +368,7 @@ class GitAutoDeploy(object):
 
         if signum == 1:
             self.setup(self._config)
-            self.run()
+            self.serve_forever()
             return
 
         elif signum == 2:
@@ -362,7 +383,7 @@ class GitAutoDeploy(object):
 def main():
     import signal
     from gitautodeploy import GitAutoDeploy
-    from cli.config import *
+    from cli.config import get_config_defaults, get_config_from_environment, get_config_from_argv, find_config_file, get_config_from_file, get_repo_config_from_environment, init_config
     import sys
     import os
 
@@ -416,4 +437,4 @@ def main():
     init_config(config)
 
     app.setup(config)
-    app.run()
+    app.serve_forever()
