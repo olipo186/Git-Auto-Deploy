@@ -15,6 +15,9 @@ def get_config_defaults():
     config['port'] = 8001
     config['intercept-stdout'] = True
 
+    # Record all log levels by default
+    config['log-level'] = 'NOTSET'
+
     # Include details with deploy command return codes in HTTP response. Causes
     # to await any git pull or deploy command actions before it sends the
     # response.

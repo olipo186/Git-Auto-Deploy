@@ -243,8 +243,10 @@ class GitAutoDeploy(object):
             consoleHandler.setFormatter(logFormatter)
             logger.addHandler(consoleHandler)
 
-        # All logs are recording
-        logger.setLevel(logging.NOTSET)
+        # Set logging level
+        if 'log-level' in self._config:
+            level = logging.getLevelName(self._config['log-level'])
+            logger.setLevel(level)
 
         if 'logfilepath' in self._config and self._config['logfilepath']:
             # Translate any ~ in the path into /home/<user>
