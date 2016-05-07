@@ -14,7 +14,11 @@ class WebhookTestCaseBase(unittest.TestCase):
     def start_gad(self, test_config):
         import sys
         import time
-        sys.path.insert(1, '..')
+        import os
+
+        # Add repo root to sys path
+        repo_root = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+        sys.path.insert(1, repo_root)
 
         from gitautodeploy.cli.config import get_config_defaults, init_config
 
@@ -69,9 +73,12 @@ class StubImporter(object):
         """Load matching module from stubs package (test stub) instead of main gitautodeploy package."""
         import imp
         import sys
+        import os
+
+        repo_root = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
         module_name = full_name.split('.')[-1]
-        module_info = imp.find_module(module_name, ['stubs'])
+        module_info = imp.find_module(module_name, [repo_root+'/test/stubs'])
         module = imp.load_module(module_name, *module_info)
         sys.modules[module_name] = module
 

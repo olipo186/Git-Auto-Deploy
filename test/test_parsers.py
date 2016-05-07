@@ -23,7 +23,6 @@ class WebhookTestCase(WebhookTestCaseBase):
             'intercept-stdout': False,
             'detailed-response': True,
             'log-level': 'WARNING',
-            'log-test-case': True,
             'repositories': []
         }
 
