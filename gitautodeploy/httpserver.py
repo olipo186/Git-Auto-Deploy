@@ -155,8 +155,9 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         logger.error("Unable to recognize request origin. Don't know how to handle the request.")
         return
 
-
     def process_repositories(self, repo_configs, ref, action, request_body):
+        """Verify that the suggested repositories has matching settings and
+        issue git pull and/or deploy commands."""
         import os
         import time
         import logging
@@ -221,10 +222,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
                     # Keep on attempting to obtain the status_running lock until we succeed
                     time.sleep(5)
-
-                #n = 4
-                #while 0 < n and 0 != GitWrapper.pull(repo_config):
-                #    n -= 1
 
                 n = 4
                 res = None
