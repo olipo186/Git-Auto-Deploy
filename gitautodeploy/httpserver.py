@@ -14,6 +14,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         """Invoked on incoming POST requests"""
         from threading import Timer
         import logging
+        import json
 
         logger = logging.getLogger()
         logger.info('Incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
@@ -30,41 +31,60 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             ServiceRequestParser = self.figure_out_service_from_request(request_headers, request_body)
 
         except ValueError, e:
-            self.send_response(400)
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
+            self.send_error(400, 'Unprocessable request')
             logger.warning('Unable to process incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
             return
 
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
-        self.end_headers()
-
         # Unable to identify the source of the request
         if not ServiceRequestParser:
+            self.send_error(400, 'Unrecognized service')
             logger.error('Unable to find appropriate handler for request. The source service is not supported.')
             return
 
-        logger.info('Using %s to handle the request.' % ServiceRequestParser.__name__)
+        # Send HTTP response before the git pull and/or deploy commands?
+        if not 'detailed-response' in self._config or not self._config['detailed-response']:
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
 
-        # Could be GitHubParser, GitLabParser or other
-        repo_configs, ref, action, repo_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
+        try:
 
-        logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
+            logger.info('Using %s to handle the request.' % ServiceRequestParser.__name__)
 
-        #if success:
-        #    print "Successfullt handled request using %s" % ServiceHandler.__name__
-        #else:
-        #    print "Unable to handle request using %s" % ServiceHandler.__name__
+            # Could be GitHubParser, GitLabParser or other
+            repo_configs, ref, action, repo_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
 
-        if len(repo_configs) == 0:
-            logger.warning('Unable to find any of the repository URLs in the config: %s' % ', '.join(repo_urls))
-            return
+            logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
 
-        # Wait one second before we do git pull (why?)
-        Timer(1.0, self.process_repositories, (repo_configs,
-                                               ref,
-                                               action, request_body)).start()
+            #if success:
+            #    print "Successfullt handled request using %s" % ServiceHandler.__name__
+            #else:
+            #    print "Unable to handle request using %s" % ServiceHandler.__name__
+
+            if len(repo_configs) == 0:
+                logger.warning('Unable to find any of the repository URLs in the config: %s' % ', '.join(repo_urls))
+                return
+
+            # Wait one second before we do git pull (why?)
+            #Timer(1.0, self.process_repositories, (repo_configs,
+            #                                    ref,
+            #                                    action, request_body)).start()
+
+            res = self.process_repositories(repo_configs, ref, action, request_body)
+
+            if 'detailed-response' in self._config and self._config['detailed-response']:
+                self.send_response(200, 'OK')
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(res))
+                self.wfile.close()
+
+        except Exception, e:
+
+            if 'detailed-response' in self._config and self._config['detailed-response']:
+                self.send_error(500, 'Unable to process request')
+
+            raise e
 
     def log_message(self, format, *args):
         """Overloads the default message logging method to allow messages to
@@ -133,12 +153,16 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         from wrappers import GitWrapper
         from lock import Lock
         import json
-        
+
         logger = logging.getLogger()
         data = json.loads(request_body)
 
+        result = []
+
         # Process each matching repository
         for repo_config in repo_configs:
+
+            repo_result = {}
 
             try:
                 # Verify that all filters matches the request (if any filters are specified)
@@ -161,13 +185,15 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
                 # Filter does not match, do not process this repo config
                 continue
-            
+
             # In case there is no path configured for the repository, no pull will
             # be made.
             if not 'path' in repo_config:
-                GitWrapper.deploy(repo_config)
+                res = GitWrapper.deploy(repo_config)
+                repo_result['deploy'] = res
+                result.append(repo_result)
                 continue
-            
+
             running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
             waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
             try:
@@ -186,12 +212,27 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                     # Keep on attempting to obtain the status_running lock until we succeed
                     time.sleep(5)
 
+                #n = 4
+                #while 0 < n and 0 != GitWrapper.pull(repo_config):
+                #    n -= 1
+
                 n = 4
-                while 0 < n and 0 != GitWrapper.pull(repo_config):
+                res = None
+                while n > 0:
+
+                    # Attempt to pull up a maximum of 4 times
+                    res = GitWrapper.pull(repo_config)
+                    repo_result['git pull'] = res
+
+                    # Return code indicating success?
+                    if res == 0:
+                        break
+
                     n -= 1
 
                 if 0 < n:
-                    GitWrapper.deploy(repo_config)
+                    res = GitWrapper.deploy(repo_config)
+                    repo_result['deploy'] = res
 
             except Exception as e:
                 logger.error('Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path'])
@@ -206,3 +247,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 # Release the lock if it's ours
                 if waiting_lock.has_lock():
                     waiting_lock.release()
+
+                result.append(repo_result)
+
+        return result

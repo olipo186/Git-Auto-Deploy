@@ -54,5 +54,8 @@ class GitWrapper():
         # Use repository path as default cwd when executing deploy commands
         cwd = (repo_config['path'] if 'path' in repo_config else None)
 
+        res = []
         for cmd in repo_config['deploy_commands']:
-            ProcessWrapper().call([cmd], cwd=cwd, shell=True)
+            res.append(ProcessWrapper().call([cmd], cwd=cwd, shell=True))
+
+        return res
