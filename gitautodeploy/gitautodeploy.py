@@ -355,11 +355,10 @@ class GitAutoDeploy(object):
             self.stop()
             self.exit()
 
-
     def stop(self):
-        if self._server is not None:
-            self._server.shutdown()
-            self._server.socket.close()
+        if self._server is None:
+            return
+        self._server.socket.close()
 
     def signal_handler(self, signum, frame):
         import logging
@@ -378,7 +377,6 @@ class GitAutoDeploy(object):
             logger.info('Requested close by SIGABRT (process abort signal). Code 6.')
 
         self.exit()
-
 
 def main():
     import signal
