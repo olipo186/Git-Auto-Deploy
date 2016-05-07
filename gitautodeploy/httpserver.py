@@ -23,31 +23,35 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.getheader('content-length'))
         request_body = self.rfile.read(content_length)
 
+        # Test case debug data
+        test_case = {
+            'headers': dict(self.headers),
+            'payload': json.loads(request_body),
+            'config': {},
+            'expected': {'status': 200, 'data': [{'deploy': 0}]}
+        }
+
         # Extract request headers and make all keys to lowercase (makes them easier to compare)
         request_headers = dict(self.headers)
         request_headers = dict((k.lower(), v) for k, v in request_headers.iteritems())
 
         try:
+
+            # Will raise a ValueError exception if it fails
             ServiceRequestParser = self.figure_out_service_from_request(request_headers, request_body)
 
-        except ValueError, e:
-            self.send_error(400, 'Unprocessable request')
-            logger.warning('Unable to process incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
-            return
+            # Unable to identify the source of the request
+            if not ServiceRequestParser:
+                self.send_error(400, 'Unrecognized service')
+                logger.error('Unable to find appropriate handler for request. The source service is not supported.')
+                test_case['expected']['status'] = 400
+                return
 
-        # Unable to identify the source of the request
-        if not ServiceRequestParser:
-            self.send_error(400, 'Unrecognized service')
-            logger.error('Unable to find appropriate handler for request. The source service is not supported.')
-            return
-
-        # Send HTTP response before the git pull and/or deploy commands?
-        if not 'detailed-response' in self._config or not self._config['detailed-response']:
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-
-        try:
+            # Send HTTP response before the git pull and/or deploy commands?
+            if not 'detailed-response' in self._config or not self._config['detailed-response']:
+                self.send_response(200, 'OK')
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
 
             logger.info('Using %s to handle the request.' % ServiceRequestParser.__name__)
 
@@ -63,6 +67,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             if len(repo_configs) == 0:
                 self.send_error(400, 'Bad request')
                 logger.warning('Unable to find any of the repository URLs in the config: %s' % ', '.join(repo_urls))
+                test_case['expected']['status'] = 400
                 return
 
             # Make git pulls and trigger deploy commands
@@ -75,26 +80,34 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps(res))
                 self.wfile.close()
 
+            # Add additional test case data
+            test_case['config'] = {
+                'url': 'url' in repo_configs[0] and repo_configs[0]['url'],
+                'branch': 'branch' in repo_configs[0] and repo_configs[0]['branch'],
+                'remote': 'remote' in repo_configs[0] and repo_configs[0]['remote'],
+                'deploy': 'echo test!'
+            }
+
+        except ValueError, e:
+            self.send_error(400, 'Unprocessable request')
+            logger.warning('Unable to process incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
+            test_case['expected']['status'] = 400
+            return
+
         except Exception, e:
 
             if 'detailed-response' in self._config and self._config['detailed-response']:
                 self.send_error(500, 'Unable to process request')
 
+            test_case['expected']['status'] = 500
+
             raise e
 
-        # Save the request as a test case
-        if 'log-test-case' in self._config and self._config['log-test-case']:
-            self.save_test_case({
-                'headers': dict(self.headers),
-                'payload': json.loads(request_body),
-                'config': {
-                    'url': repo_configs[0]['url'],
-                    'branch': repo_configs[0]['branch'],
-                    'remote': repo_configs[0]['remote'],
-                    'deploy': 'echo test!'
-                },
-                'expected': [{'deploy': 0}]
-            })
+        finally:
+
+            # Save the request as a test case
+            if 'log-test-case' in self._config and self._config['log-test-case']:
+                self.save_test_case(test_case)
 
     def log_message(self, format, *args):
         """Overloads the default message logging method to allow messages to

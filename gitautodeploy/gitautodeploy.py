@@ -98,6 +98,13 @@ class GitAutoDeploy(object):
         for repo_config in self._config['repositories']:
 
             # Only clone repositories with a configured path
+            if 'url' not in repo_config:
+                logger.critical("Repository has no configured URL")
+                self.close()
+                self.exit()
+                return
+
+            # Only clone repositories with a configured path
             if 'path' not in repo_config:
                 logger.info("Repository %s will not be cloned (no path configured)" % repo_config['url'])
                 continue
