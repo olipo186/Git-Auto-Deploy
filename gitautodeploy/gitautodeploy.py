@@ -105,9 +105,9 @@ class GitAutoDeploy(object):
                 continue
 
             # Clone repository
-            GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'], path=repo_config['path'])
+            ret = GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'], path=repo_config['path'])
 
-            if os.path.isdir(repo_config['path']):
+            if ret == 0 and os.path.isdir(repo_config['path']):
                 logger.info("Repository %s successfully cloned" % repo_config['url'])
             else:
                 logger.error("Unable to clone %s branch of repository %s" % (repo_config['branch'], repo_config['url']))
