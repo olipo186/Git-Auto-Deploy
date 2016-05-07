@@ -28,6 +28,7 @@ class GitAutoDeploy(object):
 
     @staticmethod
     def debug_diagnosis(port):
+        """Display information about what process is using the specified port."""
         import logging
         logger = logging.getLogger()
 
@@ -43,6 +44,7 @@ class GitAutoDeploy(object):
 
     @staticmethod
     def get_pid_on_port(port):
+        """Determine what process (PID) is using a specific port."""
         import os
 
         with open("/proc/net/tcp", 'r') as f:
@@ -137,6 +139,7 @@ class GitAutoDeploy(object):
                 logger.error('Could not find regexp match in path: %s' % url)
 
     def kill_conflicting_processes(self):
+        """Attempt to kill any process already using the configured port."""
         import os
         import logging
         import signal

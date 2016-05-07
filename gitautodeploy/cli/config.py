@@ -23,6 +23,10 @@ def get_config_defaults():
     # response.
     config['detailed-response'] = True
 
+    # Log incoming webhook requests in a way they can be used as test cases
+    config['log-test-case'] = False
+    config['log-test-case-dir'] = None
+
     return config
 
 def get_config_from_environment():

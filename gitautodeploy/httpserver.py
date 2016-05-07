@@ -53,7 +53,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             # Could be GitHubParser, GitLabParser or other
             repo_configs, ref, action, repo_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
-
             logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
 
             #if success:
@@ -62,14 +61,11 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             #    print "Unable to handle request using %s" % ServiceHandler.__name__
 
             if len(repo_configs) == 0:
+                self.send_error(400, 'Bad request')
                 logger.warning('Unable to find any of the repository URLs in the config: %s' % ', '.join(repo_urls))
                 return
 
-            # Wait one second before we do git pull (why?)
-            #Timer(1.0, self.process_repositories, (repo_configs,
-            #                                    ref,
-            #                                    action, request_body)).start()
-
+            # Make git pulls and trigger deploy commands
             res = self.process_repositories(repo_configs, ref, action, request_body)
 
             if 'detailed-response' in self._config and self._config['detailed-response']:
@@ -85,6 +81,20 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 self.send_error(500, 'Unable to process request')
 
             raise e
+
+        # Save the request as a test case
+        if 'log-test-case' in self._config and self._config['log-test-case']:
+            self.save_test_case({
+                'headers': dict(self.headers),
+                'payload': json.loads(request_body),
+                'config': {
+                    'url': repo_configs[0]['url'],
+                    'branch': repo_configs[0]['branch'],
+                    'remote': repo_configs[0]['remote'],
+                    'deploy': 'echo test!'
+                },
+                'expected': [{'deploy': 0}]
+            })
 
     def log_message(self, format, *args):
         """Overloads the default message logging method to allow messages to
@@ -251,3 +261,23 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 result.append(repo_result)
 
         return result
+
+    def save_test_case(self, test_case):
+        """Log request information in a way it can be used as a test case."""
+        import time
+        import json
+        import os
+
+        # Mask some header values
+        masked_headers = ['x-github-delivery', 'x-hub-signature']
+        for key in test_case['headers']:
+            if key in masked_headers:
+                test_case['headers'][key] = 'xxx'
+
+        target = '%s-%s.tc.json' % (self.client_address[0], time.strftime("%Y%m%d%H%M%S"))
+        if 'log-test-case-dir' in self._config and self._config['log-test-case-dir']:
+            target = os.path.join(self._config['log-test-case-dir'], target)
+
+        file = open(target, 'w')
+        file.write(json.dumps(test_case, sort_keys=True, indent=4))
+        file.close()
