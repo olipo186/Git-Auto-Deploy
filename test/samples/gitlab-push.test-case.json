@@ -1,0 +1,110 @@
+{
+    "config": {
+        "branch": "master", 
+        "deploy": "echo test!", 
+        "remote": "origin", 
+        "url": "http://gitlab.example.com/oliver/poignant-se.git"
+    }, 
+    "expected": {
+        "status": 200,
+        "data": [
+            {
+                "deploy": 0
+            }
+        ]
+    }, 
+    "headers": {
+        "connection": "close", 
+        "content-length": "2336", 
+        "content-type": "application/json", 
+        "host": "example.com:8001", 
+        "x-gitlab-event": "Push Hook"
+    }, 
+    "payload": {
+        "after": "bb26e21adb5a97d3f7b45d0c29506d52793c8f3b", 
+        "before": "fdd525130a91991648783608f9d55c359ed41abf", 
+        "checkout_sha": "bb26e21adb5a97d3f7b45d0c29506d52793c8f3b", 
+        "commits": [
+            {
+                "added": [], 
+                "author": {
+                    "email": "oliver@poignant.se", 
+                    "name": "Oliver Poignant"
+                }, 
+                "id": "bb26e21adb5a97d3f7b45d0c29506d52793c8f3b", 
+                "message": "aa", 
+                "modified": [
+                    "README.md"
+                ], 
+                "removed": [], 
+                "timestamp": "2016-04-14T00:19:23+02:00", 
+                "url": "http://gitlab.example.com/oliver/poignant-se/commit/bb26e21adb5a97d3f7b45d0c29506d52793c8f3b"
+            }, 
+            {
+                "added": [], 
+                "author": {
+                    "email": "oliver@poignant.se", 
+                    "name": "Oliver Poignant"
+                }, 
+                "id": "dcfccd6cb19ef50c6b7e27a657f9e37bd041a913", 
+                "message": "ss", 
+                "modified": [
+                    "README.md"
+                ], 
+                "removed": [], 
+                "timestamp": "2016-04-14T00:18:53+02:00", 
+                "url": "http://gitlab.example.com/oliver/poignant-se/commit/dcfccd6cb19ef50c6b7e27a657f9e37bd041a913"
+            }, 
+            {
+                "added": [], 
+                "author": {
+                    "email": "oliver@poignant.se", 
+                    "name": "Oliver Poignant"
+                }, 
+                "id": "fdd525130a91991648783608f9d55c359ed41abf", 
+                "message": "aa", 
+                "modified": [
+                    "README.md"
+                ], 
+                "removed": [], 
+                "timestamp": "2016-04-14T00:08:43+02:00", 
+                "url": "http://gitlab.example.com/oliver/poignant-se/commit/fdd525130a91991648783608f9d55c359ed41abf"
+            }
+        ], 
+        "event_name": "push", 
+        "message": null, 
+        "object_kind": "push", 
+        "project": {
+            "avatar_url": null, 
+            "default_branch": "master", 
+            "description": "", 
+            "git_http_url": "http://gitlab.example.com/oliver/poignant-se.git", 
+            "git_ssh_url": "ssh://git@example.com/oliver/poignant-se.git", 
+            "homepage": "http://gitlab.example.com/oliver/poignant-se", 
+            "http_url": "http://gitlab.example.com/oliver/poignant-se.git", 
+            "name": "poignant-se", 
+            "namespace": "oliver", 
+            "path_with_namespace": "oliver/poignant-se", 
+            "ssh_url": "ssh://git@example.com/oliver/poignant-se.git", 
+            "url": "ssh://git@example.com/oliver/poignant-se.git", 
+            "visibility_level": 0, 
+            "web_url": "http://gitlab.example.com/oliver/poignant-se"
+        }, 
+        "project_id": 28, 
+        "ref": "refs/heads/master", 
+        "repository": {
+            "description": "", 
+            "git_http_url": "http://gitlab.example.com/oliver/poignant-se.git", 
+            "git_ssh_url": "ssh://git@example.com/oliver/poignant-se.git", 
+            "homepage": "http://gitlab.example.com/oliver/poignant-se", 
+            "name": "poignant-se", 
+            "url": "ssh://git@example.com/oliver/poignant-se.git", 
+            "visibility_level": 0
+        }, 
+        "total_commits_count": 3, 
+        "user_avatar": "http://www.gravatar.com/avatar/bdf723d6a6f847ec075a6809aa4808fb?s=80&d=identicon", 
+        "user_email": "oliver@poignant.se", 
+        "user_id": 7, 
+        "user_name": "Oliver Poignant"
+    }
+}
