@@ -45,6 +45,7 @@ Repository configurations are comprised of the following elements:
  - **filters**: Filters to apply to the web hook events so that only the desired
    events result in executing the deploy actions. See section *Filters* for more
    details.
+ - **secret-token**: The secret token set for your webhook ([currently only implemented for GitHub](https://developer.github.com/webhooks/securing/))
 
 ## Filters
 *(Currently only supported for GitHub and GitLab)*
