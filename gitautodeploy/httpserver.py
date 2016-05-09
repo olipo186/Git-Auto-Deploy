@@ -17,7 +17,8 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         import json
 
         logger = logging.getLogger()
-        logger.info('Incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
+        
+        self.log_message('Incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
 
         content_type = self.headers.getheader('content-type')
         content_length = int(self.headers.getheader('content-length'))
@@ -53,25 +54,20 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
 
-            logger.info('Using %s to handle the request.' % ServiceRequestParser.__name__)
+            self.log_message('Using %s to handle the request.' % ServiceRequestParser.__name__)
 
             # Could be GitHubParser, GitLabParser or other
-            repo_configs, ref, action, repo_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
-            logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
+            matching_repo_configs, ref, action, webhook_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
+            self.log_debug("Event details - ref: %s; action: %s" % (ref or "master", action))
 
-            #if success:
-            #    print "Successfullt handled request using %s" % ServiceHandler.__name__
-            #else:
-            #    print "Unable to handle request using %s" % ServiceHandler.__name__
-
-            if len(repo_configs) == 0:
+            if len(matching_repo_configs) == 0:
                 self.send_error(400, 'Bad request')
-                logger.warning('Unable to find any of the repository URLs in the config: %s' % ', '.join(repo_urls))
+                self.log_error('The URLs references in the webhook did not match any repository entry in the config. For this webhook to work, make sure you have at least one repository configured with one of the following URLs; %s' % ', '.join(webhook_urls))
                 test_case['expected']['status'] = 400
                 return
 
             # Make git pulls and trigger deploy commands
-            res = self.process_repositories(repo_configs, ref, action, request_body)
+            res = self.process_repositories(matching_repo_configs, ref, action, request_body)
 
             if 'detailed-response' in self._config and self._config['detailed-response']:
                 self.send_response(200, 'OK')
@@ -82,9 +78,9 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             # Add additional test case data
             test_case['config'] = {
-                'url': 'url' in repo_configs[0] and repo_configs[0]['url'],
-                'branch': 'branch' in repo_configs[0] and repo_configs[0]['branch'],
-                'remote': 'remote' in repo_configs[0] and repo_configs[0]['remote'],
+                'url': 'url' in matching_repo_configs[0] and matching_repo_configs[0]['url'],
+                'branch': 'branch' in matching_repo_configs[0] and matching_repo_configs[0]['branch'],
+                'remote': 'remote' in matching_repo_configs[0] and matching_repo_configs[0]['remote'],
                 'deploy': 'echo test!'
             }
 
@@ -109,14 +105,24 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             if 'log-test-case' in self._config and self._config['log-test-case']:
                 self.save_test_case(test_case)
 
+    def log_error(self, format, *args):
+        """Overloads the error message logging method to allow messages to
+        go through our custom logger instead."""
+        import logging
+        logger = logging.getLogger()
+        logger.warning("%s - %s" % (self.client_address[0], format%args))
+
     def log_message(self, format, *args):
         """Overloads the default message logging method to allow messages to
         go through our custom logger instead."""
         import logging
         logger = logging.getLogger()
-        logger.info("%s - - [%s] %s\n" % (self.client_address[0],
-                                          self.log_date_time_string(),
-                                          format%args))
+        logger.info("%s - %s" % (self.client_address[0], format%args))
+
+    def log_debug(self, format, *args):
+        import logging
+        logger = logging.getLogger()
+        logger.debug("%s - %s" % (self.client_address[0], format%args))
 
     def figure_out_service_from_request(self, request_headers, request_body):
         """Parses the incoming request and attempts to determine whether
@@ -137,35 +143,31 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Assume GitLab if the X-Gitlab-Event HTTP header is set
         if 'x-gitlab-event' in request_headers:
 
-            logger.info("Received event from GitLab")
             return parsers.GitLabRequestParser
 
         # Assume GitHub if the X-GitHub-Event HTTP header is set
         elif 'x-github-event' in request_headers:
 
-            logger.info("Received event from GitHub")
             return parsers.GitHubRequestParser
 
         # Assume BitBucket if the User-Agent HTTP header is set to
         # 'Bitbucket-Webhooks/2.0' (or something similar)
         elif user_agent and user_agent.lower().find('bitbucket') != -1:
 
-            logger.info("Received event from BitBucket")
             return parsers.BitBucketRequestParser
 
         # Special Case for Gitlab CI
         elif content_type == "application/json" and "build_status" in data:
 
-            logger.info('Received event from Gitlab CI')
             return parsers.GitLabCIRequestParser
 
         # This handles old GitLab requests and Gogs requests for example.
         elif content_type == "application/json":
 
-            logger.info("Received event from unknown origin.")
+            self.log_message("Received event from unknown origin.")
             return parsers.GenericRequestParser
 
-        logger.error("Unable to recognize request origin. Don't know how to handle the request.")
+        self.log_error("Unable to recognize request origin. Don't know how to handle the request.")
         return
 
     def process_repositories(self, repo_configs, ref, action, request_body):
