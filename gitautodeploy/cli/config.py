@@ -265,14 +265,13 @@ def init_config(config):
         if 'global_deploy' in config and len(config['global_deploy'][1]) is not 0:
             repo_config['deploy_commands'].append(config['global_deploy'][1])
 
-        # If a Bitbucket repository is configured using the https:// URL, a username is usually
-        # specified in the beginning of the URL. To be able to compare configured Bitbucket
-        # repositories with incoming web hook events, this username needs to be stripped away in a
-        # copy of the URL.
-        if 'url' in repo_config and 'bitbucket_username' not in repo_config:
-            regexp = re.search(r"^(https?://)([^@]+)@(bitbucket\.org/)(.+)$", repo_config['url'])
+        # If a repository is configured with embedded credentials, we create an alternate URL
+        # without these credentials that cen be used when comparing the URL with URLs referenced
+        # in incoming web hook requests.
+        if 'url' in repo_config:
+            regexp = re.search(r"^(https?://)([^@]+)@(.+)$", repo_config['url'])
             if regexp:
-                repo_config['url_without_usernme'] = regexp.group(1) + regexp.group(3) + regexp.group(4)
+                repo_config['url_without_usernme'] = regexp.group(1) + regexp.group(3)
 
         # Translate any ~ in the path into /home/<user>
         if 'path' in repo_config:
