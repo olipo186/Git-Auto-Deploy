@@ -59,14 +59,9 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             repo_configs, ref, action, repo_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
             logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
 
-            #if success:
-            #    print "Successfullt handled request using %s" % ServiceHandler.__name__
-            #else:
-            #    print "Unable to handle request using %s" % ServiceHandler.__name__
-
             if len(repo_configs) == 0:
                 self.send_error(400, 'Bad request')
-                logger.warning('Unable to find any of the repository URLs in the config: %s' % ', '.join(repo_urls))
+                logger.warning('The URLs references in the webhook did not match any repository entry in the config. For this webhook to work, make sure you have at least one repository configured with one of the following URLs; %s' % ', '.join(webhook_urls))
                 test_case['expected']['status'] = 400
                 return
 
@@ -137,26 +132,22 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Assume GitLab if the X-Gitlab-Event HTTP header is set
         if 'x-gitlab-event' in request_headers:
 
-            logger.info("Received event from GitLab")
             return parsers.GitLabRequestParser
 
         # Assume GitHub if the X-GitHub-Event HTTP header is set
         elif 'x-github-event' in request_headers:
 
-            logger.info("Received event from GitHub")
             return parsers.GitHubRequestParser
 
         # Assume BitBucket if the User-Agent HTTP header is set to
         # 'Bitbucket-Webhooks/2.0' (or something similar)
         elif user_agent and user_agent.lower().find('bitbucket') != -1:
 
-            logger.info("Received event from BitBucket")
             return parsers.BitBucketRequestParser
 
         # Special Case for Gitlab CI
         elif content_type == "application/json" and "build_status" in data:
 
-            logger.info('Received event from Gitlab CI')
             return parsers.GitLabCIRequestParser
 
         # This handles old GitLab requests and Gogs requests for example.
