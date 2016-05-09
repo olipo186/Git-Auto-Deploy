@@ -109,7 +109,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         go through our custom logger instead."""
         import logging
         logger = logging.getLogger()
-        logger.info("%s - - [%s] %s\n" % (self.client_address[0],
+        logger.info("%s - - [%s] %s" % (self.client_address[0],
                                           self.log_date_time_string(),
                                           format%args))
 
