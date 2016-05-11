@@ -254,7 +254,7 @@ def init_config(config):
             repo_config['deploy_commands'] = []
 
         # Check if any global pre deploy commands is specified
-        if 'global_deploy' in config and len(config['global_deploy'][0]) is not 0:
+        if 'global_deploy' in config and len(config['global_deploy']) > 0 and len(config['global_deploy'][0]) is not 0:
             repo_config['deploy_commands'].insert(0, config['global_deploy'][0])
 
         # Check if any repo specific deploy command is specified
@@ -262,7 +262,7 @@ def init_config(config):
             repo_config['deploy_commands'].append(repo_config['deploy'])
 
         # Check if any global post deploy command is specified
-        if 'global_deploy' in config and len(config['global_deploy'][1]) is not 0:
+        if 'global_deploy' in config and len(config['global_deploy']) > 1 and len(config['global_deploy'][1]) is not 0:
             repo_config['deploy_commands'].append(config['global_deploy'][1])
 
         # If a repository is configured with embedded credentials, we create an alternate URL
