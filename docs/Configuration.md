@@ -24,6 +24,7 @@ as follow:
 
  - **pidfilepath**: The path where `pid` files are kept.
  - **logfilepath**: To enable logging, set this to a valid file path.
+ - **log-level**: Sets the threshold for the log output. Default value is NOTSET (all details). Recommended value is INFO (less details).
  - **host**: What IP address to listen on.
  - **port**: The port for the web server to listen on.
  - **global_deploy**: An array of two specific commands or path to scripts

@@ -7,6 +7,7 @@
     "echo Deploy started!",
     "echo Deploy completed!"
   ],
+  "log-level": "INFO",
   "repositories": [
     {
       "url": "https://github.com/olipo186/Git-Auto-Deploy.git",
