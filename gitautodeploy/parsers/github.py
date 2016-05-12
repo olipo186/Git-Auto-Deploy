@@ -15,7 +15,7 @@ class GitHubRequestParser(WebhookRequestParser):
 
         github_event = 'x-github-event' in request_headers and request_headers['x-github-event']
 
-        logger.info("Received '%s' event from GitHub" % github_event)
+        logger.debug("Received '%s' event from GitHub" % github_event)
 
         if 'repository' not in data:
             logger.error("Unable to recognize data format")
@@ -30,14 +30,14 @@ class GitHubRequestParser(WebhookRequestParser):
             if 'base' in data['pull_request']:
                 if 'ref' in data['pull_request']['base']:
                     ref = data['pull_request']['base']['ref']
-                    logger.info("Pull request to branch '%s' was fired" % ref)
+                    logger.debug("Pull request to branch '%s' was fired" % ref)
         elif 'ref' in data:
             ref = data['ref']
-            logger.info("Push to branch '%s' was fired" % ref)
+            logger.debug("Push to branch '%s' was fired" % ref)
 
         if 'action' in data:
             action = data['action']
-            logger.info("Action '%s' was fired" % action)
+            logger.debug("Action '%s' was fired" % action)
 
         # Get a list of configured repositories that matches the incoming web hook reqeust
         items = self.get_matching_repo_configs(repo_urls)

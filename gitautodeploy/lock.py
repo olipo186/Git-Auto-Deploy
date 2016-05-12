@@ -16,7 +16,7 @@ class Lock():
         try:
             os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             self._has_lock = True
-            logger.info("Successfully obtained lock: %s" % self.path)
+            logger.debug("Successfully obtained lock: %s" % self.path)
         except OSError:
             return False
         else:
@@ -31,7 +31,7 @@ class Lock():
             raise Exception("Unable to release lock that is owned by another process")
         try:
             os.remove(self.path)
-            logger.info("Successfully released lock: %s" % self.path)
+            logger.debug("Successfully released lock: %s" % self.path)
         finally:
             self._has_lock = False
 
@@ -48,5 +48,5 @@ class Lock():
         except OSError:
             pass
         finally:
-            logger.info("Successfully cleared lock: %s" % self.path)
+            logger.debug("Successfully cleared lock: %s" % self.path)
             self._has_lock = False

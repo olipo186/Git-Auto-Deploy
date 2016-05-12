@@ -53,11 +53,11 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
 
-            logger.info('Using %s to handle the request.' % ServiceRequestParser.__name__)
+            logger.info('Handling the request with %s' % ServiceRequestParser.__name__)
 
             # Could be GitHubParser, GitLabParser or other
             repo_configs, ref, action, repo_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
-            logger.info("Event details - ref: %s; action: %s" % (ref or "master", action))
+            logger.debug("Event details - ref: %s; action: %s" % (ref or "master", action))
 
             if len(repo_configs) == 0:
                 self.send_error(400, 'Bad request')
@@ -109,8 +109,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         go through our custom logger instead."""
         import logging
         logger = logging.getLogger()
-        logger.info("%s - - [%s] %s" % (self.client_address[0],
-                                          self.log_date_time_string(),
+        logger.info("%s - %s" % (self.client_address[0],
                                           format%args))
 
     def figure_out_service_from_request(self, request_headers, request_body):

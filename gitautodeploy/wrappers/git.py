@@ -10,16 +10,15 @@ class GitWrapper():
         """Pulls the latest version of the repo from the git server"""
         import logging
         from process import ProcessWrapper
-        
+        import os
+
         logger = logging.getLogger()
-        logger.info("Post push request received")
+        logger.info("Updating repository %s" % repo_config['path'])
 
         # Only pull if there is actually a local copy of the repository
         if 'path' not in repo_config:
             logger.info('No local repository path configured, no pull will occure')
             return 0
-        
-        logger.info('Updating ' + repo_config['path'])
 
         cmd =   'unset GIT_DIR ' + \
                 '&& git fetch ' + repo_config['remote'] + \
@@ -29,7 +28,11 @@ class GitWrapper():
 
         # '&& git update-index --refresh ' +\
         res = ProcessWrapper().call([cmd], cwd=repo_config['path'], shell=True)
-        logger.info('Pull result: ' + str(res))
+
+        if res == 0 and os.path.isdir(repo_config['path']):
+            logger.info("Repository %s successfully updated" % repo_config['path'])
+        else:
+            logger.error("Unable to update repository %s" % repo_config['path'])
 
         return int(res)
 
@@ -49,13 +52,19 @@ class GitWrapper():
         if 'path' in repo_config:
             path = repo_config['path']
 
-        logger.info('Executing deploy command(s)')
-        
+        if not 'deploy_commands' in repo_config or len(repo_config['deploy_commands']) == 0:
+            logger.info('No deploy commands configured')
+            return []
+
+        logger.info('Executing %s deploy commands' % str(len(repo_config['deploy_commands'])))
+
         # Use repository path as default cwd when executing deploy commands
         cwd = (repo_config['path'] if 'path' in repo_config else None)
 
         res = []
         for cmd in repo_config['deploy_commands']:
             res.append(ProcessWrapper().call([cmd], cwd=cwd, shell=True))
+
+        logger.info('%s commands executed with status; %s' % (str(len(res)), str(res)))
 
         return res

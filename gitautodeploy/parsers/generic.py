@@ -13,7 +13,7 @@ class GenericRequestParser(WebhookRequestParser):
         ref = ""
         action = ""
 
-        logger.info("Received event from unknown origin. Assume generic data format.")
+        logger.debug("Received event from unknown origin. Assume generic data format.")
 
         if 'repository' not in data:
             logger.error("Unable to recognize data format")

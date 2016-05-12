@@ -106,12 +106,14 @@ class GitAutoDeploy(object):
 
             # Only clone repositories with a configured path
             if 'path' not in repo_config:
-                logger.info("Repository %s will not be cloned (no path configured)" % repo_config['url'])
+                logger.debug("Repository %s will not be cloned (no path configured)" % repo_config['url'])
                 continue
 
             if os.path.isdir(repo_config['path']) and os.path.isdir(repo_config['path']+'/.git'):
-                logger.info("Repository %s already present" % repo_config['url'])
+                logger.debug("Repository %s already present" % repo_config['url'])
                 continue
+
+            logger.info("Repository %s not present and needs to be cloned" % repo_config['url'])
 
             # Clone repository
             ret = GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'], path=repo_config['path'])

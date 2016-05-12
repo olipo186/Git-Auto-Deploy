@@ -15,7 +15,7 @@ class GitLabRequestParser(WebhookRequestParser):
 
         gitlab_event = 'x-gitlab-event' in request_headers and request_headers['x-gitlab-event']
 
-        logger.info("Received '%s' event from GitLab" % gitlab_event)
+        logger.debug("Received '%s' event from GitLab" % gitlab_event)
 
         if 'repository' not in data:
             logger.error("Unable to recognize data format")
@@ -53,7 +53,7 @@ class GitLabCIRequestParser(WebhookRequestParser):
         ref = ""
         action = ""
 
-        logger.info('Received event from Gitlab CI')
+        logger.debug('Received event from Gitlab CI')
 
         if 'push_data' not in data:
             logger.error("Unable to recognize data format")

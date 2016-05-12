@@ -13,7 +13,7 @@ class BitBucketRequestParser(WebhookRequestParser):
         ref = ""
         action = ""
 
-        logger.info("Received event from BitBucket")
+        logger.debug("Received event from BitBucket")
 
         if 'repository' not in data:
             logger.error("Unable to recognize data format")
