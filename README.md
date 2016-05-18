@@ -15,7 +15,27 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
 
 You can install ```Git-Auto-Deploy``` in multiple ways. Below are instructions for the most common methods.
 
-## Install from repository (recommended)
+## Install from PPA (recommended for debian systems)
+
+Add our PPA repository.
+
+    sudo add-apt-repository ppa:olipo186/git-auto-deploy
+    sudo apt-get update
+
+Install ```Git-Auto-Deploy``` using apt.
+
+    sudo apt-get install git-auto-deploy
+
+Modify the configuration file to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
+
+    nano /etc/git-auto-deploy.conf.json
+
+Start ```Git-Auto-Deploy``` and check it's status.
+
+    service git-auto-deploy start
+    service git-auto-deploy status
+
+## Install from repository (recommended for other systems)
 
 When installing ```Git-Auto-Deploy``` from the repository, you'll need to make sure that Python (tested on version 2.7) and Git (tested on version 2.5.0) is installed on your system.
 
@@ -37,26 +57,6 @@ To start ```Git-Auto-Deploy``` automatically on boot, open crontab in edit mode 
     @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
 You can also configure ```Git-Auto-Deploy``` to start on boot using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
-
-## Install from PPA (recommended for debian systems)
-
-Add our PPA repository.
-
-    sudo add-apt-repository ppa:olipo186/git-auto-deploy
-    sudo apt-get update
-
-Install ```Git-Auto-Deploy``` using apt.
-
-    sudo apt-get install git-auto-deploy
-
-Modify the configuration file to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
-
-    nano /etc/git-auto-deploy.conf.json
-
-Start ```Git-Auto-Deploy``` and check it's status.
-
-    service git-auto-deploy start
-    service git-auto-deploy status
 
 ## Alternative installation methods
 
