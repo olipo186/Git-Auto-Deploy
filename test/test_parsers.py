@@ -22,7 +22,7 @@ class WebhookTestCase(WebhookTestCaseBase):
             'port': 0,
             'intercept-stdout': False,
             'detailed-response': True,
-            'log-level': 'WARNING',
+            'log-level': 'ERROR',
             'repositories': []
         }
 
@@ -40,7 +40,7 @@ class WebhookTestCase(WebhookTestCaseBase):
         self.assertEqual(response.status_code, self.test_case['expected']['status'])
 
         # Compare results
-        if 'data' in self.test_case['expected'] and self.test_case['expected']['data']:
+        if 'data' in self.test_case['expected']:
             actual = json.dumps(response.json())
             expected = json.dumps(self.test_case['expected']['data'])
             self.assertEqual(actual, expected)
