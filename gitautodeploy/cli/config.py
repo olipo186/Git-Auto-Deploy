@@ -277,6 +277,25 @@ def init_config(config):
         if 'path' in repo_config:
             repo_config['path'] = os.path.expanduser(repo_config['path'])
 
+        if 'filters' not in repo_config:
+            repo_config['filters'] = []
+
+        # Rewrite some legacy filter config syntax
+        for filter in repo_config['filters']:
+
+            # Legacy config syntax?
+            if ('kind' in filter and filter['kind'] == 'pull-request-handler') or ('type' in filter and filter['type'] == 'pull-request-filter'):
+
+                # Reset legacy values
+                filter['kind'] = None
+                filter['type'] = None
+
+                if 'ref' in filter:
+                    filter['pull_request.base.ref'] = filter['ref']
+                    filter['ref'] = None
+
+                filter['pull_request'] = True
+
     return config
 
 def get_repo_config_from_environment():

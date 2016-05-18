@@ -188,22 +188,13 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                         # All options specified in the filter must match
                         for filter_key, filter_value in filter.iteritems():
 
+                            # Ignore filters with value None (let them pass)
+                            if filter_value == None:
+                                continue
+
                             # Support for earlier version so it's non-breaking functionality
                             if filter_key == 'action' and filter_value == action:
                                 continue
-
-                            # Support for legacy config syntax
-                            if filter_key == 'kind' and filter_value == 'pull-request-handler' and 'pull_request' in data:
-                                logger.info('filter %s passed', filter_key)
-                                continue
-
-                            # Handled below
-                            #if filter_key in data and filter_value == data[filter_key]:
-                            #    continue
-
-                            # Handled below
-                            #if filter_key in data and filter_value == True:
-                            #    continue
 
                             # Interpret dots in filter name as path notations 
                             node_value = data
@@ -211,6 +202,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
                                 # If the path is not valid the filter does not match
                                 if not node_key in node_value:
+                                    logger.info("Filter '%s'' does not match since the path is invalid" % (filter_key))
                                     raise FilterMatchError()
 
                                 node_value = node_value[node_key]
@@ -223,12 +215,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                             if filter_value == True:
                                 continue
 
-                            if isinstance(node_value, dict):
-                                node_value_str = "object"
-                            else:
-                                node_value_str = node_value
-                            
-                            logger.info("Filter '%s'' does not match ('%s' != '%s')" % (filter_key, filter_value, node_value_str))
+                            logger.info("Filter '%s'' does not match ('%s' != '%s')" % (filter_key, filter_value, (str(node_value)[:75] + '..') if len(str(node_value)) > 75 else str(node_value)))
 
                             raise FilterMatchError()
 
