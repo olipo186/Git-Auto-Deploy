@@ -253,7 +253,16 @@ class GitAutoDeploy(object):
         else:
             consoleHandler = logging.StreamHandler()
             consoleHandler.setFormatter(logFormatter)
-            logger.addHandler(consoleHandler)
+
+            # Check if a stream handler is already present (will be if GAD is started by test script)
+            handler_present = False
+            for handler in logger.handlers:
+                if isinstance(handler, type(consoleHandler)):
+                    handler_present = True
+                    break
+
+            if not handler_present:
+                logger.addHandler(consoleHandler)
 
         # Set logging level
         if 'log-level' in self._config:
