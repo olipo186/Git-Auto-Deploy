@@ -11,7 +11,7 @@ class WebhookTestCase(WebhookTestCaseBase):
         self.test_name = test_name
 
     def shortDescription(self):
-        return self.test_name
+        return self.test_name[:-15]
 
     def runTest(self):
         import requests
@@ -71,14 +71,14 @@ def suite():
 
     return suite
 
-if __name__ == '__main__':
+def main():
     from unittest import TestResult
     #result = TestResult()
-
     #suite().run(result)
     #unittest.main()
     #print result
+    s = suite()
+    result = unittest.TextTestRunner(verbosity=2).run(s)
 
-    suite = suite()
-    result = unittest.TextTestRunner(verbosity=2).run(suite)
-
+if __name__ == '__main__':
+    main()

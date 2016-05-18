@@ -17,7 +17,7 @@
         "accept": "*/*", 
         "content-length": "6602", 
         "content-type": "application/json", 
-        "host": "narpau.se:8001", 
+        "host": "host:8001", 
         "user-agent": "GitHub-Hookshot/e4028f5", 
         "x-github-delivery": "xxx", 
         "x-github-event": "push", 
