@@ -72,6 +72,38 @@ A filter can use `object_kind` and `ref` attributes for example to execute the
 deploy action only on a `build` event on the `master` branch.
 
 # Examples
+
+## GitHub
+
+The following example will trigger when a pull request with **master** as base is closed.
+```json
+{
+  "host": "0.0.0.0",
+  "port": 8080,
+  "global_deploy": [
+    "echo Pre-deploy script",
+    "echo Post-deploy script"
+  ],
+  "repositories": [
+    {
+      "url": "https://github.com/olipo186/Git-Auto-Deploy.git",
+      "branch": "master",
+      "remote": "origin",
+      "path": "~/repositories/Git-Auto-Deploy",
+      "deploy": "echo deploying",
+      "filters": [
+        {
+            "action": "closed",
+            "pull_request": true,
+            "pull_request.base.ref": "master"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## GitLab
 *(Note: the filter examples below are valid for GitLab)*
 
 Execute pre-deploy script, don't `pull` the repository but execute a deploy
