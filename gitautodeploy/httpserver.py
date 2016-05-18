@@ -56,7 +56,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             logger.info('Handling the request with %s' % ServiceRequestParser.__name__)
 
             # Could be GitHubParser, GitLabParser or other
-            repo_configs, ref, action, repo_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
+            repo_configs, ref, action, webhook_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
             logger.debug("Event details - ref: %s; action: %s" % (ref or "master", action))
 
             if len(repo_configs) == 0:
@@ -182,18 +182,55 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 # Verify that all filters matches the request (if any filters are specified)
                 if 'filters' in repo_config:
 
-                    # at least one filter must match
+                    # At least one filter must match
                     for filter in repo_config['filters']:
 
-                        # all options specified in the filter must match
+                        # All options specified in the filter must match
                         for filter_key, filter_value in filter.iteritems():
 
-                            # support for earlier version so it's non-breaking functionality
+                            # Support for earlier version so it's non-breaking functionality
                             if filter_key == 'action' and filter_value == action:
                                 continue
 
-                            if filter_key not in data or filter_value != data[filter_key]:
-                                raise FilterMatchError()
+                            # Support for legacy config syntax
+                            if filter_key == 'kind' and filter_value == 'pull-request-handler' and 'pull_request' in data:
+                                logger.info('filter %s passed', filter_key)
+                                continue
+
+                            # Handled below
+                            #if filter_key in data and filter_value == data[filter_key]:
+                            #    continue
+
+                            # Handled below
+                            #if filter_key in data and filter_value == True:
+                            #    continue
+
+                            # Interpret dots in filter name as path notations 
+                            node_value = data
+                            for node_key in filter_key.split('.'):
+
+                                # If the path is not valid the filter does not match
+                                if not node_key in node_value:
+                                    raise FilterMatchError()
+
+                                node_value = node_value[node_key]
+
+                            if filter_value == node_value:
+                                continue
+
+                            # If the filter value is set to True. the filter
+                            # will pass regardless of the actual value 
+                            if filter_value == True:
+                                continue
+
+                            if isinstance(node_value, dict):
+                                node_value_str = "object"
+                            else:
+                                node_value_str = node_value
+                            
+                            logger.info("Filter '%s'' does not match ('%s' != '%s')" % (filter_key, filter_value, node_value_str))
+
+                            raise FilterMatchError()
 
             except FilterMatchError as e:
 
