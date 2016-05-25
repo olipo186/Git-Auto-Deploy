@@ -20,11 +20,20 @@ class GitWrapper():
             logger.info('No local repository path configured, no pull will occure')
             return 0
 
-        cmd =   'unset GIT_DIR ' + \
-                '&& git fetch ' + repo_config['remote'] + \
-                '&& git reset --hard ' + repo_config['remote'] + '/' + repo_config['branch'] + ' ' + \
-                '&& git submodule init ' + \
-                '&& git submodule update'
+        import platform
+
+        if platform.system().lower() == "windows":
+            # This assumes Git for Windows is installed.
+            cmd =  ['"\Program Files\Git\usr\\bin\\bash.exe"',
+                    ' -c "cd ' + repo_config['path'],
+                    ' && unset GIT_DIR ']
+        else:
+            cmd =  ['unset GIT_DIR ']
+
+        cmd.append(' && git fetch ' + repo_config['remote'])
+        cmd.append(' && git reset --hard ' + repo_config['remote'] + '/' + repo_config['branch'])
+        cmd.append(' && git submodule init ')
+        cmd.append(' && git submodule update')
 
         # '&& git update-index --refresh ' +\
         res = ProcessWrapper().call([cmd], cwd=repo_config['path'], shell=True)
