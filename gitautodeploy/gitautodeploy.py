@@ -160,7 +160,13 @@ class GitAutoDeploy(object):
             logger.warning('No process is currently using port %s.' % self._config['port'])
             return False
 
-        os.kill(pid, signal.SIGKILL)
+        if hasattr(signal, SIGKILL):
+            os.kill(pid, signal.SIGKILL)
+        elif hasattr(signal, SIGHUP):
+            os.kill(pid, signal.SIGHUP)
+        else:
+            os.kill(pid, 1)
+
         return True
 
     def create_pid_file(self):
@@ -410,10 +416,14 @@ def main():
 
     app = GitAutoDeploy()
 
-    signal.signal(signal.SIGHUP, app.signal_handler)
-    signal.signal(signal.SIGINT, app.signal_handler)
-    signal.signal(signal.SIGABRT, app.signal_handler)
-    signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+    if hasattr(signal, SIGHUP):
+        signal.signal(signal.SIGHUP, app.signal_handler)
+    if hasattr(signal, SIGINT):
+        signal.signal(signal.SIGINT, app.signal_handler)
+    if hasattr(signal, SIGABRT):
+        signal.signal(signal.SIGABRT, app.signal_handler)
+    if hasattr(signal, SIGPIPE) and hasattr(signal, SIG_IGN):
+        signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
     config = get_config_defaults()
 
