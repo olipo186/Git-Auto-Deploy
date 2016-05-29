@@ -42,7 +42,7 @@ When installing ```Git-Auto-Deploy``` from the repository, you'll need to make s
 Clone the repository.
 
     git clone https://github.com/olipo186/Git-Auto-Deploy.git
-
+o
 Install the dependencies with [pip](http://www.pip-installer.org/en/latest/), a package manager for Python, by running the following command.
 
     sudo pip install -r requirements.txt
@@ -72,8 +72,8 @@ GAD runs under Windows, but requires some requisites.
 
 1. Install Python 2.7 using the [Windows installer](https://www.python.org/downloads/).
 2. After installed, make sure Python is in your [system PATH](https://technet.microsoft.com/en-us/library/cc772047(v=ws.11).aspx). Make sure ``C:\Python27`` and ``C:\Python27\Scripts`` is part of the PATH system environment variable.
-3. Install pip using ``get-pip.py`` from https://pip.pypa.io/en/latest/installing/
-4. Install the official Git build for Windows from https://git-scm.com/download/win
+3. Install pip using the [``get-pip.py`` script](https://pip.pypa.io/en/latest/installing/)
+4. Install the [official Git build for Windows](https://git-scm.com/download/win)
 5. Verify that Git is in your [system PATH](https://technet.microsoft.com/en-us/library/cc772047(v=ws.11).aspx). Making sure that ```C:\Program Files\Git\cmd``` is added (should have be added automatically by the installer) as well as ```C:\Program Files\Git\bin``` (*not* added by default)
 6. Continue with the instructions for [installing GAD from the repository](#install-from-repository-recommended-for-other-systems)
 
