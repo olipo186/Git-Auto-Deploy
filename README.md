@@ -67,6 +67,16 @@ To start ```Git-Auto-Deploy``` automatically on boot, open crontab in edit mode 
 
 You can also configure ```Git-Auto-Deploy``` to start on boot using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
 
+## Install and run GAD under Windows
+GAD runs under Windows, but requires some requisites.
+
+1. Install Python 2.7 using the [Windows installer](https://www.python.org/downloads/).
+2. After installed, make sure Python is in your [system PATH](https://technet.microsoft.com/en-us/library/cc772047(v=ws.11).aspx). Make sure ``C:\Python27`` and ``C:\Python27\Scripts`` is part of the PATH system environment variable.
+3. Install pip using ``get-pip.py`` from https://pip.pypa.io/en/latest/installing/
+4. Install the official Git build for Windows from https://git-scm.com/download/win
+5. Verify that Git is in your [system PATH](https://technet.microsoft.com/en-us/library/cc772047(v=ws.11).aspx). Making sure that ```C:\Program Files\Git\cmd``` is added (should have be added automatically by the installer) as well as ```C:\Program Files\Git\bin``` (*not* added by default)
+6. Continue with the instructions for [installing GAD from the repository](#install-from-repository-recommended-for-other-systems)
+
 ## Alternative installation methods
 
 * [Install as a python module (experimental)](./docs/Install as a python module.md)
