@@ -11,6 +11,7 @@ class GitWrapper():
         import logging
         from process import ProcessWrapper
         import os
+        import platform
 
         logger = logging.getLogger()
         logger.info("Updating repository %s" % repo_config['path'])
@@ -20,23 +21,26 @@ class GitWrapper():
             logger.info('No local repository path configured, no pull will occure')
             return 0
 
-        import platform
+        commands = []
 
         if platform.system().lower() == "windows":
             # This assumes Git for Windows is installed.
-            cmd =  ['"\Program Files\Git\usr\\bin\\bash.exe"',
-                    ' -c "cd ' + repo_config['path'],
-                    ' && unset GIT_DIR ']
-        else:
-            cmd =  ['unset GIT_DIR ']
+            commands.append('"\Program Files\Git\usr\\bin\\bash.exe" -c "cd ' + repo_config['path'])
 
-        cmd.append(' && git fetch ' + repo_config['remote'])
-        cmd.append(' && git reset --hard ' + repo_config['remote'] + '/' + repo_config['branch'])
-        cmd.append(' && git submodule init ')
-        cmd.append(' && git submodule update')
+        commands.append('unset GIT_DIR')
+        commands.append('git fetch ' + repo_config['remote'])
+        commands.append('git reset --hard ' + repo_config['remote'] + '/' + repo_config['branch'])
+        commands.append('git submodule init')
+        commands.append('git submodule update')
+        #commands.append('git update-index --refresh')
 
-        # '&& git update-index --refresh ' +\
-        res = ProcessWrapper().call([cmd], cwd=repo_config['path'], shell=True)
+        # All commands needs to success
+        for command in commands:
+            res = ProcessWrapper().call(command, cwd=repo_config['path'], shell=True)
+
+            if res != 0:
+                logger.error("Command '%s' failed with exit code %s" % (command, res))
+                break
 
         if res == 0 and os.path.isdir(repo_config['path']):
             logger.info("Repository %s successfully updated" % repo_config['path'])

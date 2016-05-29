@@ -268,9 +268,10 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                     res = GitWrapper.deploy(repo_config)
                     repo_result['deploy'] = res
 
-            except Exception as e:
-                logger.error('Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path'])
-                logger.error(e)
+            #except Exception as e:
+            #    logger.error('Error during \'pull\' or \'deploy\' operation on path: %s' % repo_config['path'])
+            #    logger.error(e)
+            #    raise e
 
             finally:
 
