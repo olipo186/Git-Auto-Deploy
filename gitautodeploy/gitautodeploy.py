@@ -130,22 +130,22 @@ class GitAutoDeploy(object):
         logger = logging.getLogger()
 
         for repository in self._config['repositories']:
+            
+            if not 'url' in repository:
+                continue
 
-            url = repository['url']
-            logger.info("Scanning repository: %s" % url)
-            m = re.match('.*@(.*?):', url)
+            logger.info("Scanning repository: %s" % repository['url'])
+            m = re.match('[^\@]+\@([^\:\/]+)(:(\d+))?', repository['url'])
 
             if m is not None:
-                port = repository['port']
-                port = '' if port is None else ('-p' + port)
-                ProcessWrapper().call(['ssh-keyscan -t ecdsa,rsa ' +
-                                       port + ' ' +
-                                       m.group(1) +
-                                       ' >> ' +
-                                       '$HOME/.ssh/known_hosts'], shell=True)
+                host = m.group(1)
+                port = m.group(3)
+                port_arg = '' if port is None else ('-p %s ' % port)
+                cmd = 'ssh-keyscan %s%s >> $HOME/.ssh/known_hosts' % (port_arg, host)
+                ProcessWrapper().call([cmd], shell=True)
 
             else:
-                logger.error('Could not find regexp match in path: %s' % url)
+                logger.error('Could not find regexp match in path: %s' % repository['url'])
 
     def kill_conflicting_processes(self):
         """Attempt to kill any process already using the configured port."""
@@ -281,7 +281,7 @@ class GitAutoDeploy(object):
             fileHandler.setFormatter(logFormatter)
             logger.addHandler(fileHandler)
 
-        if 'ssh-keygen' in self._config and self._config['ssh-keygen']:
+        if 'ssh-keyscan' in self._config and self._config['ssh-keyscan']:
             logger.info('Scanning repository hosts for ssh keys...')
             self.ssh_key_scan()
 

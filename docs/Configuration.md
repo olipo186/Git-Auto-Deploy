@@ -16,7 +16,7 @@ Command line option    | Environment variable | Config attribute | Description
 --host <host>          | GAD_HOST             | host             | Address to bind to
 --port <port>          | GAD_PORT             | port             | Port to bind to
 --force                | GAD_FORCE            |                  | Kill any process using the configured port
---ssh-keygen           | GAD_SSH_KEYGEN       |                  | Scan repository hosts for ssh keys
+--ssh-keyscan          | GAD_SSH_KEYSCAN      |                  | Scan repository hosts for ssh keys and add them to $HOME/.ssh/known_hosts
 
 # Configuration file options
 The configuration file is formatted according to a `JSON` inspired format, with the additional feature of supporting inline comments. The possible root elements are 

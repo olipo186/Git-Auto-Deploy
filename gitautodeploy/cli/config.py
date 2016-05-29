@@ -5,7 +5,7 @@ def get_config_defaults():
     config['quiet'] = False
     config['daemon-mode'] = False
     config['config'] = None
-    config['ssh-keygen'] = False
+    config['ssh-keyscan'] = False
     config['force'] = False
     config['ssl'] = False
     config['ssl-pem-file'] = '~/.gitautodeploy.pem'
@@ -44,8 +44,8 @@ def get_config_from_environment():
     if 'GAD_CONFIG' in os.environ:
         config['config'] = os.environ['GAD_CONFIG']
 
-    if 'GAD_SSH_KEYGEN' in os.environ:
-        config['ssh-keygen'] = True
+    if 'GAD_SSH_KEYSCAN' in os.environ:
+        config['ssh-keyscan'] = True
 
     if 'GAD_FORCE' in os.environ:
         config['force'] = True
@@ -90,9 +90,9 @@ def get_config_from_argv(argv):
                         dest="config",
                         type=str)
 
-    parser.add_argument("--ssh-keygen",
+    parser.add_argument("--ssh-keyscan",
                         help="scan repository hosts for ssh keys",
-                        dest="ssh-keygen",
+                        dest="ssh-keyscan",
                         action="store_true")
 
     parser.add_argument("--force",
