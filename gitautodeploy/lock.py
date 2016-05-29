@@ -1,12 +1,15 @@
+from lockfile import LockFile
+
 class Lock():
     """Simple implementation of a mutex lock using the file systems. Works on
     *nix systems."""
 
     path = None
-    _has_lock = False
+    lock = None
 
     def __init__(self, path):
         self.path = path
+        self.lock = LockFile(path)
 
     def obtain(self):
         import os
@@ -14,39 +17,31 @@ class Lock():
         logger = logging.getLogger()
 
         try:
-            os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            self._has_lock = True
-            logger.info("Successfully obtained lock: %s" % self.path)
-        except OSError:
+            self.lock.acquire(0)
+            logger.debug("Successfully obtained lock: %s" % self.path)
+        except AlreadyLocked:
             return False
-        else:
-            return True
+
+        return True
 
     def release(self):
         import os
         import logging
         logger = logging.getLogger()
 
-        if not self._has_lock:
+        if not self.has_lock():
             raise Exception("Unable to release lock that is owned by another process")
-        try:
-            os.remove(self.path)
-            logger.info("Successfully released lock: %s" % self.path)
-        finally:
-            self._has_lock = False
+
+        self.lock.release()
+        logger.debug("Successfully released lock: %s" % self.path)
 
     def has_lock(self):
-        return self._has_lock
+        return self.lock.i_am_locking()
 
     def clear(self):
         import os
         import logging
         logger = logging.getLogger()
 
-        try:
-            os.remove(self.path)
-        except OSError:
-            pass
-        finally:
-            logger.info("Successfully cleared lock: %s" % self.path)
-            self._has_lock = False
+        self.lock.break_lock()
+        logger.debug("Successfully cleared lock: %s" % self.path)

@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # 
+# DEPRECATED: Use make instead
+# 
 # This script compiles a binary Debian package (.deb)
 # 
+
+echo "DEPRECATED: Use make instead"
+exit
 
 # Get current path
 ORIGINAL_CWD=`pwd -P`

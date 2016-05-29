@@ -13,7 +13,7 @@ class GenericRequestParser(WebhookRequestParser):
         ref = ""
         action = ""
 
-        logger.info("Received event from unknown origin. Assume generic data format.")
+        logger.debug("Received event from unknown origin. Assume generic data format.")
 
         if 'repository' not in data:
             logger.error("Unable to recognize data format")
@@ -27,4 +27,4 @@ class GenericRequestParser(WebhookRequestParser):
         # Get a list of configured repositories that matches the incoming web hook reqeust
         repo_configs = self.get_matching_repo_configs(repo_urls)
 
-        return repo_configs, ref or "master", action
+        return repo_configs, ref or "master", action, repo_urls

@@ -10,11 +10,14 @@ You can follow next steps to implement CD process:
 * Configure branch in which pull request trying to merge (variable "ref" below)
 
 Example
-```"url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy",
+```json
+"url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy",
 "deploy": "echo deploying after pull request",
 "filters": [
 {
-    "type": "pull-request-filter",
     "action": "closed",
-    "ref": "testing-branch"
-}]
+    "pull_request": true,
+    "pull_request.base.ref": "testing-branch"
+}
+]
+```

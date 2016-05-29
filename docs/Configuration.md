@@ -24,6 +24,7 @@ as follow:
 
  - **pidfilepath**: The path where `pid` files are kept.
  - **logfilepath**: To enable logging, set this to a valid file path.
+ - **log-level**: Sets the threshold for the log output. Default value is NOTSET (all details). Recommended value is INFO (less details).
  - **host**: What IP address to listen on.
  - **port**: The port for the web server to listen on.
  - **global_deploy**: An array of two specific commands or path to scripts
@@ -45,6 +46,7 @@ Repository configurations are comprised of the following elements:
  - **filters**: Filters to apply to the web hook events so that only the desired
    events result in executing the deploy actions. See section *Filters* for more
    details.
+ - **secret-token**: The secret token set for your webhook (currently only implemented for [GitHub](https://developer.github.com/webhooks/securing/) and GitLab)
 
 ## Filters
 *(Currently only supported for GitHub and GitLab)*
@@ -70,6 +72,38 @@ A filter can use `object_kind` and `ref` attributes for example to execute the
 deploy action only on a `build` event on the `master` branch.
 
 # Examples
+
+## GitHub
+
+The following example will trigger when a pull request with **master** as base is closed.
+```json
+{
+  "host": "0.0.0.0",
+  "port": 8080,
+  "global_deploy": [
+    "echo Pre-deploy script",
+    "echo Post-deploy script"
+  ],
+  "repositories": [
+    {
+      "url": "https://github.com/olipo186/Git-Auto-Deploy.git",
+      "branch": "master",
+      "remote": "origin",
+      "path": "~/repositories/Git-Auto-Deploy",
+      "deploy": "echo deploying",
+      "filters": [
+        {
+            "action": "closed",
+            "pull_request": true,
+            "pull_request.base.ref": "master"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## GitLab
 *(Note: the filter examples below are valid for GitLab)*
 
 Execute pre-deploy script, don't `pull` the repository but execute a deploy

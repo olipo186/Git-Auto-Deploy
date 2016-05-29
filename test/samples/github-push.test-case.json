@@ -1,0 +1,182 @@
+{
+    "config": {
+        "branch": "master", 
+        "deploy": "echo test!", 
+        "remote": "origin", 
+        "url": "https://github.com/olipo186/Git-Auto-Deploy.git"
+    }, 
+    "expected": {
+        "status": 200,
+        "data": [
+            {
+                "deploy": 0
+            }
+        ]
+    }, 
+    "headers": {
+        "accept": "*/*", 
+        "content-length": "6602", 
+        "content-type": "application/json", 
+        "host": "host:8001", 
+        "user-agent": "GitHub-Hookshot/e4028f5", 
+        "x-github-delivery": "xxx", 
+        "x-github-event": "push", 
+        "x-hub-signature": "xxx"
+    }, 
+    "payload": {
+        "after": "b60ff44438d884b200d70de9c45fec5a15f2c0fa", 
+        "base_ref": null, 
+        "before": "6aa6dd514d5b80c9f36fec6c56d4094fd182de61", 
+        "commits": [
+            {
+                "added": [], 
+                "author": {
+                    "email": "oliver@poignant.se", 
+                    "name": "Oliver Poignant", 
+                    "username": "olipo186"
+                }, 
+                "committer": {
+                    "email": "oliver@poignant.se", 
+                    "name": "Oliver Poignant", 
+                    "username": "olipo186"
+                }, 
+                "distinct": true, 
+                "id": "b60ff44438d884b200d70de9c45fec5a15f2c0fa", 
+                "message": "Updated docs", 
+                "modified": [
+                    "gitautodeploy/httpserver.py"
+                ], 
+                "removed": [], 
+                "timestamp": "2016-05-08T00:08:09+02:00", 
+                "tree_id": "af9230d6223d6f6849b0f86ff7b5bef8b777a85b", 
+                "url": "https://github.com/olipo186/Git-Auto-Deploy/commit/b60ff44438d884b200d70de9c45fec5a15f2c0fa"
+            }
+        ], 
+        "compare": "https://github.com/olipo186/Git-Auto-Deploy/compare/6aa6dd514d5b...b60ff44438d8", 
+        "created": false, 
+        "deleted": false, 
+        "forced": false, 
+        "head_commit": {
+            "added": [], 
+            "author": {
+                "email": "oliver@poignant.se", 
+                "name": "Oliver Poignant", 
+                "username": "olipo186"
+            }, 
+            "committer": {
+                "email": "oliver@poignant.se", 
+                "name": "Oliver Poignant", 
+                "username": "olipo186"
+            }, 
+            "distinct": true, 
+            "id": "b60ff44438d884b200d70de9c45fec5a15f2c0fa", 
+            "message": "Updated docs", 
+            "modified": [
+                "gitautodeploy/httpserver.py"
+            ], 
+            "removed": [], 
+            "timestamp": "2016-05-08T00:08:09+02:00", 
+            "tree_id": "af9230d6223d6f6849b0f86ff7b5bef8b777a85b", 
+            "url": "https://github.com/olipo186/Git-Auto-Deploy/commit/b60ff44438d884b200d70de9c45fec5a15f2c0fa"
+        }, 
+        "pusher": {
+            "email": "oliver@poignant.se", 
+            "name": "olipo186"
+        }, 
+        "ref": "refs/heads/master", 
+        "repository": {
+            "archive_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/{archive_format}{/ref}", 
+            "assignees_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/assignees{/user}", 
+            "blobs_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/git/blobs{/sha}", 
+            "branches_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/branches{/branch}", 
+            "clone_url": "https://github.com/olipo186/Git-Auto-Deploy.git", 
+            "collaborators_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/collaborators{/collaborator}", 
+            "comments_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/comments{/number}", 
+            "commits_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/commits{/sha}", 
+            "compare_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/compare/{base}...{head}", 
+            "contents_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/contents/{+path}", 
+            "contributors_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/contributors", 
+            "created_at": 1370546738, 
+            "default_branch": "master", 
+            "deployments_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/deployments", 
+            "description": "Deploy your GitHub, GitLab or Bitbucket projects automatically on Git push events or webhooks using this small HTTP server written in Python. Continuous deployment in it's most simple form.", 
+            "downloads_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/downloads", 
+            "events_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/events", 
+            "fork": false, 
+            "forks": 71, 
+            "forks_count": 71, 
+            "forks_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/forks", 
+            "full_name": "olipo186/Git-Auto-Deploy", 
+            "git_commits_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/git/commits{/sha}", 
+            "git_refs_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/git/refs{/sha}", 
+            "git_tags_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/git/tags{/sha}", 
+            "git_url": "git://github.com/olipo186/Git-Auto-Deploy.git", 
+            "has_downloads": true, 
+            "has_issues": true, 
+            "has_pages": true, 
+            "has_wiki": true, 
+            "homepage": "http://olipo186.github.io/Git-Auto-Deploy/", 
+            "hooks_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/hooks", 
+            "html_url": "https://github.com/olipo186/Git-Auto-Deploy", 
+            "id": 10534595, 
+            "issue_comment_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/issues/comments{/number}", 
+            "issue_events_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/issues/events{/number}", 
+            "issues_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/issues{/number}", 
+            "keys_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/keys{/key_id}", 
+            "labels_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/labels{/name}", 
+            "language": "Python", 
+            "languages_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/languages", 
+            "master_branch": "master", 
+            "merges_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/merges", 
+            "milestones_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/milestones{/number}", 
+            "mirror_url": null, 
+            "name": "Git-Auto-Deploy", 
+            "notifications_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/notifications{?since,all,participating}", 
+            "open_issues": 9, 
+            "open_issues_count": 9, 
+            "owner": {
+                "email": "oliver@poignant.se", 
+                "name": "olipo186"
+            }, 
+            "private": false, 
+            "pulls_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/pulls{/number}", 
+            "pushed_at": 1462658898, 
+            "releases_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/releases{/id}", 
+            "size": 502, 
+            "ssh_url": "git@github.com:olipo186/Git-Auto-Deploy.git", 
+            "stargazers": 259, 
+            "stargazers_count": 259, 
+            "stargazers_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/stargazers", 
+            "statuses_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/statuses/{sha}", 
+            "subscribers_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/subscribers", 
+            "subscription_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/subscription", 
+            "svn_url": "https://github.com/olipo186/Git-Auto-Deploy", 
+            "tags_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/tags", 
+            "teams_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/teams", 
+            "trees_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/git/trees{/sha}", 
+            "updated_at": "2016-05-07T11:10:07Z", 
+            "url": "https://github.com/olipo186/Git-Auto-Deploy", 
+            "watchers": 259, 
+            "watchers_count": 259
+        }, 
+        "sender": {
+            "avatar_url": "https://avatars.githubusercontent.com/u/1056476?v=3", 
+            "events_url": "https://api.github.com/users/olipo186/events{/privacy}", 
+            "followers_url": "https://api.github.com/users/olipo186/followers", 
+            "following_url": "https://api.github.com/users/olipo186/following{/other_user}", 
+            "gists_url": "https://api.github.com/users/olipo186/gists{/gist_id}", 
+            "gravatar_id": "", 
+            "html_url": "https://github.com/olipo186", 
+            "id": 1056476, 
+            "login": "olipo186", 
+            "organizations_url": "https://api.github.com/users/olipo186/orgs", 
+            "received_events_url": "https://api.github.com/users/olipo186/received_events", 
+            "repos_url": "https://api.github.com/users/olipo186/repos", 
+            "site_admin": false, 
+            "starred_url": "https://api.github.com/users/olipo186/starred{/owner}{/repo}", 
+            "subscriptions_url": "https://api.github.com/users/olipo186/subscriptions", 
+            "type": "User", 
+            "url": "https://api.github.com/users/olipo186"
+        }
+    }
+}

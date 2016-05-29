@@ -7,6 +7,7 @@
     "echo Deploy started!",
     "echo Deploy completed!"
   ],
+  "log-level": "INFO",
   "repositories": [
     {
       "url": "https://github.com/olipo186/Git-Auto-Deploy.git",
@@ -17,6 +18,10 @@
     },
     {
       "url": "https://github.com/github/gitignore",
+      "path": "~/repositories/gitignore"
+    },
+    {
+      "url": "git@gitlab.com:gitlab-org/gitlab-ce.git",
       "path": "~/repositories/gitignore"
     },
     {

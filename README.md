@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/olipo186/Git-Auto-Deploy.svg?branch=master)](https://travis-ci.org/olipo186/Git-Auto-Deploy)
 # What is it?
 
 Git-Auto-Deploy consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. This application allows you to continuously and automatically deploy you projects each time you push new commits to your repository.</p>
@@ -13,29 +14,6 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
 # Getting started
 
 You can install ```Git-Auto-Deploy``` in multiple ways. Below are instructions for the most common methods.
-
-## Install from repository (recommended)
-
-When installing ```Git-Auto-Deploy``` from the repository, you'll need to make sure that Python (tested on version 2.7) and Git (tested on version 2.5.0) is installed on your system.
-
-Clone the repository.
-
-    git clone https://github.com/olipo186/Git-Auto-Deploy.git
-
-Copy of the sample config and modify it. [Read more about the configuration options](./docs/Configuration.md). Make sure that ```pidfilepath``` is writable for the user running the script, as well as all paths configured for your repositories.
-
-    cd Git-Auto-Deploy
-    cp config.json.sample config.json
-
-Start ```Git-Auto-Deploy``` manually using;
-
-    python gitautodeploy
-
-To start ```Git-Auto-Deploy``` automatically on boot, open crontab in edit mode using ```crontab -e``` and add the entry below.
-
-    @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
-
-You can also configure ```Git-Auto-Deploy``` to start on boot using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
 
 ## Install from PPA (recommended for debian systems)
 
@@ -56,6 +34,29 @@ Start ```Git-Auto-Deploy``` and check it's status.
 
     service git-auto-deploy start
     service git-auto-deploy status
+
+## Install from repository (recommended for other systems)
+
+When installing ```Git-Auto-Deploy``` from the repository, you'll need to make sure that Python (tested on version 2.7) and Git (tested on version 2.5.0) is installed on your system.
+
+Clone the repository.
+
+    git clone https://github.com/olipo186/Git-Auto-Deploy.git
+
+Copy of the sample config and modify it. [Read more about the configuration options](./docs/Configuration.md). Make sure that ```pidfilepath``` is writable for the user running the script, as well as all paths configured for your repositories.
+
+    cd Git-Auto-Deploy
+    cp config.json.sample config.json
+
+Start ```Git-Auto-Deploy``` manually using;
+
+    python gitautodeploy --config config.json
+
+To start ```Git-Auto-Deploy``` automatically on boot, open crontab in edit mode using ```crontab -e``` and add the entry below.
+
+    @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
+
+You can also configure ```Git-Auto-Deploy``` to start on boot using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
 
 ## Alternative installation methods
 

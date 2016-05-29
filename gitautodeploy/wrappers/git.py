@@ -10,33 +10,50 @@ class GitWrapper():
         """Pulls the latest version of the repo from the git server"""
         import logging
         from process import ProcessWrapper
-        
+        import os
+        import platform
+
         logger = logging.getLogger()
-        logger.info("Post push request received")
+        logger.info("Updating repository %s" % repo_config['path'])
 
         # Only pull if there is actually a local copy of the repository
         if 'path' not in repo_config:
             logger.info('No local repository path configured, no pull will occure')
             return 0
-        
-        logger.info('Updating ' + repo_config['path'])
 
-        cmd =   'unset GIT_DIR ' + \
-                '&& git fetch ' + repo_config['remote'] + \
-                '&& git reset --hard ' + repo_config['remote'] + '/' + repo_config['branch'] + ' ' + \
-                '&& git submodule init ' + \
-                '&& git submodule update'
+        commands = []
 
-        # '&& git update-index --refresh ' +\
-        res = ProcessWrapper().call([cmd], cwd=repo_config['path'], shell=True)
-        logger.info('Pull result: ' + str(res))
+        if platform.system().lower() == "windows":
+            # This assumes Git for Windows is installed.
+            commands.append('"\Program Files\Git\usr\\bin\\bash.exe" -c "cd ' + repo_config['path'])
+
+        commands.append('unset GIT_DIR')
+        commands.append('git fetch ' + repo_config['remote'])
+        commands.append('git reset --hard ' + repo_config['remote'] + '/' + repo_config['branch'])
+        commands.append('git submodule init')
+        commands.append('git submodule update')
+        #commands.append('git update-index --refresh')
+
+        # All commands needs to success
+        for command in commands:
+            res = ProcessWrapper().call(command, cwd=repo_config['path'], shell=True)
+
+            if res != 0:
+                logger.error("Command '%s' failed with exit code %s" % (command, res))
+                break
+
+        if res == 0 and os.path.isdir(repo_config['path']):
+            logger.info("Repository %s successfully updated" % repo_config['path'])
+        else:
+            logger.error("Unable to update repository %s" % repo_config['path'])
 
         return int(res)
 
     @staticmethod
     def clone(url, branch, path):
         from process import ProcessWrapper
-        ProcessWrapper().call(['git clone --recursive ' + url + ' -b ' + branch + ' ' + path], shell=True)
+        res = ProcessWrapper().call(['git clone --recursive ' + url + ' -b ' + branch + ' ' + path], shell=True)
+        return int(res)
 
     @staticmethod
     def deploy(repo_config):
@@ -48,10 +65,19 @@ class GitWrapper():
         if 'path' in repo_config:
             path = repo_config['path']
 
-        logger.info('Executing deploy command(s)')
-        
+        if not 'deploy_commands' in repo_config or len(repo_config['deploy_commands']) == 0:
+            logger.info('No deploy commands configured')
+            return []
+
+        logger.info('Executing %s deploy commands' % str(len(repo_config['deploy_commands'])))
+
         # Use repository path as default cwd when executing deploy commands
         cwd = (repo_config['path'] if 'path' in repo_config else None)
 
+        res = []
         for cmd in repo_config['deploy_commands']:
-            ProcessWrapper().call([cmd], cwd=cwd, shell=True)
+            res.append(ProcessWrapper().call([cmd], cwd=cwd, shell=True))
+
+        logger.info('%s commands executed with status; %s' % (str(len(res)), str(res)))
+
+        return res

@@ -28,7 +28,6 @@ Copy the content of [config.json.sample](../config.json.sample) and save it anyw
 ## Running the application
 
 Run the application using the executable ```git-auto-deploy``` which has been provided by pip. Provide the path to your configuration file as a command line argument.
- referencing the ```gitautodeploy``` module (the directory ```Git-Auto-Deploy/gitautodeploy```).
 
     git-auto-deploy --config ~/git-auto-deploy.conf.json
 
