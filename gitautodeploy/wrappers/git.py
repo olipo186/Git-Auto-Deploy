@@ -23,11 +23,13 @@ class GitWrapper():
 
         commands = []
 
+        # On Windows, bash command needs to be run using bash.exe. This assumes bash.exe
+        # (typically installed under C:\Program Files\Git\bin) is in the system PATH.
         if platform.system().lower() == "windows":
-            # This assumes Git for Windows is installed.
-            commands.append('"\Program Files\Git\usr\\bin\\bash.exe" -c "cd ' + repo_config['path'])
+            commands.append('bash -c "cd \\"' + repo_config['path'] + '\\" && unset GIT_DIR"')
+        else:
+            commands.append('unset GIT_DIR')
 
-        commands.append('unset GIT_DIR')
         commands.append('git fetch ' + repo_config['remote'])
         commands.append('git reset --hard ' + repo_config['remote'] + '/' + repo_config['branch'])
         commands.append('git submodule init')
