@@ -4,19 +4,21 @@ NAME="git-auto-deploy"
 GAD_UID="git-auto-deploy"
 GAD_GID="git-auto-deploy"
 
-CONF_DIR="/etc/$NAME"
+HOME_DIR="/etc/$NAME"
 DATA_DIR="/var/lib/$NAME"
 PID_DIR="/var/run/$NAME"
 
 # Add user and group
-adduser --quiet --system --home $CONF_DIR --no-create-home --ingroup nogroup --disabled-password $GAD_UID
+adduser --quiet --system --home $HOME_DIR --no-create-home --ingroup nogroup --disabled-password $GAD_UID
 addgroup --system $GAD_GID
 adduser $GAD_UID $GAD_GID
 
-# Create config dir
-#mkdir -p $CONF_DIR
-#chown -R $GAD_UID:$GAD_GID $CONF_DIR
-#chmod 750 $CONF_DIR
+# Create home dir
+mkdir -p $HOME_DIR
+mkdir -p $HOME_DIR/.ssh
+touch $HOME_DIR/.ssh/known_hosts
+chown -R $GAD_UID:$GAD_GID $HOME_DIR
+chmod -R 750 $HOME_DIR
 
 # Create log file
 touch /var/log/$NAME.log
