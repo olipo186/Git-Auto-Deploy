@@ -110,6 +110,11 @@ def get_config_from_argv(argv):
                         dest="logfilepath",
                         type=str)
 
+    parser.add_argument("--log-level",
+                        help="specify log level",
+                        dest="log-level",
+                        type=str)
+
     parser.add_argument("--host",
                         help="address to bind to",
                         dest="host",
