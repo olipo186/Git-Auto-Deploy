@@ -1,4 +1,3 @@
-from lockfile import LockFile
 
 class Lock():
     """Simple implementation of a mutex lock using the file systems. Works on
@@ -8,6 +7,13 @@ class Lock():
     lock = None
 
     def __init__(self, path):
+        try:
+            from lockfile import LockFile
+        except ImportError:
+            from lockfile import FileLock
+            # Different naming in older versions of lockfile
+            LockFile = FileLock
+
         self.path = path
         self.lock = LockFile(path)
 
