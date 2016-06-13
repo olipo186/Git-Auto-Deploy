@@ -26,6 +26,16 @@ Install ```Git-Auto-Deploy``` using apt.
 
     sudo apt-get install git-auto-deploy
 
+**Note:** There's currently a problem with the debian package, causing it to not install all nessecary dependencies. Therefore, you'll need to install the following dependency manually using pip.
+
+    sudo pip install lockfile
+
+If you don't have pip installed, try installing it by running this from the command
+line:
+
+    curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
+
+
 Modify the configuration file to match your project setup. [Read more about the configuration options](./docs/Configuration.md).
 
     nano /etc/git-auto-deploy.conf.json
