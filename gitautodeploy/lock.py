@@ -1,4 +1,4 @@
-from lockfile import LockFile
+from lockfile import LockFile, AlreadyLocked
 
 class Lock():
     """Simple implementation of a mutex lock using the file systems. Works on
