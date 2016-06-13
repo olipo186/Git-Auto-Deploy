@@ -1,4 +1,4 @@
-from lockfile import LockFile, AlreadyLocked
+from lockfile import LockFile
 
 class Lock():
     """Simple implementation of a mutex lock using the file systems. Works on
@@ -14,6 +14,7 @@ class Lock():
     def obtain(self):
         import os
         import logging
+        from lockfile import AlreadyLocked
         logger = logging.getLogger()
 
         try:
