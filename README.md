@@ -33,7 +33,7 @@ Modify the configuration file to match your project setup. [Read more about the 
 Optional: Copy any private SSH key you wish to use to the home directory of GAD.
 
     sudo cp /path/to/id_rsa /etc/git-auto-deploy/.ssh/
-    chown -R git-auto-deploy:git-auto-deploy /etc/git-auto-deploy
+    sudo chown -R git-auto-deploy:git-auto-deploy /etc/git-auto-deploy
 
 Start ```Git-Auto-Deploy``` and check it's status.
 
