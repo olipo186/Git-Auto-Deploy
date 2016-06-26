@@ -55,18 +55,26 @@ class GitLabCIRequestParser(WebhookRequestParser):
 
         logger.debug('Received event from Gitlab CI')
 
-        if 'push_data' not in data:
+        if 'repository' not in data:
             logger.error("Unable to recognize data format")
             return [], ref or "master", action
 
         # Only add repositories if the build is successful. Ignore it in other case.
         if data['build_status'] == "success":
             for k in ['url', 'git_http_url', 'git_ssh_url']:
-                if k in data['push_data']['repository']:
-                    repo_urls.append(data['push_data']['repository'][k])
+                if k in data['repository']:
+                    repo_urls.append(data['repository'][k])
         else:
             logger.warning("Gitlab CI build '%d' has status '%s'. Not pull will be done" % (
                 data['build_id'], data['build_status']))
+
+        # extract the branch
+        if 'ref' in data:
+            ref = data['ref']
+
+        # set the action
+        if 'object_kind' in data:
+            action = data['object_kind']
 
         # Get a list of configured repositories that matches the incoming web hook reqeust
         repo_configs = self.get_matching_repo_configs(repo_urls)

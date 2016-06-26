@@ -131,7 +131,11 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         # Assume GitLab if the X-Gitlab-Event HTTP header is set
         if 'x-gitlab-event' in request_headers:
 
-            return parsers.GitLabRequestParser
+            # Special Case for Gitlab CI
+            if content_type == "application/json" and "build_status" in data:
+                return parsers.GitLabCIRequestParser
+            else:
+                return parsers.GitLabRequestParser
 
         # Assume GitHub if the X-GitHub-Event HTTP header is set
         elif 'x-github-event' in request_headers:
@@ -143,11 +147,6 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         elif user_agent and user_agent.lower().find('bitbucket') != -1:
 
             return parsers.BitBucketRequestParser
-
-        # Special Case for Gitlab CI
-        elif content_type == "application/json" and "build_status" in data:
-
-            return parsers.GitLabCIRequestParser
 
         # This handles old GitLab requests and Gogs requests for example.
         elif content_type == "application/json":
