@@ -19,6 +19,7 @@ You can install ```Git-Auto-Deploy``` in multiple ways. Below are instructions f
 
 Add our PPA repository.
 
+    sudo apt-get install software-properties-common
     sudo add-apt-repository ppa:olipo186/git-auto-deploy
     sudo apt-get update
 
