@@ -97,18 +97,6 @@ class GitAutoDeploy(object):
         # Iterate over all configured repositories
         for repo_config in self._config['repositories']:
 
-            # Only clone repositories with a configured path
-            if 'url' not in repo_config:
-                logger.critical("Repository has no configured URL")
-                self.close()
-                self.exit()
-                return
-
-            # Only clone repositories with a configured path
-            if 'path' not in repo_config:
-                logger.debug("Repository %s will not be cloned (no path configured)" % repo_config['url'])
-                continue
-
             if os.path.isdir(repo_config['path']) and os.path.isdir(repo_config['path']+'/.git'):
                 # Pull repository
                 logger.debug("Repository %s already present and will be updated" % repo_config['url'])
@@ -460,7 +448,10 @@ def main():
         config['repositories'].append(repo_config)
 
     # Initialize config by expanding with missing values
-    init_config(config)
+    if init_config(config) != 0:
+        app.close()
+        app.exit()
+        return
 
     app.setup(config)
     app.serve_forever()

@@ -246,6 +246,16 @@ def init_config(config):
 
     for repo_config in config['repositories']:
 
+        # Only clone repositories with a configured path
+        if 'url' not in repo_config:
+            logger.critical("Repository has no configured URL")
+            return 1
+
+        # Only clone repositories with a configured path
+        if 'path' not in repo_config:
+            logger.critical("Repository has no configured path")
+            return 2
+
         # Setup branch if missing
         if 'branch' not in repo_config:
             repo_config['branch'] = "master"
@@ -301,7 +311,7 @@ def init_config(config):
 
                 filter['pull_request'] = True
 
-    return config
+    return 0
 
 def get_repo_config_from_environment():
     """Look for repository config in any defined environment variables. If
