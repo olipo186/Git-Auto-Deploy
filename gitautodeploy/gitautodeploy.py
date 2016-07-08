@@ -246,6 +246,17 @@ class GitAutoDeploy(object):
         from lock import Lock
         from httpserver import WebhookRequestHandler
 
+        # This solves https://github.com/olipo186/Git-Auto-Deploy/issues/118
+        try:
+            from logging import NullHandler
+        except ImportError:
+            from logging import Handler
+
+            class NullHandler(Handler):
+                def emit(self, record):
+                    pass
+
+
         # Attatch config values to this instance
         self._config = config
 
@@ -255,7 +266,7 @@ class GitAutoDeploy(object):
 
         # Enable console output?
         if ('quiet' in self._config and self._config['quiet']) or ('daemon-mode' in self._config and self._config['daemon-mode']):
-            logger.addHandler(logging.NullHandler())
+            logger.addHandler(NullHandler())
         else:
             consoleHandler = logging.StreamHandler()
             consoleHandler.setFormatter(logFormatter)
