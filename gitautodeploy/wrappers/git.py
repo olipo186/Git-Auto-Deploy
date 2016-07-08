@@ -6,6 +6,46 @@ class GitWrapper():
         pass
 
     @staticmethod
+    def init(repo_config):
+        """Init remote url of the repo from the git server"""
+        import logging
+        from process import ProcessWrapper
+        import os
+        import platform
+
+        logger = logging.getLogger()
+        logger.info("Initializing repository %s" % repo_config['path'])
+
+        commands = []
+
+        # On Windows, bash command needs to be run using bash.exe. This assumes bash.exe
+        # (typically installed under C:\Program Files\Git\bin) is in the system PATH.
+        if platform.system().lower() == "windows":
+            commands.append('bash -c "cd \\"' + repo_config['path'] + '\\" && unset GIT_DIR"')
+        else:
+            commands.append('unset GIT_DIR')
+
+        commands.append('git remote set-url ' + repo_config['remote'] + " " + repo_config['url'])
+        commands.append('git fetch ' + repo_config['remote'])
+        commands.append('git checkout -f -B ' + repo_config['branch'] + ' -t ' + repo_config['remote'] + '/' + repo_config['branch'])
+        commands.append('git submodule update --init --recursive')
+
+        # All commands need to success
+        for command in commands:
+            res = ProcessWrapper().call(command, cwd=repo_config['path'], shell=True)
+
+            if res != 0:
+                logger.error("Command '%s' failed with exit code %s" % (command, res))
+                break
+
+        if res == 0 and os.path.isdir(repo_config['path']):
+            logger.info("Repository %s successfully initialized" % repo_config['path'])
+        else:
+            logger.error("Unable to init repository %s" % repo_config['path'])
+
+        return int(res)
+
+    @staticmethod
     def pull(repo_config):
         """Pulls the latest version of the repo from the git server"""
         import logging
@@ -25,7 +65,8 @@ class GitWrapper():
         else:
             commands.append('unset GIT_DIR')
 
-        commands.append('git checkout -f -B ' + repo_config['branch'] + ' -t ' + repo_config['remote'] + '/' + repo_config['branch'])
+        commands.append('git fetch ' + repo_config['remote'])
+        commands.append('git reset --hard ' + repo_config['remote'] + "/" + repo_config['branch'])
         commands.append('git submodule update --init --recursive')
 
         # All commands need to success

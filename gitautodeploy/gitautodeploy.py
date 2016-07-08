@@ -98,12 +98,8 @@ class GitAutoDeploy(object):
         for repo_config in self._config['repositories']:
 
             if os.path.isdir(repo_config['path']) and os.path.isdir(repo_config['path']+'/.git'):
-                # Pull repository
-                logger.debug("Repository %s already present and will be updated" % repo_config['url'])
-                GitWrapper.pull(repo_config)
+                GitWrapper.init(repo_config)
             else:
-                # Clone repository
-                logger.info("Repository %s not present and needs to be cloned" % repo_config['url'])
                 GitWrapper.clone(repo_config)
 
     def ssh_key_scan(self):
