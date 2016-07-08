@@ -112,11 +112,7 @@ class GitAutoDeploy(object):
             if os.path.isdir(repo_config['path']) and os.path.isdir(repo_config['path']+'/.git'):
                 # Pull repository
                 logger.debug("Repository %s already present and will be updated" % repo_config['url'])
-                ret = GitWrapper.pull(repo_config)
-                if ret == 0:
-                    logger.info("Repository %s successfully pulled" % repo_config['url'])
-                else:
-                    logger.error("Unable to pull %s branch of repository %s" % (repo_config['branch'], repo_config['url']))
+                GitWrapper.pull(repo_config)
             else:
                 # Clone repository
                 logger.info("Repository %s not present and needs to be cloned" % repo_config['url'])
