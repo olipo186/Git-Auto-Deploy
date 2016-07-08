@@ -32,9 +32,8 @@ class GitWrapper():
 
         commands.append('git checkout -f -B ' + repo_config['branch'] + ' -t ' + repo_config['remote'] + '/' + repo_config['branch'])
         commands.append('git submodule update --init --recursive')
-        #commands.append('git update-index --refresh')
 
-        # All commands needs to success
+        # All commands need to success
         for command in commands:
             res = ProcessWrapper().call(command, cwd=repo_config['path'], shell=True)
 
@@ -50,9 +49,38 @@ class GitWrapper():
         return int(res)
 
     @staticmethod
-    def clone(url, branch, path):
+    def clone(repo_config):
+        """Clones the latest version of the repo from the git server"""
+        import logging
         from process import ProcessWrapper
-        res = ProcessWrapper().call(['git clone --recursive ' + url + ' -b ' + branch + ' ' + path], shell=True)
+        import os
+        import platform
+
+        logger = logging.getLogger()
+        logger.info("Cloning repository %s" % repo_config['path'])
+
+        # Only pull if there is actually a local copy of the repository
+        if 'path' not in repo_config:
+            logger.info('No local repository path configured, no clone will occure')
+            return 0
+
+        commands = []
+        commands.append('unset GIT_DIR')
+        commands.append('git clone --recursive ' + repo_config['url'] + ' -b ' + repo_config['branch'] + ' ' + repo_config['path'])
+
+        # All commands need to success
+        for command in commands:
+            res = ProcessWrapper().call(command, shell=True)
+
+            if res != 0:
+                logger.error("Command '%s' failed with exit code %s" % (command, res))
+                break
+
+        if res == 0 and os.path.isdir(repo_config['path']):
+            logger.info("Repository %s successfully cloned" % repo_config['url'])
+        else:
+            logger.error("Unable to clone repository %s" % repo_config['url'])
+
         return int(res)
 
     @staticmethod

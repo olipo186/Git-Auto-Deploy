@@ -116,11 +116,7 @@ class GitAutoDeploy(object):
             else:
                 # Clone repository
                 logger.info("Repository %s not present and needs to be cloned" % repo_config['url'])
-                ret = GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'], path=repo_config['path'])
-                if ret == 0 and os.path.isdir(repo_config['path']):
-                    logger.info("Repository %s successfully cloned" % repo_config['url'])
-                else:
-                    logger.error("Unable to clone %s branch of repository %s" % (repo_config['branch'], repo_config['url']))
+                GitWrapper.clone(repo_config)
 
     def ssh_key_scan(self):
         import re
