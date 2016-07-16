@@ -128,8 +128,12 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         user_agent = 'user-agent' in request_headers and request_headers['user-agent']
         content_type = 'content-type' in request_headers and request_headers['content-type']
 
+        # Assume Coding if the X-Coding-Event HTTP header is set
+        if 'x-coding-event' in request_headers:
+            return parsers.CodingRequestParser
+
         # Assume GitLab if the X-Gitlab-Event HTTP header is set
-        if 'x-gitlab-event' in request_headers:
+        elif 'x-gitlab-event' in request_headers:
 
             # Special Case for Gitlab CI
             if content_type == "application/json" and "build_status" in data:
