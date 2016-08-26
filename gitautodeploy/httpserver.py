@@ -235,6 +235,14 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 result.append(repo_result)
                 continue
 
+            # If the path does not exist, a warning will be raised and no pull or
+            # deploy will be made.
+            if not os.path.isdir(repo_config['path']):
+                logger.error("The repository '%s' does not exist locally. Make sure it was pulled " % repo_config['path'] +
+                        "properly without errors by reviewing the log.")
+                result.append(repo_result)
+                continue
+
             running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
             waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
             try:
