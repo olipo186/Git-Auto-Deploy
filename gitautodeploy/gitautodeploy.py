@@ -97,31 +97,10 @@ class GitAutoDeploy(object):
         # Iterate over all configured repositories
         for repo_config in self._config['repositories']:
 
-            # Only clone repositories with a configured path
-            if 'url' not in repo_config:
-                logger.critical("Repository has no configured URL")
-                self.close()
-                self.exit()
-                return
-
-            # Only clone repositories with a configured path
-            if 'path' not in repo_config:
-                logger.debug("Repository %s will not be cloned (no path configured)" % repo_config['url'])
-                continue
-
             if os.path.isdir(repo_config['path']) and os.path.isdir(repo_config['path']+'/.git'):
-                logger.debug("Repository %s already present" % repo_config['url'])
-                continue
-
-            logger.info("Repository %s not present and needs to be cloned" % repo_config['url'])
-
-            # Clone repository
-            ret = GitWrapper.clone(url=repo_config['url'], branch=repo_config['branch'], path=repo_config['path'])
-
-            if ret == 0 and os.path.isdir(repo_config['path']):
-                logger.info("Repository %s successfully cloned" % repo_config['url'])
+                GitWrapper.init(repo_config)
             else:
-                logger.error("Unable to clone %s branch of repository %s" % (repo_config['branch'], repo_config['url']))
+                GitWrapper.clone(repo_config)
 
     def ssh_key_scan(self):
         import re
@@ -476,7 +455,10 @@ def main():
         config['repositories'].append(repo_config)
 
     # Initialize config by expanding with missing values
-    init_config(config)
+    if init_config(config) != 0:
+        app.close()
+        app.exit()
+        return
 
     app.setup(config)
     app.serve_forever()
