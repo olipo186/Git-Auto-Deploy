@@ -56,6 +56,11 @@ class GitWrapper():
         logger = logging.getLogger()
         logger.info("Updating repository %s" % repo_config['path'])
 
+        # Only pull if there is actually a local copy of the repository
+        if 'path' not in repo_config:
+            logger.info('No local repository path configured, no pull will occure')
+            return 0
+
         commands = []
 
         # On Windows, bash command needs to be run using bash.exe. This assumes bash.exe
@@ -94,6 +99,11 @@ class GitWrapper():
 
         logger = logging.getLogger()
         logger.info("Cloning repository %s" % repo_config['path'])
+
+        # Only pull if there is actually a local copy of the repository
+        if 'path' not in repo_config:
+            logger.info('No local repository path configured, no clone will occure')
+            return 0
 
         commands = []
         commands.append('unset GIT_DIR')
