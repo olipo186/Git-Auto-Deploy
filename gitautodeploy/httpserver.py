@@ -243,6 +243,13 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 result.append(repo_result)
                 continue
 
+            # If the path is not writable, a warning will be raised and no pull or
+            # deploy will be made.
+            if not os.access(repo_config['path'], os.W_OK):
+                logger.error("The path '%s' is not writable. Make sure that GAD has write access to that path." % repo_config['path'])
+                result.append(repo_result)
+                continue
+
             running_lock = Lock(os.path.join(repo_config['path'], 'status_running'))
             waiting_lock = Lock(os.path.join(repo_config['path'], 'status_waiting'))
             try:
