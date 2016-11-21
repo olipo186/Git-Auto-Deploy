@@ -6,7 +6,7 @@ GAD_GID="git-auto-deploy"
 
 HOME_DIR="/etc/$NAME"
 DATA_DIR="/var/lib/$NAME"
-PID_DIR="/var/run/$NAME
+PID_DIR="/var/run/$NAME"
 PID_FILE="$PID_DIR/$NAME.pid"
 
 # Add user and group
