@@ -6,7 +6,8 @@ GAD_GID="git-auto-deploy"
 
 HOME_DIR="/etc/$NAME"
 DATA_DIR="/var/lib/$NAME"
-PID_FILE="/var/run/$NAME.pid"
+PID_DIR="/var/run/$NAME"
+PID_FILE="$PID_DIR/$NAME.pid"
 
 # Add user and group
 adduser --quiet --system --home $HOME_DIR --no-create-home --ingroup nogroup --disabled-password $GAD_UID
@@ -31,8 +32,9 @@ chown -R $GAD_UID:$GAD_GID $DATA_DIR
 chmod 750 $DATA_DIR
 
 # Create pid file
+mkdir $PID_DIR
 touch $PID_FILE
-chown $GAD_UID:$GAD_GID $PID_FILE
+chown $GAD_UID:$GAD_GID $PID_DIR $PID_FILE
 chmod 750 $PID_FILE
 
 update-rc.d $NAME defaults
