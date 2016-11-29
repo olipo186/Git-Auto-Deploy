@@ -16,7 +16,7 @@ class WebhookRequestParser(object):
             for repo_config in self._config['repositories']:
                 if repo_config in configs:
                     continue
-                if repo_config['url'] == url:
+                if repo_config.get('match-url', repo_config.get('url')) == url:
                     configs.append(repo_config)
                 elif 'url_without_usernme' in repo_config and repo_config['url_without_usernme'] == url:
                     configs.append(repo_config)
