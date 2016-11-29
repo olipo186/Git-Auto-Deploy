@@ -205,7 +205,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
                                 # If the path is not valid the filter does not match
                                 if not node_key in node_value:
-                                    logger.info("Filter '%s'' does not match since the path is invalid" % (filter_key))
+                                    logger.info("Filter '%s' does not match since the path is invalid" % (filter_key))
                                     raise FilterMatchError()
 
                                 node_value = node_value[node_key]
