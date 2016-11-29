@@ -37,6 +37,7 @@ as follow:
 Repository configurations are comprised of the following elements:
 
  - **url**: The URL to the repository.
+ - **match-url**: An alternative URL used when matching incoming webhook requests (see https://github.com/olipo186/Git-Auto-Deploy/pull/148) 
  - **branch**: The branch which will be checked out.
  - **remote**: The name of the remote to use.
  - **path**: Path to clone the repository to. If omitted, the repository won't
