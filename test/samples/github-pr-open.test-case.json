@@ -3,7 +3,13 @@
         "branch": "master", 
         "deploy": "echo test!", 
         "remote": "origin", 
-        "url": "https://github.com/olipo186/Git-Auto-Deploy.git"
+        "url": "https://github.com/olipo186/Git-Auto-Deploy.git",
+        "payload-filter": [
+            {
+                "action": "opened",
+                "pull_request.user.login": "olipo186"
+            }
+        ]
     }, 
     "expected": {
         "status": 200,

@@ -1,0 +1,214 @@
+{
+    "config": {
+        "branch": "master", 
+        "deploy": "echo test!", 
+        "remote": "origin", 
+        "url": "https://bitbucket.org/oliverpoignant/test-hook.git",
+        "header-filter": {
+            "x-event-key": "pullrequest:created"
+        }
+    },
+    "expected": {
+        "status": 200,
+        "data": [
+            {
+                "deploy": 0
+            }
+        ]
+    },
+    "headers": {
+        "accept": "*/*", 
+        "accept-encoding": "gzip, deflate", 
+        "connection": "keep-alive", 
+        "content-length": "4248", 
+        "content-type": "application/json", 
+        "host": "narpau.se:8001", 
+        "user-agent": "Bitbucket-Webhooks/2.0", 
+        "x-attempt-number": "1", 
+        "x-event-key": "pullrequest:created", 
+        "x-hook-uuid": "1f813038-7b26-4d08-9b80-ee76eeb53d93", 
+        "x-request-uuid": "2e6626d9-effe-46f7-8bfd-e9dee9a58920"
+    }, 
+    "payload": {
+        "actor": {
+            "display_name": "Oliver Poignant", 
+            "links": {
+                "avatar": {
+                    "href": "https://bitbucket.org/account/oliverpoignant/avatar/32/"
+                }, 
+                "html": {
+                    "href": "https://bitbucket.org/oliverpoignant/"
+                }, 
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/users/oliverpoignant"
+                }
+            }, 
+            "type": "user", 
+            "username": "oliverpoignant", 
+            "uuid": "{d628d18b-5fe4-4f45-b34f-cc1a20073194}"
+        }, 
+        "pullrequest": {
+            "author": {
+                "display_name": "Oliver Poignant", 
+                "links": {
+                    "avatar": {
+                        "href": "https://bitbucket.org/account/oliverpoignant/avatar/32/"
+                    }, 
+                    "html": {
+                        "href": "https://bitbucket.org/oliverpoignant/"
+                    }, 
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/users/oliverpoignant"
+                    }
+                }, 
+                "type": "user", 
+                "username": "oliverpoignant", 
+                "uuid": "{d628d18b-5fe4-4f45-b34f-cc1a20073194}"
+            }, 
+            "close_source_branch": false, 
+            "closed_by": null, 
+            "comment_count": 0, 
+            "created_on": "2016-12-08T19:30:52.967233+00:00", 
+            "description": "", 
+            "destination": {
+                "branch": {
+                    "name": "master"
+                }, 
+                "commit": {
+                    "hash": "04dad24aa44d", 
+                    "links": {
+                        "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/commit/04dad24aa44d"
+                        }
+                    }
+                }, 
+                "repository": {
+                    "full_name": "oliverpoignant/test-hook", 
+                    "links": {
+                        "avatar": {
+                            "href": "https://bitbucket.org/oliverpoignant/test-hook/avatar/32/"
+                        }, 
+                        "html": {
+                            "href": "https://bitbucket.org/oliverpoignant/test-hook"
+                        }, 
+                        "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook"
+                        }
+                    }, 
+                    "name": "test-hook", 
+                    "type": "repository", 
+                    "uuid": "{88ad4da3-6e3e-41ad-9aef-f3a26731d913}"
+                }
+            }, 
+            "id": 1, 
+            "links": {
+                "activity": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/pullrequests/1/activity"
+                }, 
+                "approve": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/pullrequests/1/approve"
+                }, 
+                "comments": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/pullrequests/1/comments"
+                }, 
+                "commits": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/pullrequests/1/commits"
+                }, 
+                "decline": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/pullrequests/1/decline"
+                }, 
+                "diff": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/pullrequests/1/diff"
+                }, 
+                "html": {
+                    "href": "https://bitbucket.org/oliverpoignant/test-hook/pull-requests/1"
+                }, 
+                "merge": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/pullrequests/1/merge"
+                }, 
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/pullrequests/1"
+                }, 
+                "statuses": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/pullrequests/1/statuses"
+                }
+            }, 
+            "merge_commit": null, 
+            "participants": [], 
+            "reason": "", 
+            "reviewers": [], 
+            "source": {
+                "branch": {
+                    "name": "development"
+                }, 
+                "commit": {
+                    "hash": "198a37b77185", 
+                    "links": {
+                        "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook/commit/198a37b77185"
+                        }
+                    }
+                }, 
+                "repository": {
+                    "full_name": "oliverpoignant/test-hook", 
+                    "links": {
+                        "avatar": {
+                            "href": "https://bitbucket.org/oliverpoignant/test-hook/avatar/32/"
+                        }, 
+                        "html": {
+                            "href": "https://bitbucket.org/oliverpoignant/test-hook"
+                        }, 
+                        "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook"
+                        }
+                    }, 
+                    "name": "test-hook", 
+                    "type": "repository", 
+                    "uuid": "{88ad4da3-6e3e-41ad-9aef-f3a26731d913}"
+                }
+            }, 
+            "state": "OPEN", 
+            "task_count": 0, 
+            "title": "ahhha edited online with Bitbucket", 
+            "type": "pullrequest", 
+            "updated_on": "2016-12-08T19:30:52.984875+00:00"
+        }, 
+        "repository": {
+            "full_name": "oliverpoignant/test-hook", 
+            "is_private": true, 
+            "links": {
+                "avatar": {
+                    "href": "https://bitbucket.org/oliverpoignant/test-hook/avatar/32/"
+                }, 
+                "html": {
+                    "href": "https://bitbucket.org/oliverpoignant/test-hook"
+                }, 
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/oliverpoignant/test-hook"
+                }
+            }, 
+            "name": "test-hook", 
+            "owner": {
+                "display_name": "Oliver Poignant", 
+                "links": {
+                    "avatar": {
+                        "href": "https://bitbucket.org/account/oliverpoignant/avatar/32/"
+                    }, 
+                    "html": {
+                        "href": "https://bitbucket.org/oliverpoignant/"
+                    }, 
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/users/oliverpoignant"
+                    }
+                }, 
+                "type": "user", 
+                "username": "oliverpoignant", 
+                "uuid": "{d628d18b-5fe4-4f45-b34f-cc1a20073194}"
+            }, 
+            "scm": "git", 
+            "type": "repository", 
+            "uuid": "{88ad4da3-6e3e-41ad-9aef-f3a26731d913}", 
+            "website": ""
+        }
+    }
+}

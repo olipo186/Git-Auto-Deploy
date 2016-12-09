@@ -1,0 +1,249 @@
+{
+    "config": {
+        "branch": "master",
+        "deploy": "echo test!",
+        "remote": "origin",
+        "url": "https://bitbucket.org/team/repository.git",
+        "header-filter": {
+            "x-event-key": "pullrequest:fulfilled"
+        }
+    },
+    "expected": {
+        "status": 200,
+        "data": [
+            {
+                "deploy": 0
+            }
+        ]
+    },
+    "headers": {
+        "X-Request-UUID": "78b41616-e3b4-4f18-b911-4ba3baf5fec5",
+        "X-Event-Key": "pullrequest:fulfilled",
+        "User-Agent": "Bitbucket-Webhooks/2.0",
+        "X-Attempt-Number": "3",
+        "X-Hook-UUID": "07a11b9b-d82a-4558-a903-8b76e2b541f5",
+        "Content-Type": "application/json"
+    },
+    "payload": {
+        "pullrequest": {
+            "merge_commit": {
+                "hash": "4ea4f3f317a6",
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/repositories/team/repository/commit/4ea4f3f317a6"
+                    }
+                }
+            },
+            "description": "",
+            "links": {
+                "decline": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository/pullrequests/156/decline"
+                },
+                "commits": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository/pullrequests/156/commits"
+                },
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository/pullrequests/156"
+                },
+                "comments": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository/pullrequests/156/comments"
+                },
+                "merge": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository/pullrequests/156/merge"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/team/repository/pull-requests/156"
+                },
+                "activity": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository/pullrequests/156/activity"
+                },
+                "diff": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository/pullrequests/156/diff"
+                },
+                "approve": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository/pullrequests/156/approve"
+                },
+                "statuses": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository/pullrequests/156/statuses"
+                }
+            },
+            "author": {
+                "username": "User",
+                "display_name": "User",
+                "type": "user",
+                "uuid": "{59f0a5d6-47ab-4f00-899d-efc81e98dba1}",
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/users/User"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/User/"
+                    },
+                    "avatar": {
+                        "href": "https://bitbucket.org/account/User/avatar/32/"
+                    }
+                }
+            },
+            "close_source_branch": false,
+            "reviewers": [],
+            "destination": {
+                "commit": {
+                    "hash": "095aa224e257",
+                    "links": {
+                        "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/team/repository/commit/095aa224e257"
+                        }
+                    }
+                },
+                "branch": {
+                    "name": "master"
+                },
+                "repository": {
+                    "full_name": "team/repository",
+                    "type": "repository",
+                    "uuid": "{a064b276-e793-42a5-8b27-050056718971}",
+                    "links": {
+                        "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/team/repository"
+                        },
+                        "html": {
+                            "href": "https://bitbucket.org/team/repository"
+                        },
+                        "avatar": {
+                            "href": "https://bitbucket.org/team/repository/avatar/32/"
+                        }
+                    },
+                    "name": "Repository Name"
+                }
+            },
+            "comment_count": 0,
+            "id": 156,
+            "source": {
+                "commit": {
+                    "hash": "d41c93cba906",
+                    "links": {
+                        "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/team/repository/commit/d41c93cba906"
+                        }
+                    }
+                },
+                "branch": {
+                    "name": "develop"
+                },
+                "repository": {
+                    "full_name": "team/repository",
+                    "type": "repository",
+                    "uuid": "{a064b276-e793-42a5-8b27-050056718971}",
+                    "links": {
+                        "self": {
+                            "href": "https://api.bitbucket.org/2.0/repositories/team/repository"
+                        },
+                        "html": {
+                            "href": "https://bitbucket.org/team/repository"
+                        },
+                        "avatar": {
+                            "href": "https://bitbucket.org/team/repository/avatar/32/"
+                        }
+                    },
+                    "name": "Repository Name"
+                }
+            },
+            "participants": [],
+            "state": "MERGED",
+            "task_count": 0,
+            "created_on": "2016-12-02T19:13:24.073024+00:00",
+            "updated_on": "2016-12-02T19:13:47.132095+00:00",
+            "reason": "",
+            "title": "Pull request title.",
+            "type": "pullrequest",
+            "closed_by": {
+                "username": "User",
+                "display_name": "User",
+                "type": "user",
+                "uuid": "{59f0a5d6-47ab-4f00-899d-efc81e98dba1}",
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/users/User"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/User/"
+                    },
+                    "avatar": {
+                        "href": "https://bitbucket.org/account/User/avatar/32/"
+                    }
+                }
+            }
+        },
+        "repository": {
+            "website": "",
+            "scm": "git",
+            "uuid": "{a064b276-e793-42a5-8b27-050056718971}",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/repositories/team/repository"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/team/repository"
+                },
+                "avatar": {
+                    "href": "https://bitbucket.org/team/repository/avatar/32/"
+                }
+            },
+            "project": {
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/teams/team/projects/PROJ"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/account/user/team/projects/PROJ"
+                    },
+                    "avatar": {
+                        "href": "https://bitbucket.org/account/user/team/projects/PROJ/avatar/32"
+                    }
+                },
+                "type": "project",
+                "uuid": "{0b88330f-47da-4fa8-9a61-dc8e0dae21f1}",
+                "key": "PROJ",
+                "name": "Repository Name"
+            },
+            "full_name": "team/repository",
+            "owner": {
+                "username": "team",
+                "display_name": "Repository Name ",
+                "type": "team",
+                "uuid": "{1ac257f7-39d5-49b4-acbd-21def2e164fc}",
+                "links": {
+                    "self": {
+                        "href": "https://api.bitbucket.org/2.0/teams/team"
+                    },
+                    "html": {
+                        "href": "https://bitbucket.org/team/"
+                    },
+                    "avatar": {
+                        "href": "https://bitbucket.org/account/team/avatar/32/"
+                    }
+                }
+            },
+            "type": "repository",
+            "is_private": true,
+            "name": "Repository Name"
+        },
+        "actor": {
+            "username": "User",
+            "display_name": "User",
+            "type": "user",
+            "uuid": "{59f0a5d6-47ab-4f00-899d-efc81e98dba1}",
+            "links": {
+                "self": {
+                    "href": "https://api.bitbucket.org/2.0/users/User"
+                },
+                "html": {
+                    "href": "https://bitbucket.org/User/"
+                },
+                "avatar": {
+                    "href": "https://bitbucket.org/account/User/avatar/32/"
+                }
+            }
+        }
+    }
+}
