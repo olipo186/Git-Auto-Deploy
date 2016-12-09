@@ -39,6 +39,22 @@ class GitLabRequestParser(WebhookRequestParser):
 
         return repo_configs, ref or "master", action, repo_urls
 
+    def validate_request(self, request_headers, repo_configs):
+        import logging
+
+        logger = logging.getLogger()
+
+        for repo_config in repo_configs:
+
+            # Validate secret token if present
+            if 'secret-token' in repo_config and 'x-gitlab-token' in request_headers:
+
+                if repo_config['secret-token'] != request_headers['x-gitlab-token']:
+                    logger.info("Request token does not match the 'secret-token' configured for repository %s." % repo_config['url'])
+                    return False
+
+        return True
+
 
 class GitLabCIRequestParser(WebhookRequestParser):
 

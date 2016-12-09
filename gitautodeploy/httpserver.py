@@ -59,6 +59,11 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
             repo_configs, ref, action, webhook_urls = ServiceRequestParser(self._config).get_repo_params_from_request(request_headers, request_body)
             logger.debug("Event details - ref: %s; action: %s" % (ref or "master", action))
 
+            if not ServiceRequestParser(self._config).validate_request(request_headers, repo_configs):
+                self.send_error(400, 'Bad request')
+                test_case['expected']['status'] = 400
+                return
+
             if len(repo_configs) == 0:
                 self.send_error(400, 'Bad request')
                 logger.warning('The URLs references in the webhook did not match any repository entry in the config. For this webhook to work, make sure you have at least one repository configured with one of the following URLs; %s' % ', '.join(webhook_urls))

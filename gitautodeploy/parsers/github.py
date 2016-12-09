@@ -40,20 +40,24 @@ class GitHubRequestParser(WebhookRequestParser):
             logger.debug("Action '%s' was fired" % action)
 
         # Get a list of configured repositories that matches the incoming web hook reqeust
-        items = self.get_matching_repo_configs(repo_urls)
+        repo_configs = self.get_matching_repo_configs(repo_urls)
 
-        repo_configs = []
-        for repo_config in items:
+        return repo_configs, ref or "master", action, repo_urls
+
+    def validate_request(self, request_headers, repo_configs):
+        import logging
+
+        logger = logging.getLogger()
+
+        for repo_config in repo_configs:
 
             # Validate secret token if present
             if 'secret-token' in repo_config and 'x-hub-signature' in request_headers:
                 if not self.verify_signature(repo_config['secret-token'], request_body, request_headers['x-hub-signature']):
-                    logger.warning("Request signature does not match the 'secret-token' configured for repository %s." % repo_config['url'])
-                    continue
+                    logger.info("Request signature does not match the 'secret-token' configured for repository %s." % repo_config['url'])
+                    return False
 
-            repo_configs.append(repo_config)
-
-        return repo_configs, ref or "master", action, repo_urls
+        return True
 
     def verify_signature(self, token, body, signature):
         import hashlib

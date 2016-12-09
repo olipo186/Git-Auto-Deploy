@@ -22,3 +22,6 @@ class WebhookRequestParser(object):
                     configs.append(repo_config)
 
         return configs
+
+    def validate_request(self, request_headers, repo_configs):
+        return True

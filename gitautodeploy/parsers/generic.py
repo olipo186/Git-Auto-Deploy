@@ -28,3 +28,4 @@ class GenericRequestParser(WebhookRequestParser):
         repo_configs = self.get_matching_repo_configs(repo_urls)
 
         return repo_configs, ref or "master", action, repo_urls
+
