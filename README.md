@@ -15,7 +15,7 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
 
 You can install ```Git-Auto-Deploy``` in multiple ways. Below are instructions for the most common methods.
 
-## Install from PPA (recommended for debian systems)
+## Install from PPA (recommended for ubuntu systems)
 
 Add our PPA repository.
 
