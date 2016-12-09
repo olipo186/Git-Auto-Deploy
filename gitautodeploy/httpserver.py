@@ -66,7 +66,7 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
                 return
 
             # Make git pulls and trigger deploy commands
-            res = self.process_repositories(repo_configs, ref, action, request_body)
+            res = self.process_repositories(repo_configs, ref, action, request_body, request_headers)
 
             if 'detailed-response' in self._config and self._config['detailed-response']:
                 self.send_response(200, 'OK')
@@ -161,7 +161,78 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
         logger.error("Unable to recognize request origin. Don't know how to handle the request.")
         return
 
-    def process_repositories(self, repo_configs, ref, action, request_body):
+    def passes_payload_filter(self, payload_filters, data, action):
+        import logging
+
+        logger = logging.getLogger()
+
+        # At least one filter must match
+        for filter in payload_filters:
+
+            # All options specified in the filter must match
+            for filter_key, filter_value in filter.iteritems():
+
+                # Ignore filters with value None (let them pass)
+                if filter_value == None:
+                    continue
+
+                # Support for earlier version so it's non-breaking functionality
+                if filter_key == 'action' and filter_value == action:
+                    continue
+
+                # Interpret dots in filter name as path notations 
+                node_value = data
+                for node_key in filter_key.split('.'):
+
+                    # If the path is not valid the filter does not match
+                    if not node_key in node_value:
+                        logger.info("Filter '%s' does not match since the path is invalid" % (filter_key))
+
+                        # Filter does not match, do not process this repo config
+                        return False
+
+                    node_value = node_value[node_key]
+
+                if filter_value == node_value:
+                    continue
+
+                # If the filter value is set to True. the filter
+                # will pass regardless of the actual value 
+                if filter_value == True:
+                    continue
+
+                logger.info("Filter '%s'' does not match ('%s' != '%s')" % (filter_key, filter_value, (str(node_value)[:75] + '..') if len(str(node_value)) > 75 else str(node_value)))
+
+                # Filter does not match, do not process this repo config
+                return False
+
+        # Filter does match, proceed
+        return True
+
+    def passes_header_filter(self, header_filter, request_headers):
+        import logging
+
+        logger = logging.getLogger()
+
+        # At least one filter must match
+        for key in header_filter:
+
+            # Verify that the request has the required header attribute
+            if key.lower() not in request_headers:
+                return False
+
+            # "True" indicates that any header value is accepted
+            if header_filter[key] is True:
+                continue
+
+            # Verify that the request has the required header value
+            if header_filter[key] != request_headers[key.lower()]:
+                return False
+
+        # Filter does match, proceed
+        return True
+
+    def process_repositories(self, repo_configs, ref, action, request_body, request_headers):
         """Verify that the suggested repositories has matching settings and
         issue git pull and/or deploy commands."""
         import os
@@ -181,48 +252,14 @@ class WebhookRequestHandler(BaseHTTPRequestHandler):
 
             repo_result = {}
 
-            try:
-                # Verify that all filters matches the request (if any filters are specified)
-                if 'filters' in repo_config:
+            # Verify that all payload filters matches the request (if any payload filters are specified)
+            if 'payload-filter' in repo_config and not self.passes_payload_filter(repo_config['payload-filter'], data, action):
 
-                    # At least one filter must match
-                    for filter in repo_config['filters']:
+                # Filter does not match, do not process this repo config
+                continue
 
-                        # All options specified in the filter must match
-                        for filter_key, filter_value in filter.iteritems():
-
-                            # Ignore filters with value None (let them pass)
-                            if filter_value == None:
-                                continue
-
-                            # Support for earlier version so it's non-breaking functionality
-                            if filter_key == 'action' and filter_value == action:
-                                continue
-
-                            # Interpret dots in filter name as path notations 
-                            node_value = data
-                            for node_key in filter_key.split('.'):
-
-                                # If the path is not valid the filter does not match
-                                if not node_key in node_value:
-                                    logger.info("Filter '%s' does not match since the path is invalid" % (filter_key))
-                                    raise FilterMatchError()
-
-                                node_value = node_value[node_key]
-
-                            if filter_value == node_value:
-                                continue
-
-                            # If the filter value is set to True. the filter
-                            # will pass regardless of the actual value 
-                            if filter_value == True:
-                                continue
-
-                            logger.info("Filter '%s'' does not match ('%s' != '%s')" % (filter_key, filter_value, (str(node_value)[:75] + '..') if len(str(node_value)) > 75 else str(node_value)))
-
-                            raise FilterMatchError()
-
-            except FilterMatchError as e:
+            # Verify that all header filters matches the request (if any header filters are specified)
+            if 'header-filter' in repo_config and not self.passes_header_filter(repo_config['header-filter'], request_headers):
 
                 # Filter does not match, do not process this repo config
                 continue

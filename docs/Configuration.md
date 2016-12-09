@@ -44,15 +44,107 @@ Repository configurations are comprised of the following elements:
    be cloned, only the deploy scripts will be executed.
  - **deploy**: A command to be executed. If `path` is set, the command is 
    executed after a successfull `pull`.
- - **filters**: Filters to apply to the web hook events so that only the desired
-   events result in executing the deploy actions. See section *Filters* for more
-   details.
+ - **payload-filter**: A list of inclusive filters/rules that is applied to the request body of incoming web hook requests and determines whether the deploy command should be executed or not. See section *Filters* for more details.
+ - **header-filter**: A set of inclusive filters/rules that is applied to the request header of incoming web hook requests and determines whether the deploy command should be executed or not. See section *Filters* for more details.
  - **secret-token**: The secret token set for your webhook (currently only implemented for [GitHub](https://developer.github.com/webhooks/securing/) and GitLab)
 
 ## Filters
 *(Currently only supported for GitHub and GitLab)*
 
-With filter, it is possible to trigger the deploy only if the criteria are met.
+With filters, it is possible to trigger the deploy only if a set of specific criterias are met. The filter can be applied to the web hook request header (if specified using the *header-filter* option) or to the request body (*payload-filter*).
+
+### Allow web hooks with specific header values only (header-filter)
+
+Some Git providers will add custom HTTP headers in their web hook requests when sending them to GAD. Using a *header-filter*, you can configure GAD to only process web hooks that has a specific HTTP header specified.
+
+For example, if you'd like to only process requests that has the *X-Event-Key* header set to the value *pullrequest:fulfilled*, you could use the following config;
+
+```json
+{
+  ...
+  "repositories": [
+    {
+      ...
+      "header-filter": {
+          "X-Event-Key": "pullrequest:fulfilled"
+      }
+    }
+  ]
+}
+```
+
+If a header name is specified but with the value set to true, any request that has the header specified will pass without regard to the header value.
+
+```json
+{
+  ...
+  "repositories": [
+    {
+      ...
+      "header-filter": {
+          "X-Event-Key": true
+      }
+    }
+  ]
+}
+```
+
+### Allow web hooks with specific payload only (payload-filter)
+
+A web hook request typically contains a payload, or a request body, made up of a JSON object. The JSON object in the request body will follow a format choosen by the Git server. Thus, it's format will differ depending on whether you are using GitHub, GitLab, Bitbucket or any other Git provider.
+
+A *payload-filter* can be used to set specific criterias for which incoming web hook requests should actually trigger the deploy command. Filter can be setup to only trigger deploys when a commit is made to a specific branch, or when a pull request is closed and has a specific destination branch.
+
+Since the format of the payload differs depending on what Git provider you are using, you'll need to inspect the web hook request format yourself and write a filter that matches its structure.
+
+To specify a filter that should be applied further down the object tree, a dot notation (".") is used. For example, if the request body looks like this;
+```json
+{
+  "action": "opened",
+  "number": 69,
+  "pull_request": {
+    "url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/pulls/69",
+    "id": 61793882,
+    "html_url": "https://github.com/olipo186/Git-Auto-Deploy/pull/69",
+    "diff_url": "https://github.com/olipo186/Git-Auto-Deploy/pull/69.diff",
+    "patch_url": "https://github.com/olipo186/Git-Auto-Deploy/pull/69.patch",
+    "issue_url": "https://api.github.com/repos/olipo186/Git-Auto-Deploy/issues/69",
+    "number": 69,
+    "state": "open",
+    "locked": false,
+    "title": "Refactoring. Fixed some imminent issues.",
+    "user": {
+      "login": "olipo186",
+      "id": 1056476,
+      "avatar_url": "https://avatars.githubusercontent.com/u/1056476?v=3",
+      "gravatar_id": "",
+      ...
+  },
+  ...
+}
+```
+
+You could specify the following filter, which would only trigger on pull requests created by olipo186.
+
+```json
+{
+  ...
+  "repositories": [
+    {
+      ...
+      "payload-filter": [
+        {
+          "action": "opened",
+          "pull_request.user.login": "olipo186"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Legacy filters (older format)
+
 For example, deploy on `push` to the `master` branch only, ignore other branches.
 
 Filters are defined by providing keys/values to be looked up in the original 
@@ -72,9 +164,9 @@ For example, GitLab web hook data looks like this:
 A filter can use `object_kind` and `ref` attributes for example to execute the
 deploy action only on a `build` event on the `master` branch.
 
-# Examples
+### Examples
 
-## GitHub
+#### GitHub
 
 The following example will trigger when a pull request with **master** as base is closed.
 ```json
@@ -104,7 +196,7 @@ The following example will trigger when a pull request with **master** as base i
 }
 ```
 
-## GitLab
+#### GitLab
 *(Note: the filter examples below are valid for GitLab)*
 
 Execute pre-deploy script, don't `pull` the repository but execute a deploy

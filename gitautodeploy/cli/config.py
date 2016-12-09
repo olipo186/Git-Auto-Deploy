@@ -282,11 +282,19 @@ def init_config(config):
         if 'path' in repo_config:
             repo_config['path'] = os.path.expanduser(repo_config['path'])
 
-        if 'filters' not in repo_config:
-            repo_config['filters'] = []
+        # Support for legacy config format
+        if 'filters' in repo_config:
+            repo_config['payload-filter'] = repo_config['filters']
+            del repo_config['filters']
+
+        if 'payload-filter' not in repo_config:
+            repo_config['payload-filter'] = []
+
+        if 'header-filter' not in repo_config:
+            repo_config['header-filter'] = {}
 
         # Rewrite some legacy filter config syntax
-        for filter in repo_config['filters']:
+        for filter in repo_config['payload-filter']:
 
             # Legacy config syntax?
             if ('kind' in filter and filter['kind'] == 'pull-request-handler') or ('type' in filter and filter['type'] == 'pull-request-filter'):
