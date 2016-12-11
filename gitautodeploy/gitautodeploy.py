@@ -235,7 +235,7 @@ class GitAutoDeploy(object):
         import os
         import logging
         from lock import Lock
-        from httpserver import WebhookRequestHandler
+        from httpserver import WebhookRequestHandlerFactory
 
         # This solves https://github.com/olipo186/Git-Auto-Deploy/issues/118
         try:
@@ -320,7 +320,9 @@ class GitAutoDeploy(object):
                 Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
         try:
-            WebhookRequestHandler._config = self._config
+            # Create web hook request handler class
+            WebhookRequestHandler = WebhookRequestHandlerFactory(self._config)
+
             self._server = HTTPServer((self._config['host'],
                                        self._config['port']),
                                       WebhookRequestHandler)
