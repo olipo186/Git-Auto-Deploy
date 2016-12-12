@@ -18,8 +18,9 @@ class GitLabCIRequestParser(WebhookRequestParser):
         # Only add repositories if the build is successful. Ignore it in other case.
         if data['build_status'] == "success":
             for k in ['url', 'git_http_url', 'git_ssh_url']:
-                if k in data['repository']:
-                    repo_urls.append(data['repository'][k])
+                for n in ['repository', 'project']:
+                    if n in data and k in data[n]:
+                        repo_urls.append(data[n][k])
         else:
             action.log_warning("Gitlab CI build '%d' has status '%s'. Not pull will be done" % (data['build_id'], data['build_status']))
 
