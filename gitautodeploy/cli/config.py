@@ -27,6 +27,8 @@ def get_config_defaults():
     config['log-test-case'] = False
     config['log-test-case-dir'] = None
 
+    config['remote-whitelist'] = ['127.0.0.1']
+
     return config
 
 def get_config_from_environment():

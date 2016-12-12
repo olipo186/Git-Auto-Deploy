@@ -227,6 +227,12 @@ class GitAutoDeploy(object):
 
         return 0
 
+    def update(self, action, message=None):
+        pass
+        #print "%s was updated" % action,
+#        if message:
+#            print "Message: %s" % message
+
     def setup(self, config):
         """Setup an instance of GAD based on the provided config object."""
         import sys
@@ -236,6 +242,7 @@ class GitAutoDeploy(object):
         import logging
         from lock import Lock
         from httpserver import WebhookRequestHandlerFactory
+        from events import EventStore
 
         # This solves https://github.com/olipo186/Git-Auto-Deploy/issues/118
         try:
@@ -246,7 +253,6 @@ class GitAutoDeploy(object):
             class NullHandler(Handler):
                 def emit(self, record):
                     pass
-
 
         # Attatch config values to this instance
         self._config = config
@@ -320,8 +326,12 @@ class GitAutoDeploy(object):
                 Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
         try:
+
+            event_store = EventStore()
+            event_store.register_observer(self)
+
             # Create web hook request handler class
-            WebhookRequestHandler = WebhookRequestHandlerFactory(self._config)
+            WebhookRequestHandler = WebhookRequestHandlerFactory(self._config, event_store)
 
             self._server = HTTPServer((self._config['host'],
                                        self._config['port']),

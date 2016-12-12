@@ -2,22 +2,18 @@ from common import WebhookRequestParser
 
 class BitBucketRequestParser(WebhookRequestParser):
 
-    def get_repo_params_from_request(self, request_headers, request_body):
+    def get_repo_configs(self, request_headers, request_body, action):
         import json
-        import logging
 
-        logger = logging.getLogger()
         data = json.loads(request_body)
 
         repo_urls = []
-        ref = ""
-        action = ""
 
-        logger.debug("Received event from BitBucket")
+        action.log_debug("Received event from BitBucket")
 
         if 'repository' not in data:
-            logger.error("Unable to recognize data format")
-            return [], ref or "master", action
+            action.log_error("Unable to recognize data format")
+            return []
 
         # One repository may posses multiple URLs for different protocols
         for k in ['url', 'git_url', 'clone_url', 'ssh_url']:
@@ -32,6 +28,6 @@ class BitBucketRequestParser(WebhookRequestParser):
             repo_urls.append('https://bitbucket.org/%s.git' % (data['repository']['full_name']))
 
         # Get a list of configured repositories that matches the incoming web hook reqeust
-        repo_configs = self.get_matching_repo_configs(repo_urls)
+        repo_configs = self.get_matching_repo_configs(repo_urls, action)
 
-        return repo_configs, ref or "master", action, repo_urls
+        return repo_configs
