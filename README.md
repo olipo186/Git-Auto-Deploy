@@ -17,6 +17,8 @@ You can install ```Git-Auto-Deploy``` in multiple ways. Below are instructions f
 
 ## Install from PPA (recommended for ubuntu systems)
 
+[Using Debian? Have a look at this answer for instructions.](https://github.com/olipo186/Git-Auto-Deploy/issues/153)
+
 Add our PPA repository.
 
     sudo apt-get install software-properties-common
