@@ -352,6 +352,9 @@ def WebhookRequestHandlerFactory(config, event_store):
                 self.send_response(200, 'OK')
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
+                self.finish()
+                self.connection.close()
+
                 test_case['expected']['status'] = 200
 
                 if len(repo_configs) == 0:
