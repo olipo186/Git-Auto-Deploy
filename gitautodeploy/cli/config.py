@@ -27,7 +27,10 @@ def get_config_defaults():
     config['log-test-case'] = False
     config['log-test-case-dir'] = None
 
-    config['remote-whitelist'] = ['127.0.0.1']
+    config['web-ui'] = {
+        'enabled': False,
+        'remote-whitelist': ['127.0.0.1']
+    }
 
     return config
 

@@ -255,8 +255,9 @@ class WebhookRequestFilter(object):
 
 def WebhookRequestHandlerFactory(config, event_store):
     """Factory method for webhook request handler class"""
+    from SimpleHTTPServer import SimpleHTTPRequestHandler
 
-    class WebhookRequestHandler(BaseHTTPRequestHandler, object):
+    class WebhookRequestHandler(SimpleHTTPRequestHandler, object):
         """Extends the BaseHTTPRequestHandler class and handles the incoming
         HTTP requests."""
 
@@ -265,20 +266,36 @@ def WebhookRequestHandlerFactory(config, event_store):
              self.event_store = event_store
              super(WebhookRequestHandler, self).__init__(*args, **kwargs)
 
-        def do_GET(self):
+        def end_headers (self):
+            self.send_header('Access-Control-Allow-Origin', '*')
+            SimpleHTTPRequestHandler.end_headers(self)
+
+        def do_HEAD(self):
             import json
 
-            if not self.client_address[0] in self._config['remote-whitelist']:
+            if not self._config['web-ui']['enabled'] or not self.client_address[0] in self._config['web-ui']['remote-whitelist']:
                 self.send_error(403)
                 return
 
-            data = self.event_store.dict_repr()
+            return SimpleHTTPRequestHandler.do_HEAD(self)
 
-            self.send_response(200, 'OK')
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps(data))
-            self.wfile.close()
+        def do_GET(self):
+            import json
+
+            if not self._config['web-ui']['enabled'] or not self.client_address[0] in self._config['web-ui']['remote-whitelist']:
+                self.send_error(403)
+                return
+
+            if self.path == "/api/status":
+                data = self.event_store.dict_repr()
+                self.send_response(200, 'OK')
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(data))
+                self.wfile.close()
+                return
+
+            return SimpleHTTPRequestHandler.do_GET(self)
 
         def do_POST(self):
             """Invoked on incoming POST requests"""
@@ -296,7 +313,8 @@ def WebhookRequestHandlerFactory(config, event_store):
             request_headers = dict(self.headers)
             request_headers = dict((k.lower(), v) for k, v in request_headers.iteritems())
 
-            action = WebhookAction(self.client_address, request_body, request_headers)
+            action = WebhookAction(self.client_address, request_headers, request_body)
+            action.set_waiting(True)
             event_store.register_action(action)
 
             action.log_info('Incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
@@ -361,7 +379,7 @@ def WebhookRequestHandlerFactory(config, event_store):
                     action.log_info("Filter does not match")
                     return
 
-                action.log_info("Deploying")
+                action.log_info("Executing deploy commands")
 
                 # Schedule the execution of the webhook (git pull and trigger deploy etc)
                 request_processor.execute_webhook(repo_configs, request_headers, request_body, action)
@@ -374,12 +392,16 @@ def WebhookRequestHandlerFactory(config, event_store):
                     'deploy': 'echo test!'
                 }
 
-                action.log_info("Done")
+                action.log_info("Deploy commands were executed")
+                action.set_success(True)
+                action.update()
 
             except ValueError, e:
                 self.send_error(400, 'Unprocessable request')
                 action.log_warning('Unable to process incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
                 test_case['expected']['status'] = 400
+                action.set_success(False)
+                action.update()
                 return
 
             except Exception, e:
@@ -389,6 +411,8 @@ def WebhookRequestHandlerFactory(config, event_store):
 
                 test_case['expected']['status'] = 500
                 action.log_warning("Unable to process request")
+                action.set_success(False)
+                action.update()
 
                 raise e
 
@@ -397,6 +421,9 @@ def WebhookRequestHandlerFactory(config, event_store):
                 # Save the request as a test case
                 if 'log-test-case' in self._config and self._config['log-test-case']:
                     self.save_test_case(test_case)
+
+                action.set_waiting(False)
+                action.update()
 
         def log_message(self, format, *args):
             """Overloads the default message logging method to allow messages to
@@ -427,8 +454,4 @@ def WebhookRequestHandlerFactory(config, event_store):
             file.close()
 
     return WebhookRequestHandler
-
-class WebhookRequestHandler(BaseHTTPRequestHandler):
-    """Extends the BaseHTTPRequestHandler class and handles the incoming
-    HTTP requests."""
 

@@ -18,6 +18,9 @@ class GitAutoDeploy(object):
     _config = {}
     _port = None
     _pid = None
+    _event_store = None
+    _default_stdout = None
+    _default_stderr = None
 
     def __new__(cls, *args, **kwargs):
         """Overload constructor to enable singleton access"""
@@ -227,11 +230,8 @@ class GitAutoDeploy(object):
 
         return 0
 
-    def update(self, action, message=None):
+    def update(self, *args, **kwargs):
         pass
-        #print "%s was updated" % action,
-#        if message:
-#            print "Message: %s" % message
 
     def setup(self, config):
         """Setup an instance of GAD based on the provided config object."""
@@ -242,7 +242,7 @@ class GitAutoDeploy(object):
         import logging
         from lock import Lock
         from httpserver import WebhookRequestHandlerFactory
-        from events import EventStore
+        from events import EventStore, StartupEvent
 
         # This solves https://github.com/olipo186/Git-Auto-Deploy/issues/118
         try:
@@ -256,6 +256,12 @@ class GitAutoDeploy(object):
 
         # Attatch config values to this instance
         self._config = config
+
+        self._event_store = EventStore()
+        self._event_store.register_observer(self)
+
+        startup_event = StartupEvent()
+        self._event_store.register_action(startup_event)
 
         # Set up logging
         logger = logging.getLogger()
@@ -290,11 +296,11 @@ class GitAutoDeploy(object):
             logger.addHandler(fileHandler)
 
         if 'ssh-keyscan' in self._config and self._config['ssh-keyscan']:
-            logger.info('Scanning repository hosts for ssh keys...')
+            startup_event.log_info('Scanning repository hosts for ssh keys...')
             self.ssh_key_scan()
 
         if 'force' in self._config and self._config['force']:
-            logger.info('Attempting to kill any other process currently occupying port %s' % self._config['port'])
+            startup_event.log_info('Attempting to kill any other process currently occupying port %s' % self._config['port'])
             self.kill_conflicting_processes()
 
         # Clone all repos once initially
@@ -309,10 +315,10 @@ class GitAutoDeploy(object):
             sys.stderr = LogInterface(logger.error)
 
         if 'daemon-mode' in self._config and self._config['daemon-mode']:
-            logger.info('Starting Git Auto Deploy in daemon mode')
+            startup_event.log_info('Starting Git Auto Deploy in daemon mode')
             GitAutoDeploy.create_daemon()
         else:
-            logger.info('Git Auto Deploy started')
+            startup_event.log_info('Git Auto Deploy started')
 
         self._pid = os.getpid()
         self.create_pid_file()
@@ -327,11 +333,8 @@ class GitAutoDeploy(object):
 
         try:
 
-            event_store = EventStore()
-            event_store.register_observer(self)
-
             # Create web hook request handler class
-            WebhookRequestHandler = WebhookRequestHandlerFactory(self._config, event_store)
+            WebhookRequestHandler = WebhookRequestHandlerFactory(self._config, self._event_store)
 
             self._server = HTTPServer((self._config['host'],
                                        self._config['port']),
@@ -344,14 +347,16 @@ class GitAutoDeploy(object):
                                                       certfile=os.path.expanduser(self._config['ssl-pem']),
                                                       server_side=True)
             sa = self._server.socket.getsockname()
-            logger.info("Listening on %s port %s", sa[0], sa[1])
+            startup_event.log_info("Listening on %s port %s" % (sa[0], sa[1]))
+            startup_event.address = sa[0]
+            startup_event.port = sa[1]
+            startup_event.notify()
 
             # Actual port bound to (nessecary when OS picks randomly free port)
             self._port = sa[1]
 
         except socket.error, e:
-
-            logger.critical("Error on socket: %s" % e)
+            startup_event.log_critical("Error on socket: %s" % e)
             GitAutoDeploy.debug_diagnosis(self._config['port'])
 
             sys.exit(1)
@@ -361,6 +366,15 @@ class GitAutoDeploy(object):
         import sys
         import socket
         import logging
+        import os
+        from events import SystemEvent
+
+        # Add script dir to sys path, allowing us to import sub modules even after changing cwd
+        sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
+
+        # Set CWD to public www folder. This makes the http server serve files from the wwwroot directory.
+        wwwroot = os.path.join(os.path.dirname(os.path.realpath(__file__)), "wwwroot")
+        os.chdir(wwwroot)
 
         # Set up logging
         logger = logging.getLogger()
@@ -370,10 +384,16 @@ class GitAutoDeploy(object):
 
         except socket.error, e:
             logger.critical("Error on socket: %s" % e)
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
         
         except KeyboardInterrupt, e:
             logger.info('Requested close by keyboard interrupt signal')
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_info('Requested close by keyboard interrupt signal')
             self.stop()
             self.exit()
 
@@ -404,6 +424,7 @@ class GitAutoDeploy(object):
         self._server.socket.close()
 
     def signal_handler(self, signum, frame):
+        from events import SystemEvent
         import logging
         logger = logging.getLogger()
         self.stop()
@@ -415,9 +436,15 @@ class GitAutoDeploy(object):
 
         elif signum == 2:
             logger.info('Requested close by keyboard interrupt signal')
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_info('Requested close by keyboard interrupt signal')
 
         elif signum == 6:
             logger.info('Requested close by SIGABRT (process abort signal). Code 6.')
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_info('Requested close by SIGABRT (process abort signal). Code 6.')
 
         self.exit()
 
