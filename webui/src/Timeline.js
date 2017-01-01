@@ -36,6 +36,8 @@ class Timeline extends Component {
             return obj;
           }
         );
+
+        /*
         events.push({
             type: "WebhookAction",
             timestamp: 1483200720
@@ -56,7 +58,6 @@ class Timeline extends Component {
       "x-github-event": "push",
       "x-github-delivery": "3ade9980-cc22-11e6-9efe-3be1665744c8",
       "x-hub-signature": "sha1=b73756e722ba28729aac624a48591fa83163e747",
-      "accept": "*/*",
       "user-agent": "GitHub-Hookshot/7676889",
       "host": "narpau.se:8001",
       "content-type": "application/json"
@@ -82,7 +83,6 @@ class Timeline extends Component {
         "x-github-event": "push",
         "x-github-delivery": "3ade9980-cc22-11e6-9efe-3be1665744c8",
         "x-hub-signature": "sha1=b73756e722ba28729aac624a48591fa83163e747",
-        "accept": "*/*",
         "user-agent": "GitHub-Hookshot/7676889",
         "host": "narpau.se:8001",
         "content-type": "application/json"
@@ -91,7 +91,7 @@ class Timeline extends Component {
       "client-address": "192.30.252.40",
       "type": "WebhookAction",
       "id": 1
-    });
+    });*/
     
         this.setState({ events: events, loaded: true });
       })

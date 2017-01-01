@@ -112,12 +112,18 @@ module.exports = {
       // "url" loader works just like "file" loader but it also embeds
       // assets smaller than specified size as data URLs to avoid requests.
       {
+          test: /\.scss$/,
+          include: paths.appSrc,
+          loaders: ["style", "css", "sass"]
+      },
+      {
         exclude: [
           /\.html$/,
           /\.(js|jsx)$/,
           /\.css$/,
           /\.json$/,
-          /\.svg$/
+          /\.svg$/,
+          /\.scss$/
         ],
         loader: 'url',
         query: {

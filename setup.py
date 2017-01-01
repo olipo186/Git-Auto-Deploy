@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(name='git-auto-deploy',
-      version='0.8',
+      version='0.9',
       url='https://github.com/olipo186/Git-Auto-Deploy',
       author='Oliver Poignant',
       author_email='oliver@poignant.se',
       packages = find_packages(),
-      package_data={'gitautodeploy': ['data/*']},
+      package_data={'gitautodeploy': ['data/*', 'wwwroot/*']},
       entry_points={
           'console_scripts': [
               'git-auto-deploy = gitautodeploy.__main__:main'
