@@ -58,7 +58,7 @@ Install the dependencies with [pip](http://www.pip-installer.org/en/latest/), a 
 If you don't have pip installed, try installing it by running this from the command
 line:
 
-    curl https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python
+    curl https://bootstrap.pypa.io/get-pip.py | python
 
 Copy of the sample config and modify it. [Read more about the configuration options](./docs/Configuration.md). Make sure that ```pidfilepath``` is writable for the user running the script, as well as all paths configured for your repositories.
 
