@@ -1,0 +1,53 @@
+.Navigation {
+    
+    height: 3.7rem;
+    background-color: #282f39;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+
+    &:after {
+        height: 3.7rem;
+        background-color: #282f39;
+        background-color: red;
+        position: absolute;
+        bottom: -5rem;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        content: ' ';
+    }
+
+    .icon {
+        position: absolute;
+        top: 50%;
+        left: 1.5rem;
+        margin-top: -.25rem;
+        width: .5rem;
+        height: .5rem;
+        border-radius: 2rem;
+        background-color: #BFB;
+        background-color: #333;
+        left: 7.25rem;
+    }
+
+    .uil-pacman-css {
+        width: 30px;
+        height: 30px;
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        margin-top: -28px;
+        display: none;
+    }
+
+    .title {
+        color: white;
+        font-size: 1.2rem;
+        font-family: 'Roboto', sans-serif;
+        margin: 1rem .75rem;
+        padding: 0;
+    }
+}

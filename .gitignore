@@ -70,3 +70,17 @@ config.json
 deb_dist
 *.tar.gz
 MANIFEST
+
+# dependencies
+webui/node_modules
+
+# testing
+webui/coverage
+
+# production
+webui/build
+
+# misc
+.DS_Store
+.env
+npm-debug.log

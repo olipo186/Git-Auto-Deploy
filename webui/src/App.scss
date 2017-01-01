@@ -1,0 +1,14 @@
+@import 'variables';
+
+.App {
+
+    .view-container {
+        padding-top: .75rem;
+        padding-left: 11rem;
+    }
+
+    .primary-view {
+        width: 100%;
+        max-width: 450px;
+    }
+}
