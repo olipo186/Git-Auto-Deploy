@@ -10,7 +10,7 @@
     $timeline-icon-radius: $line-thickness * 2;
 
     position: relative;
-    padding: 0 0 1rem 1rem;
+    padding: 0 1rem 1rem 1rem;
     @media screen and (min-width : $tablet-min-width) {
         padding: 0;
     }
@@ -22,7 +22,11 @@
         box-shadow: 0 2px 6px 1px rgba(0, 0, 0, 0.125);
         font-family: 'Roboto', sans-serif;
         color: #333;
-        width: $container-width * 2 - 9%;
+        width: 100%;
+
+        @media screen and (min-width : $mobile-min-width) {
+            width: $container-width * 2 - 9%;
+        }
 
         @media screen and (min-width : $tablet-min-width) {
             width: $container-width;
@@ -141,6 +145,11 @@
         content: ' ';
         left: calc(92% - #{$line-thickness / 2});
 
+        display: none;
+        @media screen and (min-width : $mobile-min-width) {
+            display: block;
+        }
+
         @media screen and (min-width : $tablet-min-width) {
             left: calc(50% - #{$line-thickness / 2});
         }
@@ -159,6 +168,10 @@
         left: 50%;
         right: auto;
         margin-left: -1 * ($timeline-icon-radius + $line-thickness);
+        display: none;
+        @media screen and (min-width : $mobile-min-width) {
+            display: block;
+        }
     }
 
     &.blue {
@@ -188,6 +201,12 @@
         width: $arrow-width;
         height: $arrow-height;
         margin-top: -1 * $arrow-height / 2;
+        display: none;
+
+        @media screen and (min-width : $mobile-min-width) {
+            display: block;
+        }
+
     }
 
     &.blue {

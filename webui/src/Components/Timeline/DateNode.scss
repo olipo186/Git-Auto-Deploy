@@ -6,24 +6,27 @@
 
     .date {
         $width: 5.5rem;
-        position: absolute;
         background-color: $color-blue-gray;
         border-radius: .3rem;
         font-family: 'Roboto', sans-serif;
         border: $line-thickness solid $body-background;
         width: $width;
         border-radius: .5rem;
-        top: 0;
         margin: 0;
         color: white;
         font-size: .8rem;
         line-height: 1.4rem;
         text-align: center;
-        top: 50%;
         margin-top: calc(-.7rem - #{$line-thickness});
         background: white;
         color: #666;
-        left: calc(92% - #{$width / 2} - #{$line-thickness});
+        margin: 0 auto;
+        
+        @media screen and (min-width : $mobile-min-width) {
+            position: absolute;
+            top: 50%;
+            left: calc(92% - #{$width / 2} - #{$line-thickness});
+        }
         @media screen and (min-width : $tablet-min-width) {
             left: calc(50% - #{$width / 2} - #{$line-thickness});
         }
@@ -45,6 +48,10 @@
         background-color: $color-blue-gray;
         content: ' ';
         left: calc(92% - #{$line-thickness / 2});
+        display: none;
+        @media screen and (min-width : $mobile-min-width) {
+            display: block;
+        }
         @media screen and (min-width : $tablet-min-width) {
             left: calc(50% - #{$line-thickness / 2});
         }
