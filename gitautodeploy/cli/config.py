@@ -6,7 +6,6 @@ def get_config_defaults():
     config['daemon-mode'] = False
     config['config'] = None
     config['ssh-keyscan'] = False
-    config['force'] = False
     config['ssl'] = False
     config['ssl-pem-file'] = '~/.gitautodeploy.pem'
     config['pidfilepath'] = '~/.gitautodeploy.pid'
@@ -52,9 +51,6 @@ def get_config_from_environment():
     if 'GAD_SSH_KEYSCAN' in os.environ:
         config['ssh-keyscan'] = True
 
-    if 'GAD_FORCE' in os.environ:
-        config['force'] = True
-
     if 'GAD_SSL' in os.environ:
         config['ssl'] = True
 
@@ -98,11 +94,6 @@ def get_config_from_argv(argv):
     parser.add_argument("--ssh-keyscan",
                         help="scan repository hosts for ssh keys",
                         dest="ssh-keyscan",
-                        action="store_true")
-
-    parser.add_argument("--force",
-                        help="kill any process using the configured port",
-                        dest="force",
                         action="store_true")
 
     parser.add_argument("--pid-file",

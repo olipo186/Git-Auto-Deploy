@@ -1,6 +1,3 @@
-from BaseHTTPServer import BaseHTTPRequestHandler
-
-
 class WebbhookRequestProcessor(object):
 
     def get_service_handler(self, request_headers, request_body, action):

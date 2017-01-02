@@ -15,7 +15,6 @@ Command line option    | Environment variable | Config attribute | Description
 --log-file <path>      | GAD_LOG_FILE         | logfilepath      | Specify a log file
 --host <host>          | GAD_HOST             | host             | Address to bind to
 --port <port>          | GAD_PORT             | port             | Port to bind to
---force                | GAD_FORCE            |                  | Kill any process using the configured port
 --ssh-keyscan          | GAD_SSH_KEYSCAN      |                  | Scan repository hosts for ssh keys and add them to $HOME/.ssh/known_hosts
 
 # Configuration file options

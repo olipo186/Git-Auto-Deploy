@@ -67,6 +67,7 @@ class SystemEvent(object):
         self.register_message(message, "ERROR")
 
     def log_critical(self, message):
+        self.logger.critical(message)
         self.register_message(message, "CRITICAL")
 
     def update(self):
