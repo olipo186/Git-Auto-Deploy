@@ -15,7 +15,7 @@ class LogInterface(object):
 class GitAutoDeploy(object):
     _instance = None
     _http_server = None
-    #_ws_server = None
+    _ws_server = None
     _config = {}
     _port = None
     _pid = None
@@ -249,15 +249,21 @@ class GitAutoDeploy(object):
                                        self._config['port']),
                                       WebhookRequestHandler)
 
-            #try:
-            #    from SimpleWebSocketServer import SimpleWebSocketServer
-            #    from wsserver import WebSocketClientHandler
+            # Start a web socket server if the web UI is enabled
+            #if self._config['web-ui']['enabled']:
 
-            #    # Create web socket server
-            #    self._ws_server = SimpleWebSocketServer(self._config['ws-host'], self._config['ws-port'], WebSocketClientHandler)
+            #    try:
+            #        from SimpleWebSocketServer import SimpleWebSocketServer
+            #        from wsserver import WebSocketClientHandler
 
-            #except ImportError as e:
-            #    self._startup_event.log_error("Unable to start web socket server due to lack of compability. python => 2.7.9 is required.")
+            #        # Create web socket server
+            #        self._ws_server = SimpleWebSocketServer(self._config['ws-host'], self._config['ws-port'], WebSocketClientHandler)
+
+            #        sa = self._ws_server.socket.getsockname()
+            #        self._startup_event.log_info("Listening for web socket on %s port %s" % (sa[0], sa[1]))
+
+            #    except ImportError, e:
+            #        self._startup_event.log_error("Unable to start web socket server due to a too old version of Python. Version => 2.7.9 is required.")
 
             # Setup SSL for HTTP server
             if 'ssl' in self._config and self._config['ssl']:
@@ -267,7 +273,7 @@ class GitAutoDeploy(object):
                                                       certfile=os.path.expanduser(self._config['ssl-pem']),
                                                       server_side=True)
             sa = self._http_server.socket.getsockname()
-            self._startup_event.log_info("Listening on %s port %s" % (sa[0], sa[1]))
+            self._startup_event.log_info("Listening for http connections on %s port %s" % (sa[0], sa[1]))
             self._startup_event.address = sa[0]
             self._startup_event.port = sa[1]
             self._startup_event.notify()
@@ -304,10 +310,10 @@ class GitAutoDeploy(object):
 
         pass
 
-    #def serve_ws(self):
-    #    if not self._ws_server:
-    #        return
-    #    self._ws_server.serveforever()
+    def serve_ws(self):
+        if not self._ws_server:
+            return
+        self._ws_server.serveforever()
 
     def serve_forever(self):
         """Start listening for incoming requests."""
@@ -399,8 +405,8 @@ class GitAutoDeploy(object):
             self._http_server.socket.close()
 
         # Stop web socket server if running
-        #if self._ws_server is not None:
-        #    self._ws_server.close()
+        if self._ws_server is not None:
+            self._ws_server.close()
 
     def exit(self):
         import sys
