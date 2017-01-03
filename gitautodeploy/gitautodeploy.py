@@ -11,16 +11,20 @@ class LogInterface(object):
         for line in msg.strip().split("\n"):
             self.level(line)
 
+    def flush(self):
+        pass
 
 class GitAutoDeploy(object):
     _instance = None
-    _server = None
+    _http_server = None
+    _ws_server = None
     _config = {}
     _port = None
     _pid = None
     _event_store = None
     _default_stdout = None
     _default_stderr = None
+    _startup_event = None
 
     def __new__(cls, *args, **kwargs):
         """Overload constructor to enable singleton access"""
@@ -29,61 +33,16 @@ class GitAutoDeploy(object):
                 cls, *args, **kwargs)
         return cls._instance
 
-    @staticmethod
-    def debug_diagnosis(port):
-        """Display information about what process is using the specified port."""
-        import logging
-        logger = logging.getLogger()
+    def __init__(self):
+        from .events import EventStore, StartupEvent
 
-        pid = GitAutoDeploy.get_pid_on_port(port)
-        if pid is False:
-            logger.warning('Unable to determine what PID is using port %s' % port)
-            return
+        # Setup an event store instance that can keep a global record of events
+        self._event_store = EventStore()
+        self._event_store.register_observer(self)
 
-        logger.info('Process with PID %s is using port %s' % (pid, port))
-        with open("/proc/%s/cmdline" % pid) as f:
-            cmdline = f.readlines()
-            logger.info('Process with PID %s was started using the command: %s' % (pid, cmdline[0].replace('\x00', ' ')))
-
-    @staticmethod
-    def get_pid_on_port(port):
-        """Determine what process (PID) is using a specific port."""
-        import os
-
-        with open("/proc/net/tcp", 'r') as f:
-            file_content = f.readlines()[1:]
-
-        pids = [int(x) for x in os.listdir('/proc') if x.isdigit()]
-        conf_port = str(port)
-        mpid = False
-
-        for line in file_content:
-            if mpid is not False:
-                break
-
-            _, laddr, _, _, _, _, _, _, _, inode = line.split()[:10]
-            decport = str(int(laddr.split(':')[1], 16))
-
-            if decport != conf_port:
-                continue
-
-            for pid in pids:
-                try:
-                    path = "/proc/%s/fd" % pid
-                    if os.access(path, os.R_OK) is False:
-                        continue
-
-                    for fd in os.listdir(path):
-                        cinode = os.readlink("/proc/%s/fd/%s" % (pid, fd))
-                        minode = cinode.split(":")
-
-                        if len(minode) == 2 and minode[1][1:-1] == inode:
-                            mpid = pid
-
-                except Exception as e:
-                    pass
-
-        return mpid
+        # Create a startup event that can hold status and any error messages from the startup process
+        self._startup_event = StartupEvent()
+        self._event_store.register_action(self._startup_event)
 
     def clone_all_repos(self):
         """Iterates over all configured repositories and clones them to their
@@ -91,7 +50,7 @@ class GitAutoDeploy(object):
         import os
         import re
         import logging
-        from wrappers import GitWrapper
+        from .wrappers import GitWrapper
         logger = logging.getLogger()
 
         if not 'repositories' in self._config:
@@ -103,7 +62,6 @@ class GitAutoDeploy(object):
             # Only clone repositories with a configured path
             if 'url' not in repo_config:
                 logger.critical("Repository has no configured URL")
-                self.close()
                 self.exit()
                 return
 
@@ -120,7 +78,7 @@ class GitAutoDeploy(object):
     def ssh_key_scan(self):
         import re
         import logging
-        from wrappers import ProcessWrapper
+        from .wrappers import ProcessWrapper
         logger = logging.getLogger()
 
         for repository in self._config['repositories']:
@@ -141,28 +99,6 @@ class GitAutoDeploy(object):
             else:
                 logger.error('Could not find regexp match in path: %s' % repository['url'])
 
-    def kill_conflicting_processes(self):
-        """Attempt to kill any process already using the configured port."""
-        import os
-        import logging
-        import signal
-        logger = logging.getLogger()
-
-        pid = GitAutoDeploy.get_pid_on_port(self._config['port'])
-
-        if pid is False:
-            logger.warning('No process is currently using port %s.' % self._config['port'])
-            return False
-
-        if hasattr(signal, 'SIGKILL'):
-            os.kill(pid, signal.SIGKILL)
-        elif hasattr(signal, 'SIGHUP'):
-            os.kill(pid, signal.SIGHUP)
-        else:
-            os.kill(pid, 1)
-
-        return True
-
     def create_pid_file(self):
         import os
 
@@ -179,24 +115,9 @@ class GitAutoDeploy(object):
         if 'pidfilepath' in self._config and self._config['pidfilepath']:
             try:
                 os.remove(self._config['pidfilepath'])
-            except OSError, e:
+            except OSError as e:
                 if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
                     raise
-
-    def close(self):
-        import sys
-        import logging
-        logger = logging.getLogger()
-        logger.info('Goodbye')
-        self.remove_pid_file()
-        if 'intercept-stdout' in self._config and self._config['intercept-stdout']:
-            sys.stdout = self._default_stdout
-            sys.stderr = self._default_stderr
-
-    def exit(self):
-        import sys
-        self.close()
-        sys.exit(0)
 
     @staticmethod
     def create_daemon():
@@ -205,7 +126,7 @@ class GitAutoDeploy(object):
         try:
             # Spawn first child. Returns 0 in the child and pid in the parent.
             pid = os.fork()
-        except OSError, e:
+        except OSError as e:
             raise Exception("%s [%d]" % (e.strerror, e.errno))
 
         # First child
@@ -216,7 +137,7 @@ class GitAutoDeploy(object):
                 # Spawn second child
                 pid = os.fork()
                 
-            except OSError, e:
+            except OSError as e:
                 raise Exception("%s [%d]" % (e.strerror, e.errno))
 
             if pid == 0:
@@ -236,13 +157,16 @@ class GitAutoDeploy(object):
     def setup(self, config):
         """Setup an instance of GAD based on the provided config object."""
         import sys
-        from BaseHTTPServer import HTTPServer
         import socket
         import os
         import logging
-        from lock import Lock
-        from httpserver import WebhookRequestHandlerFactory
-        from events import EventStore, StartupEvent
+        from .lock import Lock
+        from .httpserver import WebhookRequestHandlerFactory
+
+        try:
+            from BaseHTTPServer import HTTPServer
+        except ImportError as e:
+            from http.server import HTTPServer
 
         # This solves https://github.com/olipo186/Git-Auto-Deploy/issues/118
         try:
@@ -256,12 +180,6 @@ class GitAutoDeploy(object):
 
         # Attatch config values to this instance
         self._config = config
-
-        self._event_store = EventStore()
-        self._event_store.register_observer(self)
-
-        startup_event = StartupEvent()
-        self._event_store.register_action(startup_event)
 
         # Set up logging
         logger = logging.getLogger()
@@ -296,12 +214,8 @@ class GitAutoDeploy(object):
             logger.addHandler(fileHandler)
 
         if 'ssh-keyscan' in self._config and self._config['ssh-keyscan']:
-            startup_event.log_info('Scanning repository hosts for ssh keys...')
+            self._startup_event.log_info('Scanning repository hosts for ssh keys...')
             self.ssh_key_scan()
-
-        if 'force' in self._config and self._config['force']:
-            startup_event.log_info('Attempting to kill any other process currently occupying port %s' % self._config['port'])
-            self.kill_conflicting_processes()
 
         # Clone all repos once initially
         self.clone_all_repos()
@@ -315,10 +229,10 @@ class GitAutoDeploy(object):
             sys.stderr = LogInterface(logger.error)
 
         if 'daemon-mode' in self._config and self._config['daemon-mode']:
-            startup_event.log_info('Starting Git Auto Deploy in daemon mode')
+            self._startup_event.log_info('Starting Git Auto Deploy in daemon mode')
             GitAutoDeploy.create_daemon()
         else:
-            startup_event.log_info('Git Auto Deploy started')
+            self._startup_event.log_info('Git Auto Deploy started')
 
         self._pid = os.getpid()
         self.create_pid_file()
@@ -336,30 +250,76 @@ class GitAutoDeploy(object):
             # Create web hook request handler class
             WebhookRequestHandler = WebhookRequestHandlerFactory(self._config, self._event_store)
 
-            self._server = HTTPServer((self._config['host'],
+            # Create HTTP server
+            self._http_server = HTTPServer((self._config['host'],
                                        self._config['port']),
                                       WebhookRequestHandler)
 
+            # Start a web socket server if the web UI is enabled
+            #if self._config['web-ui']['enabled']:
+
+            #    try:
+            #        from SimpleWebSocketServer import SimpleWebSocketServer
+            #        from wsserver import WebSocketClientHandler
+
+            #        # Create web socket server
+            #        self._ws_server = SimpleWebSocketServer(self._config['ws-host'], self._config['ws-port'], WebSocketClientHandler)
+
+            #        sa = self._ws_server.socket.getsockname()
+            #        self._startup_event.log_info("Listening for web socket on %s port %s" % (sa[0], sa[1]))
+
+            #    except ImportError as e:
+            #        self._startup_event.log_error("Unable to start web socket server due to a too old version of Python. Version => 2.7.9 is required.")
+
+            # Setup SSL for HTTP server
             if 'ssl' in self._config and self._config['ssl']:
                 import ssl
                 logger.info("enabling ssl")
-                self._server.socket = ssl.wrap_socket(self._server.socket,
+                self._http_server.socket = ssl.wrap_socket(self._http_server.socket,
                                                       certfile=os.path.expanduser(self._config['ssl-pem']),
                                                       server_side=True)
-            sa = self._server.socket.getsockname()
-            startup_event.log_info("Listening on %s port %s" % (sa[0], sa[1]))
-            startup_event.address = sa[0]
-            startup_event.port = sa[1]
-            startup_event.notify()
+            sa = self._http_server.socket.getsockname()
+            self._startup_event.log_info("Listening for http connections on %s port %s" % (sa[0], sa[1]))
+            self._startup_event.address = sa[0]
+            self._startup_event.port = sa[1]
+            self._startup_event.notify()
 
             # Actual port bound to (nessecary when OS picks randomly free port)
             self._port = sa[1]
 
-        except socket.error, e:
-            startup_event.log_critical("Error on socket: %s" % e)
-            GitAutoDeploy.debug_diagnosis(self._config['port'])
-
+        except socket.error as e:
+            self._startup_event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
+
+    def serve_http(self):
+        import sys
+        import socket
+        import logging
+        import os
+        from .events import SystemEvent
+
+        try:
+            self._http_server.serve_forever()
+
+        except socket.error as e:
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_critical("Error on socket: %s" % e)
+            sys.exit(1)
+        
+        except KeyboardInterrupt as e:
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_info('Requested close by keyboard interrupt signal')
+            self.stop()
+            self.exit()
+
+        pass
+
+    def serve_ws(self):
+        if not self._ws_server:
+            return
+        self._ws_server.serveforever()
 
     def serve_forever(self):
         """Start listening for incoming requests."""
@@ -367,7 +327,8 @@ class GitAutoDeploy(object):
         import socket
         import logging
         import os
-        from events import SystemEvent
+        from .events import SystemEvent
+        import threading
 
         # Add script dir to sys path, allowing us to import sub modules even after changing cwd
         sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
@@ -376,77 +337,98 @@ class GitAutoDeploy(object):
         wwwroot = os.path.join(os.path.dirname(os.path.realpath(__file__)), "wwwroot")
         os.chdir(wwwroot)
 
-        # Set up logging
-        logger = logging.getLogger()
+        t1 = threading.Thread(target=self.serve_http)
+        #t1.daemon = True
+        t1.start()
 
-        try:
-            self._server.serve_forever()
 
-        except socket.error, e:
-            logger.critical("Error on socket: %s" % e)
-            event = SystemEvent()
-            self._event_store.register_action(event)
-            event.log_critical("Error on socket: %s" % e)
-            sys.exit(1)
-        
-        except KeyboardInterrupt, e:
-            logger.info('Requested close by keyboard interrupt signal')
-            event = SystemEvent()
-            self._event_store.register_action(event)
-            event.log_info('Requested close by keyboard interrupt signal')
-            self.stop()
-            self.exit()
+        #t2 = threading.Thread(target=self.serve_ws)
+        #t1.daemon = True
+        #t2.start()
+
+        # Wait for thread to finish without blocking main thread
+        while t1.isAlive:
+            t1.join(5)
+
+        # Wait for thread to finish without blocking main thread
+        #while t2.isAlive:
+        #    t2.join(5)
+
 
     def handle_request(self):
         """Start listening for incoming requests."""
         import sys
         import socket
-        import logging
-
-        # Set up logging
-        logger = logging.getLogger()
+        from .events import SystemEvent
 
         try:
-            self._server.handle_request()
+            self._http_server.handle_request()
 
-        except socket.error, e:
-            logger.critical("Error on socket: %s" % e)
+        except socket.error as e:
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
         
-        except KeyboardInterrupt, e:
-            logger.info('Requested close by keyboard interrupt signal')
+        except KeyboardInterrupt as e:
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_info('Requested close by keyboard interrupt signal')
             self.stop()
             self.exit()
 
-    def stop(self):
-        if self._server is None:
-            return
-        self._server.socket.close()
-
     def signal_handler(self, signum, frame):
-        from events import SystemEvent
-        import logging
-        logger = logging.getLogger()
+        from .events import SystemEvent
         self.stop()
 
+        event = SystemEvent()
+        self._event_store.register_action(event)
+
+        # Reload configuration on SIGHUP events (conventional for daemon processes)
         if signum == 1:
             self.setup(self._config)
             self.serve_forever()
             return
 
+        # Keyboard interrupt signal
         elif signum == 2:
-            logger.info('Requested close by keyboard interrupt signal')
-            event = SystemEvent()
-            self._event_store.register_action(event)
-            event.log_info('Requested close by keyboard interrupt signal')
+            event.log_info('Recieved keyboard interrupt signal (%s) from the OS, shutting down.' % signum)
 
-        elif signum == 6:
-            logger.info('Requested close by SIGABRT (process abort signal). Code 6.')
-            event = SystemEvent()
-            self._event_store.register_action(event)
-            event.log_info('Requested close by SIGABRT (process abort signal). Code 6.')
+        else:
+            event.log_info('Recieved signal (%s) from the OS, shutting down.' % signum)
 
         self.exit()
+
+    def stop(self):
+        """Stop all running TCP servers (HTTP and web socket servers)"""
+
+        # Stop HTTP server if running
+        if self._http_server is not None:
+
+            # Shut down the underlying TCP server
+            self._http_server.shutdown()
+            # Close the socket
+            self._http_server.socket.close()
+
+        # Stop web socket server if running
+        if self._ws_server is not None:
+            self._ws_server.close()
+
+    def exit(self):
+        import sys
+        import logging
+        logger = logging.getLogger()
+        logger.info('Goodbye')
+
+        # Delete PID file
+        self.remove_pid_file()
+
+        # Restore stdin and stdout
+        if 'intercept-stdout' in self._config and self._config['intercept-stdout']:
+            sys.stdout = self._default_stdout
+            sys.stderr = self._default_stderr
+
+        sys.exit(0)
 
 def main():
     import signal

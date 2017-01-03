@@ -5,7 +5,7 @@ Description=GitAutoDeploy
 User=www-data
 Group=www-data
 WorkingDirectory=/opt/Git-Auto-Deploy/
-ExecStart=/usr/bin/python /opt/Git-Auto-Deploy/gitautodeploy --daemon-mode
+ExecStart=/usr/bin/python -m /opt/Git-Auto-Deploy/gitautodeploy --daemon-mode
 
 [Install]
 WantedBy=multi-user.target

@@ -1,5 +1,4 @@
-from BaseHTTPServer import BaseHTTPRequestHandler
-
+from .parsers import CodingRequestParser, GitLabCIRequestParser, GitLabRequestParser, GitHubRequestParser, BitBucketRequestParser, GenericRequestParser
 
 class WebbhookRequestProcessor(object):
 
@@ -7,10 +6,7 @@ class WebbhookRequestProcessor(object):
         """Parses the incoming request and attempts to determine whether
         it originates from GitHub, GitLab or any other known service."""
         import json
-        import logging
-        import parsers
 
-        logger = logging.getLogger()
         payload = json.loads(request_body)
 
         if not isinstance(payload, dict):
@@ -21,33 +17,33 @@ class WebbhookRequestProcessor(object):
 
         # Assume Coding if the X-Coding-Event HTTP header is set
         if 'x-coding-event' in request_headers:
-            return parsers.CodingRequestParser
+            return CodingRequestParser
 
         # Assume GitLab if the X-Gitlab-Event HTTP header is set
         elif 'x-gitlab-event' in request_headers:
 
             # Special Case for Gitlab CI
             if content_type == "application/json" and "build_status" in payload:
-                return parsers.GitLabCIRequestParser
+                return GitLabCIRequestParser
             else:
-                return parsers.GitLabRequestParser
+                return GitLabRequestParser
 
         # Assume GitHub if the X-GitHub-Event HTTP header is set
         elif 'x-github-event' in request_headers:
 
-            return parsers.GitHubRequestParser
+            return GitHubRequestParser
 
         # Assume BitBucket if the User-Agent HTTP header is set to
         # 'Bitbucket-Webhooks/2.0' (or something similar)
         elif user_agent and user_agent.lower().find('bitbucket') != -1:
 
-            return parsers.BitBucketRequestParser
+            return BitBucketRequestParser
 
         # This handles old GitLab requests and Gogs requests for example.
         elif content_type == "application/json":
 
             action.log_info("Received event from unknown origin.")
-            return parsers.GenericRequestParser
+            return GenericRequestParser
 
         action.log_error("Unable to recognize request origin. Don't know how to handle the request.")
         return
@@ -58,8 +54,8 @@ class WebbhookRequestProcessor(object):
         import os
         import time
         import logging
-        from wrappers import GitWrapper
-        from lock import Lock
+        from .wrappers import GitWrapper
+        from .lock import Lock
         import json
 
         logger = logging.getLogger()
@@ -146,6 +142,10 @@ class WebbhookRequestProcessor(object):
 
                 result.append(repo_result)
 
+            action.log_info("Deploy commands were executed")
+            action.set_success(True)
+            action.update()
+
         return result
 
 
@@ -160,7 +160,7 @@ class WebhookRequestFilter(object):
         for filter in payload_filters:
 
             # All options specified in the filter must match
-            for filter_key, filter_value in filter.iteritems():
+            for filter_key, filter_value in filter.items():
 
                 # Ignore filters with value None (let them pass)
                 if filter_value == None:
@@ -224,8 +224,8 @@ class WebhookRequestFilter(object):
         import os
         import time
         import logging
-        from wrappers import GitWrapper
-        from lock import Lock
+        from .wrappers import GitWrapper
+        from .lock import Lock
         import json
 
         logger = logging.getLogger()
@@ -255,7 +255,10 @@ class WebhookRequestFilter(object):
 
 def WebhookRequestHandlerFactory(config, event_store):
     """Factory method for webhook request handler class"""
-    from SimpleHTTPServer import SimpleHTTPRequestHandler
+    try:
+        from SimpleHTTPServer import SimpleHTTPRequestHandler
+    except ImportError as e:
+        from http.server import SimpleHTTPRequestHandler
 
     class WebhookRequestHandler(SimpleHTTPRequestHandler, object):
         """Extends the BaseHTTPRequestHandler class and handles the incoming
@@ -291,8 +294,7 @@ def WebhookRequestHandlerFactory(config, event_store):
                 self.send_response(200, 'OK')
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps(data))
-                self.wfile.close()
+                self.wfile.write(json.dumps(data).encode('utf-8'))
                 return
 
             return SimpleHTTPRequestHandler.do_GET(self)
@@ -302,16 +304,17 @@ def WebhookRequestHandlerFactory(config, event_store):
             from threading import Timer
             import logging
             import json
-            from events import WebhookAction
+            from .events import WebhookAction
+            import threading
 
             logger = logging.getLogger()
 
-            content_length = int(self.headers.getheader('content-length'))
-            request_body = self.rfile.read(content_length)
+            content_length = int(self.headers.get('content-length'))
+            request_body = self.rfile.read(content_length).decode('utf-8')
 
             # Extract request headers and make all keys to lowercase (makes them easier to compare)
             request_headers = dict(self.headers)
-            request_headers = dict((k.lower(), v) for k, v in request_headers.iteritems())
+            request_headers = dict((k.lower(), v) for k, v in request_headers.items())
 
             action = WebhookAction(self.client_address, request_headers, request_body)
             action.set_waiting(True)
@@ -365,15 +368,11 @@ def WebhookRequestHandlerFactory(config, event_store):
                     action.log_warning("Request not valid")
                     return
 
-                # Send HTTP response before the git pull and/or deploy commands?
-                #if not 'detailed-response' in self._config or not self._config['detailed-response']:
+                test_case['expected']['status'] = 200
+
                 self.send_response(200, 'OK')
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
-                self.finish()
-                self.connection.close()
-
-                test_case['expected']['status'] = 200
 
                 if len(repo_configs) == 0:
                     action.log_info("Filter does not match")
@@ -382,7 +381,9 @@ def WebhookRequestHandlerFactory(config, event_store):
                 action.log_info("Executing deploy commands")
 
                 # Schedule the execution of the webhook (git pull and trigger deploy etc)
-                request_processor.execute_webhook(repo_configs, request_headers, request_body, action)
+                #request_processor.execute_webhook(repo_configs, request_headers, request_body, action)
+                thread = threading.Thread(target=request_processor.execute_webhook, args=[repo_configs, request_headers, request_body, action])
+                thread.start()
 
                 # Add additional test case data
                 test_case['config'] = {
@@ -392,11 +393,7 @@ def WebhookRequestHandlerFactory(config, event_store):
                     'deploy': 'echo test!'
                 }
 
-                action.log_info("Deploy commands were executed")
-                action.set_success(True)
-                action.update()
-
-            except ValueError, e:
+            except ValueError as e:
                 self.send_error(400, 'Unprocessable request')
                 action.log_warning('Unable to process incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
                 test_case['expected']['status'] = 400
@@ -404,7 +401,7 @@ def WebhookRequestHandlerFactory(config, event_store):
                 action.update()
                 return
 
-            except Exception, e:
+            except Exception as e:
 
                 if 'detailed-response' in self._config and self._config['detailed-response']:
                     self.send_error(500, 'Unable to process request')
