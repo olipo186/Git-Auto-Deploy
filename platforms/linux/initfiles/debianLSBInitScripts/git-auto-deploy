@@ -14,7 +14,7 @@
 NAME="git-auto-deploy"
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="GitAutodeploy"
-DAEMON="/usr/bin/env python /opt/Git-Auto-Deploy/gitautodeploy"
+DAEMON="/usr/bin/env python -m /opt/Git-Auto-Deploy/gitautodeploy"
 DAEMON_UID=root
 DAEMON_GID=root
 RUNDIR=/var/run/$NAME

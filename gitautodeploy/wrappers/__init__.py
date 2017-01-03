@@ -1,2 +1,2 @@
-from git import *
-from process import *
+from .git import *
+from .process import *

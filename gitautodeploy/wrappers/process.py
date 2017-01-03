@@ -20,6 +20,10 @@ class ProcessWrapper():
         p = Popen(*popenargs, **kwargs)
         stdout, stderr = p.communicate()
 
+        # Decode bytes to string (assume utf-8 encoding)
+        stdout = stdout.decode("utf-8")
+        stderr = stderr.decode("utf-8")
+
         if stdout:
             for line in stdout.strip().split("\n"):
                 logger.info(line)

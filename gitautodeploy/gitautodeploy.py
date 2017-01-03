@@ -11,6 +11,8 @@ class LogInterface(object):
         for line in msg.strip().split("\n"):
             self.level(line)
 
+    def flush(self):
+        pass
 
 class GitAutoDeploy(object):
     _instance = None
@@ -32,7 +34,7 @@ class GitAutoDeploy(object):
         return cls._instance
 
     def __init__(self):
-        from events import EventStore, StartupEvent
+        from .events import EventStore, StartupEvent
 
         # Setup an event store instance that can keep a global record of events
         self._event_store = EventStore()
@@ -48,7 +50,7 @@ class GitAutoDeploy(object):
         import os
         import re
         import logging
-        from wrappers import GitWrapper
+        from .wrappers import GitWrapper
         logger = logging.getLogger()
 
         if not 'repositories' in self._config:
@@ -76,7 +78,7 @@ class GitAutoDeploy(object):
     def ssh_key_scan(self):
         import re
         import logging
-        from wrappers import ProcessWrapper
+        from .wrappers import ProcessWrapper
         logger = logging.getLogger()
 
         for repository in self._config['repositories']:
@@ -113,7 +115,7 @@ class GitAutoDeploy(object):
         if 'pidfilepath' in self._config and self._config['pidfilepath']:
             try:
                 os.remove(self._config['pidfilepath'])
-            except OSError, e:
+            except OSError as e:
                 if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
                     raise
 
@@ -124,7 +126,7 @@ class GitAutoDeploy(object):
         try:
             # Spawn first child. Returns 0 in the child and pid in the parent.
             pid = os.fork()
-        except OSError, e:
+        except OSError as e:
             raise Exception("%s [%d]" % (e.strerror, e.errno))
 
         # First child
@@ -135,7 +137,7 @@ class GitAutoDeploy(object):
                 # Spawn second child
                 pid = os.fork()
                 
-            except OSError, e:
+            except OSError as e:
                 raise Exception("%s [%d]" % (e.strerror, e.errno))
 
             if pid == 0:
@@ -155,12 +157,16 @@ class GitAutoDeploy(object):
     def setup(self, config):
         """Setup an instance of GAD based on the provided config object."""
         import sys
-        from BaseHTTPServer import HTTPServer
         import socket
         import os
         import logging
-        from lock import Lock
-        from httpserver import WebhookRequestHandlerFactory
+        from .lock import Lock
+        from .httpserver import WebhookRequestHandlerFactory
+
+        try:
+            from BaseHTTPServer import HTTPServer
+        except ImportError as e:
+            from http.server import HTTPServer
 
         # This solves https://github.com/olipo186/Git-Auto-Deploy/issues/118
         try:
@@ -262,7 +268,7 @@ class GitAutoDeploy(object):
             #        sa = self._ws_server.socket.getsockname()
             #        self._startup_event.log_info("Listening for web socket on %s port %s" % (sa[0], sa[1]))
 
-            #    except ImportError, e:
+            #    except ImportError as e:
             #        self._startup_event.log_error("Unable to start web socket server due to a too old version of Python. Version => 2.7.9 is required.")
 
             # Setup SSL for HTTP server
@@ -281,7 +287,7 @@ class GitAutoDeploy(object):
             # Actual port bound to (nessecary when OS picks randomly free port)
             self._port = sa[1]
 
-        except socket.error, e:
+        except socket.error as e:
             self._startup_event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
 
@@ -290,18 +296,18 @@ class GitAutoDeploy(object):
         import socket
         import logging
         import os
-        from events import SystemEvent
+        from .events import SystemEvent
 
         try:
             self._http_server.serve_forever()
 
-        except socket.error, e:
+        except socket.error as e:
             event = SystemEvent()
             self._event_store.register_action(event)
             event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
         
-        except KeyboardInterrupt, e:
+        except KeyboardInterrupt as e:
             event = SystemEvent()
             self._event_store.register_action(event)
             event.log_info('Requested close by keyboard interrupt signal')
@@ -321,7 +327,7 @@ class GitAutoDeploy(object):
         import socket
         import logging
         import os
-        from events import SystemEvent
+        from .events import SystemEvent
         import threading
 
         # Add script dir to sys path, allowing us to import sub modules even after changing cwd
@@ -353,18 +359,18 @@ class GitAutoDeploy(object):
         """Start listening for incoming requests."""
         import sys
         import socket
-        from events import SystemEvent
+        from .events import SystemEvent
 
         try:
             self._http_server.handle_request()
 
-        except socket.error, e:
+        except socket.error as e:
             event = SystemEvent()
             self._event_store.register_action(event)
             event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
         
-        except KeyboardInterrupt, e:
+        except KeyboardInterrupt as e:
             event = SystemEvent()
             self._event_store.register_action(event)
             event.log_info('Requested close by keyboard interrupt signal')
@@ -372,7 +378,7 @@ class GitAutoDeploy(object):
             self.exit()
 
     def signal_handler(self, signum, frame):
-        from events import SystemEvent
+        from .events import SystemEvent
         self.stop()
 
         event = SystemEvent()

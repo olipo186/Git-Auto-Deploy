@@ -1,4 +1,4 @@
-from common import WebhookRequestParser
+from .common import WebhookRequestParser
 
 class GitLabCIRequestParser(WebhookRequestParser):
 

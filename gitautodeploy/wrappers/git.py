@@ -9,7 +9,7 @@ class GitWrapper():
     def init(repo_config):
         """Init remote url of the repo from the git server"""
         import logging
-        from process import ProcessWrapper
+        from .process import ProcessWrapper
         import os
         import platform
 
@@ -49,7 +49,7 @@ class GitWrapper():
     def pull(repo_config):
         """Pulls the latest version of the repo from the git server"""
         import logging
-        from process import ProcessWrapper
+        from .process import ProcessWrapper
         import os
         import platform
 
@@ -93,7 +93,7 @@ class GitWrapper():
     def clone(repo_config):
         """Clones the latest version of the repo from the git server"""
         import logging
-        from process import ProcessWrapper
+        from .process import ProcessWrapper
         import os
         import platform
 
@@ -127,7 +127,7 @@ class GitWrapper():
     @staticmethod
     def deploy(repo_config):
         """Executes any supplied post-pull deploy command"""
-        from process import ProcessWrapper
+        from .process import ProcessWrapper
         import logging
         logger = logging.getLogger()
 

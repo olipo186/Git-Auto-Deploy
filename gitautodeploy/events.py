@@ -148,4 +148,7 @@ class EventStore(object):
         self.update_observers(action, message)
 
     def dict_repr(self):
-        return map(lambda x: x.dict_repr(), self.actions)
+        action_repr = []
+        for action in self.actions:
+            action_repr.append(action.dict_repr())
+        return action_repr

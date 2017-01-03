@@ -2,14 +2,14 @@
 
 ```Git-Auto-Deploy``` can be automatically started at boot time using various techniques. Below you'll find a couple of suggested approaches with instructions.
 
-The following instructions assumes that you are running ```Git-Auto-Deploy``` from a clone of this repository. In such a case, ```Git-Auto-Deploy``` is started by invoking ```python``` and referencing the ```gitautodeploy``` python module which is found in the cloned repository. Such a command can look like ```python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode```.
+The following instructions assumes that you are running ```Git-Auto-Deploy``` from a clone of this repository. In such a case, ```Git-Auto-Deploy``` is started by invoking ```python -m``` and referencing the ```gitautodeploy``` python module which is found in the cloned repository. Such a command can look like ```python -m /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode```.
 
 If you have used any of the alternative installation methods (install with pip or as a debian package), you will instead start ```Git-Auto-Deploy``` using a installed executable. ```Git-Auto-Deploy``` would then be started using a command like ```git-auto-deploy --daemon-mode``` instead. If you have installed ```Git-Auto-Deploy``` in this way, you will need to modify the paths and commands used in the instructions below.
 
 ## Crontab
 The easiest way to configure your system to automatically start ```Git-Auto-Deploy``` after a reboot is using crontab. Open crontab in edit mode using ```crontab -e``` and add the following:
 
-    @reboot /usr/bin/python /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet
+    @reboot /usr/bin/python -m /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet
 
 ## Debian and Sys-V like init system.
 
