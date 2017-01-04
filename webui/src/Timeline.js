@@ -93,7 +93,7 @@ class Timeline extends Component {
     axios.get(url)
       .then(res => {
         const events = res.data.events.map(obj =>  new Event(obj));
-        this.wsPort = res.data['ws-port'];
+        this.wsPort = res.data['web-socket-port'];
         this.setState({ events: events, loaded: true });
       })
       .catch(err => {

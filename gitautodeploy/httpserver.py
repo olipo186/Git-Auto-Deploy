@@ -279,7 +279,7 @@ def WebhookRequestHandlerFactory(config, event_store):
         def do_HEAD(self):
             import json
 
-            if not self._config['web-ui']['enabled'] or not self.client_address[0] in self._config['web-ui']['remote-whitelist']:
+            if not self._config['web-ui-enabled'] or not self.client_address[0] in self._config['web-ui-whitelist']:
                 self.send_error(403)
                 return
 
@@ -288,14 +288,14 @@ def WebhookRequestHandlerFactory(config, event_store):
         def do_GET(self):
             import json
 
-            if not self._config['web-ui']['enabled'] or not self.client_address[0] in self._config['web-ui']['remote-whitelist']:
+            if not self._config['web-ui-enabled'] or not self.client_address[0] in self._config['web-ui-whitelist']:
                 self.send_error(403)
                 return
 
             if self.path == "/api/status":
                 data = {
                     'events': self.event_store.dict_repr(),
-                    'ws-port': self._config['web-ui']['ws-port']
+                    'web-socket-port': self._config['web-ui-web-socket-port']
                 }
                 self.send_response(200, 'OK')
                 self.send_header('Content-type', 'application/json')

@@ -329,7 +329,7 @@ class GitAutoDeploy(object):
         """Start a web socket server, used by the web UI to get notifications about updates."""
 
         # Start a web socket server if the web UI is enabled
-        if not self._config['web-ui']['enabled']:
+        if not self._config['web-ui-enabled']:
             return
 
         try:
@@ -340,17 +340,17 @@ class GitAutoDeploy(object):
             # Create a WebSocketClientHandler instance
             WebSocketClientHandler = WebSocketClientHandlerFactory(self._config, self._ws_clients, self._event_store)
 
-            uri = u"ws://%s:%s" % (self._config['web-ui']['ws-host'], self._config['web-ui']['ws-port'])
+            uri = u"ws://%s:%s" % (self._config['web-ui-web-socket-host'], self._config['web-ui-web-socket-port'])
             factory = WebSocketServerFactory(uri)
             factory.protocol = WebSocketClientHandler
             # factory.setProtocolOptions(maxConnections=2)
 
             # note to self: if using putChild, the child must be bytes...
-            self._ws_server_port = reactor.listenTCP(self._config['web-ui']['ws-port'], factory)
+            self._ws_server_port = reactor.listenTCP(self._config['web-ui-web-socket-port'], factory)
 
-            self._startup_event.log_info("Listening for web socket connections on %s port %s" % (self._config['web-ui']['ws-host'], self._config['web-ui']['ws-port']))
-            self._startup_event.ws_address = self._config['web-ui']['ws-host']
-            self._startup_event.ws_port = self._config['web-ui']['ws-port']
+            self._startup_event.log_info("Listening for web socket connections on %s port %s" % (self._config['web-ui-web-socket-host'], self._config['web-ui-web-socket-port']))
+            self._startup_event.ws_address = self._config['web-ui-web-socket-host']
+            self._startup_event.ws_port = self._config['web-ui-web-socket-port']
             self._startup_event.set_ws_started(True)
 
             # Serve forever (until reactor.stop())

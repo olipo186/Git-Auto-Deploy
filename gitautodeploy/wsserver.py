@@ -21,7 +21,7 @@ def WebSocketClientHandlerFactory(config, clients, event_store):
             self.logger.info("Client connecting: {0}".format(request.peer))
 
             # Validate the request
-            if not self._config['web-ui']['enabled'] or not self.peer.host in self._config['web-ui']['remote-whitelist']:
+            if not self._config['web-ui-enabled'] or not self.peer.host in self._config['web-ui-whitelist']:
                 self.sendClose()
                 logger.info("Unautorized connection attempt from %s" % self.peer.host)
                 return
@@ -49,12 +49,5 @@ def WebSocketClientHandlerFactory(config, clients, event_store):
 
             if self in self.clients:
                 self.clients.remove(self)
-
-        #def notify_refresh(self, payload):
-        #    import json
-        #    self.sendMessage(json.dumps({
-        #        "event": "refresh",
-        #        "payload": payload
-        #    }))
 
     return WebSocketClientHandler

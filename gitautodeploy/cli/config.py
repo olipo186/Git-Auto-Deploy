@@ -26,12 +26,10 @@ def get_config_defaults():
     config['log-test-case'] = False
     config['log-test-case-dir'] = None
 
-    config['web-ui'] = {
-        'enabled': False,
-        'remote-whitelist': ['127.0.0.1'],
-        'ws-host': '0.0.0.0',
-        'ws-port': 9000
-    }
+    config['web-ui-enabled'] = False
+    config['web-ui-whitelist'] = ['127.0.0.1']
+    config['web-ui-web-socket-host'] = '0.0.0.0'
+    config['web-ui-web-socket-port'] = 9000
 
     return config
 
