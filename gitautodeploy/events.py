@@ -97,9 +97,13 @@ class WebhookAction(SystemEvent):
 
 class StartupEvent(SystemEvent):
 
-    def __init__(self, address=None, port=None):
-        self.address = address
-        self.port = port
+    def __init__(self, http_address=None, http_port=None, ws_address=None, ws_port=None):
+        self.http_address = http_address
+        self.http_port = http_port
+        self.http_started = False
+        self.ws_address = ws_address
+        self.ws_port = ws_port
+        self.ws_started = False
         super(StartupEvent, self).__init__()
 
     def __repr__(self):
@@ -107,8 +111,12 @@ class StartupEvent(SystemEvent):
 
     def dict_repr(self):
         data = super(StartupEvent, self).dict_repr()
-        data['address'] = self.address
-        data['port'] = self.port
+        data['http-address'] = self.http_address
+        data['http-port'] = self.http_port
+        data['http-started'] = self.http_started
+        data['ws-address'] = self.ws_address
+        data['ws-port'] = self.ws_port
+        data['ws-started'] = self.ws_started
         return data
 
 
@@ -130,12 +138,12 @@ class EventStore(object):
         for observer in self.observers:
             observer.update(*args, **kwargs)
 
-    def register_action(self, action):
-        action.set_id(self.next_id)
-        action.register_hub(self)
+    def register_action(self, event):
+        event.set_id(self.next_id)
+        event.register_hub(self)
         self.next_id = self.next_id + 1
-        self.actions.append(action)
-        self.update_observers(action)
+        self.actions.append(event)
+        self.update_observers(event=event)
 
         # Store max 100 actions
         if len(self.actions) > 100:
@@ -144,8 +152,8 @@ class EventStore(object):
     def notify(self, event):
         self.update_observers(event=event)
 
-    def update_action(self, action, message=None):
-        self.update_observers(action, message)
+    def update_action(self, event, message=None):
+        self.update_observers(event=event, message=message)
 
     def dict_repr(self):
         action_repr = []

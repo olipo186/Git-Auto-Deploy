@@ -157,10 +157,28 @@ class GitAutoDeploy(object):
 
     def update(self, *args, **kwargs):
         import json
-        data = self._event_store.dict_repr()
-        json_data = json.dumps(data).encode('utf-8')
+
+        message = {
+            'type': 'unknown'
+        }
+
+        if 'event' in kwargs:
+            #if 'message' in kwargs:
+            #    message = {
+            #        'type': 'event-message',
+            #        'event-id': kwargs['event'].id,
+            #        'message': kwargs['message']
+            #    }
+            #else:
+            message = {
+                'type': 'event-update',
+                'event-id': kwargs['event'].id,
+                'event': kwargs['event'].dict_repr()
+            }
+
+        data = json.dumps(message).encode('utf-8')
         for client in self._ws_clients:
-            client.notify_refresh(json_data)
+            client.sendMessage(data)
 
     def setup(self, config):
         """Setup an instance of GAD based on the provided config object."""
@@ -245,9 +263,8 @@ class GitAutoDeploy(object):
                 Lock(os.path.join(repo_config['path'], 'status_running')).clear()
                 Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
-        if 'daemon-mode' not in self._config or not self._config['daemon-mode']:
-            self._startup_event.log_info('Git Auto Deploy started')
-
+        #if 'daemon-mode' not in self._config or not self._config['daemon-mode']:
+        #    self._startup_event.log_info('Git Auto Deploy started')
 
     def serve_http(self):
         """Starts a HTTP server that listens for webhook requests and serves the web ui."""
@@ -255,15 +272,11 @@ class GitAutoDeploy(object):
         import socket
         import logging
         import os
-        from .events import SystemEvent, StartupEvent
 
         try:
             from BaseHTTPServer import HTTPServer
         except ImportError as e:
             from http.server import HTTPServer
-
-        start_http_event = StartupEvent()
-        self._event_store.register_action(start_http_event)
 
         # Setup
         try:
@@ -284,13 +297,14 @@ class GitAutoDeploy(object):
                                                       certfile=os.path.expanduser(self._config['ssl-pem']),
                                                       server_side=True)
             sa = self._http_server.socket.getsockname()
-            start_http_event.log_info("Listening for http connections on %s port %s" % (sa[0], sa[1]))
-            start_http_event.address = sa[0]
-            start_http_event.port = sa[1]
-            start_http_event.notify()
+            self._startup_event.log_info("Listening for http connections on %s port %s" % (sa[0], sa[1]))
+            self._startup_event.http_address = sa[0]
+            self._startup_event.http_port = sa[1]
+            self._startup_event.http_started = True
+            self._startup_event.notify()
 
         except socket.error as e:
-            start_http_event.log_critical("Error on socket: %s" % e)
+            self._startup_event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
 
         # Run forever
@@ -315,10 +329,6 @@ class GitAutoDeploy(object):
     def serve_ws(self):
         """Start a web socket server, used by the web UI to get notifications about updates."""
 
-        from .events import SystemEvent, StartupEvent
-        start_ws_event = StartupEvent()
-        self._event_store.register_action(start_ws_event)
-
         # Start a web socket server if the web UI is enabled
         if not self._config['web-ui']['enabled']:
             return
@@ -339,10 +349,11 @@ class GitAutoDeploy(object):
             # note to self: if using putChild, the child must be bytes...
             self._ws_server_port = reactor.listenTCP(self._config['web-ui']['ws-port'], factory)
 
-            start_ws_event.log_info("Listening for web socket connections on %s port %s" % (self._config['web-ui']['ws-host'], self._config['web-ui']['ws-port']))
-            start_ws_event.address = self._config['web-ui']['ws-host']
-            start_ws_event.port = self._config['web-ui']['ws-port']
-            start_ws_event.notify()
+            self._startup_event.log_info("Listening for web socket connections on %s port %s" % (self._config['web-ui']['ws-host'], self._config['web-ui']['ws-port']))
+            self._startup_event.ws_address = self._config['web-ui']['ws-host']
+            self._startup_event.ws_port = self._config['web-ui']['ws-port']
+            self._startup_event.ws_started = True
+            self._startup_event.notify()
 
             # Serve forever (until reactor.stop())
             reactor.run(installSignalHandlers=False)

@@ -50,11 +50,11 @@ def WebSocketClientHandlerFactory(config, clients, event_store):
             if self in self.clients:
                 self.clients.remove(self)
 
-        def notify_refresh(self, payload):
-            import json
-            self.sendMessage(json.dumps({
-                "event": "refresh",
-                "payload": payload
-            }))
+        #def notify_refresh(self, payload):
+        #    import json
+        #    self.sendMessage(json.dumps({
+        #        "event": "refresh",
+        #        "payload": payload
+        #    }))
 
     return WebSocketClientHandler

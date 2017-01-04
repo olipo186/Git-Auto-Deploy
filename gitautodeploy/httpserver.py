@@ -145,9 +145,10 @@ class WebbhookRequestProcessor(object):
 
                 result.append(repo_result)
 
-            action.log_info("Deploy commands were executed")
-            action.set_success(True)
-            action.update()
+        action.log_info("Deploy commands were executed")
+        action.set_success(True)
+        action.set_waiting(False)
+        action.update()
 
         return result
 
@@ -384,7 +385,6 @@ def WebhookRequestHandlerFactory(config, event_store):
                 action.log_info("Executing deploy commands")
 
                 # Schedule the execution of the webhook (git pull and trigger deploy etc)
-                #request_processor.execute_webhook(repo_configs, request_headers, request_body, action)
                 thread = threading.Thread(target=request_processor.execute_webhook, args=[repo_configs, request_headers, request_body, action])
                 thread.start()
 
@@ -401,6 +401,7 @@ def WebhookRequestHandlerFactory(config, event_store):
                 action.log_warning('Unable to process incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
                 test_case['expected']['status'] = 400
                 action.set_success(False)
+                action.set_waiting(False)
                 action.update()
                 return
 
@@ -412,6 +413,7 @@ def WebhookRequestHandlerFactory(config, event_store):
                 test_case['expected']['status'] = 500
                 action.log_warning("Unable to process request")
                 action.set_success(False)
+                action.set_waiting(False)
                 action.update()
 
                 raise e
@@ -421,9 +423,6 @@ def WebhookRequestHandlerFactory(config, event_store):
                 # Save the request as a test case
                 if 'log-test-case' in self._config and self._config['log-test-case']:
                     self.save_test_case(test_case)
-
-                action.set_waiting(False)
-                action.update()
 
         def log_message(self, format, *args):
             """Overloads the default message logging method to allow messages to

@@ -3,21 +3,13 @@ import './EventNode.scss';
 import moment from 'moment';
 
 class EventNode extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-        event: props.event,
-        alignment: props.alignment
-    };
-  }
 
   getColorClass() {
 
-      if(this.state.event.type === "StartupEvent")
+      if(this.props.event.type === "StartupEvent")
         return "green";
 
-      if(this.state.event.type === "WebhookAction")
+      if(this.props.event.type === "WebhookAction")
         return "blue";
 
       return "purple";
@@ -25,53 +17,67 @@ class EventNode extends Component {
 
   getTitle() {
 
-      if(this.state.event.type === "StartupEvent")
+      if(this.props.event.type === "StartupEvent")
         return "Startup";
 
-      if(this.state.event.type === "WebhookAction")
+      if(this.props.event.type === "WebhookAction")
         return "Webhook";
 
-      return this.state.event.type;
+      return this.props.event.type;
   }
 
   getSubtitle() {
 
-      if(this.state.event.type === "StartupEvent") {
+      if(this.props.event.type === "StartupEvent") {
 
-        if(this.state.event.address)
-          return "Listening on " + this.state.event.address + " port " + this.state.event.port;
+        if(this.isWaiting())
+          return "Starting up.."
 
-        return "Starting up.."
+        return "Listening for incoming connections";
       }
 
-      if(this.state.event.type === "WebhookAction")
-        return "Incoming request from " + this.state.event['client-address'];
+      if(this.props.event.type === "WebhookAction") {
+        if(this.props.event.messages.length)
+          return this.props.event.messages[this.props.event.messages.length - 1]
+        return "Incoming request from " + this.props.event['client-address'];
+      }
 
-      return this.state.event.type;
+      return this.props.event.type;
   }
 
   getDate() {
-      return moment.unix(this.state.event.timestamp).format("YYYY-MM-DD");
+      return moment.unix(this.props.event.timestamp).format("YYYY-MM-DD");
   }
 
   getTime() {
-      return moment.unix(this.state.event.timestamp).format("HH:mm");
+      return moment.unix(this.props.event.timestamp).format("HH:mm");
   }
 
   getIconName() {
 
-    if(this.state.event.success === false)
+    if(this.props.event.success === false)
       return "alert"
 
-    if(this.state.event.type === "StartupEvent")
+    if(this.props.event.type === "StartupEvent")
       return "alert-circle";
 
     return "check";
   }
 
+  isWaiting() {
+    if(this.props.event.type === "StartupEvent") {
+      if(this.props.event['ws-started'] !== true || this.props.event['http-started'] !== true) {
+        return true;
+      }
+    } else if(this.props.event.waiting === true) {
+        return true;
+    }
+    return false;
+  }
+
   getIconElement() {
 
-    if(this.state.event.waiting === true) {
+    if(this.isWaiting()) {
       return (
         <div className="icon spinner"></div>
       );
@@ -84,7 +90,7 @@ class EventNode extends Component {
 
   render() {
     return (
-      <div className={"EventNode " + this.state.alignment + " " + this.getColorClass()}>
+      <div className={"EventNode " + this.props.alignment + " " + this.getColorClass()}>
         <span className="horizontal-line"></span>
         <span className="timeline-icon"></span>
         <div className="inner">
