@@ -146,9 +146,8 @@ class WebbhookRequestProcessor(object):
                 result.append(repo_result)
 
         action.log_info("Deploy commands were executed")
-        action.set_success(True)
         action.set_waiting(False)
-        action.update()
+        action.set_success(True)
 
         return result
 
@@ -321,8 +320,8 @@ def WebhookRequestHandlerFactory(config, event_store):
             request_headers = dict((k.lower(), v) for k, v in request_headers.items())
 
             action = WebhookAction(self.client_address, request_headers, request_body)
-            action.set_waiting(True)
             event_store.register_action(action)
+            action.set_waiting(True)
 
             action.log_info('Incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
 
@@ -400,9 +399,8 @@ def WebhookRequestHandlerFactory(config, event_store):
                 self.send_error(400, 'Unprocessable request')
                 action.log_warning('Unable to process incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
                 test_case['expected']['status'] = 400
-                action.set_success(False)
                 action.set_waiting(False)
-                action.update()
+                action.set_success(False)
                 return
 
             except Exception as e:
@@ -412,9 +410,8 @@ def WebhookRequestHandlerFactory(config, event_store):
 
                 test_case['expected']['status'] = 500
                 action.log_warning("Unable to process request")
-                action.set_success(False)
                 action.set_waiting(False)
-                action.update()
+                action.set_success(False)
 
                 raise e
 

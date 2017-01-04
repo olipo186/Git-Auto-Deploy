@@ -158,11 +158,11 @@ class GitAutoDeploy(object):
     def update(self, *args, **kwargs):
         import json
 
-        message = {
-            'type': 'unknown'
-        }
+        #message = {
+        #    'type': 'unknown'
+        #}
 
-        if 'event' in kwargs:
+        #if 'event' in kwargs:
             #if 'message' in kwargs:
             #    message = {
             #        'type': 'event-message',
@@ -170,13 +170,13 @@ class GitAutoDeploy(object):
             #        'message': kwargs['message']
             #    }
             #else:
-            message = {
-                'type': 'event-update',
-                'event-id': kwargs['event'].id,
-                'event': kwargs['event'].dict_repr()
-            }
+            #message = {
+            #    'type': 'event-update',
+            #    'event-id': kwargs['event'].id,
+            #    'event': kwargs['event'].dict_repr()
+            #}
 
-        data = json.dumps(message).encode('utf-8')
+        data = json.dumps(kwargs).encode('utf-8')
         for client in self._ws_clients:
             client.sendMessage(data)
 
@@ -300,8 +300,7 @@ class GitAutoDeploy(object):
             self._startup_event.log_info("Listening for http connections on %s port %s" % (sa[0], sa[1]))
             self._startup_event.http_address = sa[0]
             self._startup_event.http_port = sa[1]
-            self._startup_event.http_started = True
-            self._startup_event.notify()
+            self._startup_event.set_http_started(True)
 
         except socket.error as e:
             self._startup_event.log_critical("Error on socket: %s" % e)
@@ -352,8 +351,7 @@ class GitAutoDeploy(object):
             self._startup_event.log_info("Listening for web socket connections on %s port %s" % (self._config['web-ui']['ws-host'], self._config['web-ui']['ws-port']))
             self._startup_event.ws_address = self._config['web-ui']['ws-host']
             self._startup_event.ws_port = self._config['web-ui']['ws-port']
-            self._startup_event.ws_started = True
-            self._startup_event.notify()
+            self._startup_event.set_ws_started(True)
 
             # Serve forever (until reactor.stop())
             reactor.run(installSignalHandlers=False)
