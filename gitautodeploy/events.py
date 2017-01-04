@@ -100,10 +100,11 @@ class StartupEvent(SystemEvent):
     def __init__(self, http_address=None, http_port=None, ws_address=None, ws_port=None):
         self.http_address = http_address
         self.http_port = http_port
-        self.http_started = False
+        self.http_started = None
         self.ws_address = ws_address
         self.ws_port = ws_port
-        self.ws_started = False
+        self.ws_started = None
+        self.waiting = True
         super(StartupEvent, self).__init__()
 
     def __repr__(self):
@@ -130,8 +131,10 @@ class StartupEvent(SystemEvent):
         self.validate_success()
 
     def validate_success(self):
-        if self.http_started and self.ws_started:
+        if self.http_started is not False and self.ws_started is not False:
+            self.set_waiting(False)
             self.set_success(True)
+
 
 class EventStore(object):
 

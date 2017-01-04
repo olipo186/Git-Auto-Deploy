@@ -368,6 +368,19 @@ class GitAutoDeploy(object):
         from .events import SystemEvent
         import threading
 
+        try:
+            from autobahn.websocket import WebSocketServerProtocol, WebSocketServerFactory
+            from twisted.internet import reactor
+
+            # Given that the nessecary dependencies are present, notify the
+            # event that we expect the web socket server to be started
+            self._startup_event.ws_started = False
+        except ImportError:
+            pass
+
+        # Notify the event that we expect the http server to be started
+        self._startup_event.http_started = False
+
         # Add script dir to sys path, allowing us to import sub modules even after changing cwd
         sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 

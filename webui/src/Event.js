@@ -74,14 +74,7 @@ class Event {
   }
 
   isWaiting() {
-    if(this.event.type === "StartupEvent") {
-      if(this.event['ws-started'] !== true || this.event['http-started'] !== true) {
-        return true;
-      }
-    } else if(this.event.waiting === true) {
-        return true;
-    }
-    return false;
+    return this.event.waiting;
   }
 }
 
