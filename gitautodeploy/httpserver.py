@@ -293,7 +293,10 @@ def WebhookRequestHandlerFactory(config, event_store):
                 return
 
             if self.path == "/api/status":
-                data = self.event_store.dict_repr()
+                data = {
+                    'events': self.event_store.dict_repr(),
+                    'ws-port': self._config['web-ui']['ws-port']
+                }
                 self.send_response(200, 'OK')
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()

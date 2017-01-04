@@ -19,6 +19,8 @@ class Timeline extends Component {
 
     this.wsSocket = null;
     this.wsIsOpen = false;
+    this.wsIsRecovering = false;
+    this.wsPort = 9000;
   }
 
   componentDidMount() {
@@ -78,7 +80,6 @@ class Timeline extends Component {
     n.onerror = function () {
       console.log("onerror");
     };
-
   }
 
   fetchEventList() {
@@ -91,15 +92,8 @@ class Timeline extends Component {
 
     axios.get(url)
       .then(res => {
-
-        //const posts = res.data.data.children.map(obj => obj.data);
-        const events = res.data.map(obj =>
-          {
-            //obj.key = obj.id;
-            //console.log(obj);
-            return new Event(obj);
-          }
-        );
+        const events = res.data.events.map(obj =>  new Event(obj));
+        this.wsPort = res.data['ws-port'];
         this.setState({ events: events, loaded: true });
       })
       .catch(err => {
@@ -158,7 +152,6 @@ class Timeline extends Component {
   }
 
   handleJSONMessage(data) {
-
     var event;
 
     if(data.type === "new-event") {
@@ -176,59 +169,75 @@ class Timeline extends Component {
       event = this.getEventWithId(data.id);
 
       if(event && event.type === "WebhookAction") {
-
         this.showUserNotification(event);
-
       }
 
     } else {
-
       console.log("Unknown event: " + data.type);
-
     }
+  }
+
+  getWebsocketURI() {
+    if (process.env.NODE_ENV === "development") {
+      return "ws://10.0.0.1:" + this.wsPort;
+    }
+    var scheme = window.location.protocol === "https" ? "wss" : "ws";
+    return scheme + "://" + window.location.hostname + ":" + this.wsPort;
   }
 
   initWebsocketConnection() {
     var self = this;
+    var uri = self.getWebsocketURI();
 
-    var scheme = window.location.protocol === "https" ? "wss" : "ws";
-    var uri = scheme + "://" + window.location.hostname + ":9000";
+    self.wsSocket = new WebSocket(uri);
+    self.wsSocket.binaryType = "arraybuffer";
+    self.wsSocket.onopen = function() {
 
-    if (process.env.NODE_ENV === "development") {
-      uri = "ws://10.0.0.1:9000";
-    }
+      self.wsIsOpen = true;
 
-    this.wsSocket = new WebSocket(uri);
-    this.wsSocket.binaryType = "arraybuffer";
-
-    this.wsSocket.onopen = function() {
-      //console.log("Connected!");
-      this.wsIsOpen = true;
-    }
-
-    this.wsSocket.onmessage = function(e) {
-      if (typeof e.data === "string") {
-          try {
-            var data = JSON.parse(e.data);
-            self.handleJSONMessage(data);
-          } catch(e) {
-            console.error(e);
-          }
-      } else {
-          var arr = new Uint8Array(e.data);
-          var hex = '';
-          for (var i = 0; i < arr.length; i++) {
-            hex += ('00' + arr[i].toString(16)).substr(-2);
-          }
-          console.log("Binary message received: " + hex);
+      if(self.wsIsRecovering) {
+        self.wsIsRecovering = false;
+        self.fetchEventList();
       }
-    }
+    };
 
-    this.wsSocket.onclose = function(e) {
-      console.log("Connection closed.");
-      this.wsSocket = null;
-      this.wsIsOpen = false;
-    }
+    self.wsSocket.onmessage = (e) => {
+      if (typeof e.data === "string") {
+        try {
+          var data = JSON.parse(e.data);
+          self.handleJSONMessage(data);
+        } catch(e) {
+          console.error(e);
+        }
+      } else {
+        var arr = new Uint8Array(e.data);
+        var hex = '';
+        for (var i = 0; i < arr.length; i++) {
+          hex += ('00' + arr[i].toString(16)).substr(-2);
+        }
+        console.log("Binary message received: " + hex);
+      }
+    };
+
+    self.wsSocket.onclose = function() {
+
+      self.wsSocket.close();
+      self.wsSocket = null;
+      self.wsIsOpen = false;
+      self.wsIsRecovering = true;
+
+      if(self.wsReconnectTimeout !== undefined) {
+        clearTimeout(self.wsReconnectTimeout);
+      }
+
+      // Try to reconnect again after 2 seconds
+      self.wsReconnectTimeout = setTimeout(function() {
+
+        self.initWebsocketConnection();
+        self.wsReconnectTimeout = undefined;
+      }, 2000);
+    };
+
   }
 
   /*
