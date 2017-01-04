@@ -14,17 +14,19 @@ class LogInterface(object):
     def flush(self):
         pass
 
+from .wsserver import WebSocketClientHandlerFactory
+from .httpserver import WebhookRequestHandlerFactory
+
 class GitAutoDeploy(object):
     _instance = None
     _http_server = None
-    _ws_server = None
     _config = {}
-    _port = None
     _pid = None
     _event_store = None
     _default_stdout = None
     _default_stderr = None
     _startup_event = None
+    _ws_clients = []
 
     def __new__(cls, *args, **kwargs):
         """Overload constructor to enable singleton access"""
@@ -40,7 +42,8 @@ class GitAutoDeploy(object):
         self._event_store = EventStore()
         self._event_store.register_observer(self)
 
-        # Create a startup event that can hold status and any error messages from the startup process
+        # Create a startup event that can hold status and any error messages
+        # from the startup process
         self._startup_event = StartupEvent()
         self._event_store.register_action(self._startup_event)
 
@@ -53,7 +56,7 @@ class GitAutoDeploy(object):
         from .wrappers import GitWrapper
         logger = logging.getLogger()
 
-        if not 'repositories' in self._config:
+        if 'repositories' not in self._config:
             return
 
         # Iterate over all configured repositories
@@ -82,8 +85,8 @@ class GitAutoDeploy(object):
         logger = logging.getLogger()
 
         for repository in self._config['repositories']:
-            
-            if not 'url' in repository:
+
+            if 'url' not in repository:
                 continue
 
             logger.info("Scanning repository: %s" % repository['url'])
@@ -116,7 +119,8 @@ class GitAutoDeploy(object):
             try:
                 os.remove(self._config['pidfilepath'])
             except OSError as e:
-                if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
+                # errno.ENOENT = no such file or directory
+                if e.errno != errno.ENOENT:
                     raise
 
     @staticmethod
@@ -136,7 +140,7 @@ class GitAutoDeploy(object):
             try:
                 # Spawn second child
                 pid = os.fork()
-                
+
             except OSError as e:
                 raise Exception("%s [%d]" % (e.strerror, e.errno))
 
@@ -152,7 +156,29 @@ class GitAutoDeploy(object):
         return 0
 
     def update(self, *args, **kwargs):
-        pass
+        import json
+
+        #message = {
+        #    'type': 'unknown'
+        #}
+
+        #if 'event' in kwargs:
+            #if 'message' in kwargs:
+            #    message = {
+            #        'type': 'event-message',
+            #        'event-id': kwargs['event'].id,
+            #        'message': kwargs['message']
+            #    }
+            #else:
+            #message = {
+            #    'type': 'event-update',
+            #    'event-id': kwargs['event'].id,
+            #    'event': kwargs['event'].dict_repr()
+            #}
+
+        data = json.dumps(kwargs).encode('utf-8')
+        for client in self._ws_clients:
+            client.sendMessage(data)
 
     def setup(self, config):
         """Setup an instance of GAD based on the provided config object."""
@@ -161,12 +187,6 @@ class GitAutoDeploy(object):
         import os
         import logging
         from .lock import Lock
-        from .httpserver import WebhookRequestHandlerFactory
-
-        try:
-            from BaseHTTPServer import HTTPServer
-        except ImportError as e:
-            from http.server import HTTPServer
 
         # This solves https://github.com/olipo186/Git-Auto-Deploy/issues/118
         try:
@@ -231,8 +251,6 @@ class GitAutoDeploy(object):
         if 'daemon-mode' in self._config and self._config['daemon-mode']:
             self._startup_event.log_info('Starting Git Auto Deploy in daemon mode')
             GitAutoDeploy.create_daemon()
-        else:
-            self._startup_event.log_info('Git Auto Deploy started')
 
         self._pid = os.getpid()
         self.create_pid_file()
@@ -245,6 +263,22 @@ class GitAutoDeploy(object):
                 Lock(os.path.join(repo_config['path'], 'status_running')).clear()
                 Lock(os.path.join(repo_config['path'], 'status_waiting')).clear()
 
+        #if 'daemon-mode' not in self._config or not self._config['daemon-mode']:
+        #    self._startup_event.log_info('Git Auto Deploy started')
+
+    def serve_http(self):
+        """Starts a HTTP server that listens for webhook requests and serves the web ui."""
+        import sys
+        import socket
+        import logging
+        import os
+
+        try:
+            from BaseHTTPServer import HTTPServer
+        except ImportError as e:
+            from http.server import HTTPServer
+
+        # Setup
         try:
 
             # Create web hook request handler class
@@ -255,22 +289,6 @@ class GitAutoDeploy(object):
                                        self._config['port']),
                                       WebhookRequestHandler)
 
-            # Start a web socket server if the web UI is enabled
-            #if self._config['web-ui']['enabled']:
-
-            #    try:
-            #        from SimpleWebSocketServer import SimpleWebSocketServer
-            #        from wsserver import WebSocketClientHandler
-
-            #        # Create web socket server
-            #        self._ws_server = SimpleWebSocketServer(self._config['ws-host'], self._config['ws-port'], WebSocketClientHandler)
-
-            #        sa = self._ws_server.socket.getsockname()
-            #        self._startup_event.log_info("Listening for web socket on %s port %s" % (sa[0], sa[1]))
-
-            #    except ImportError as e:
-            #        self._startup_event.log_error("Unable to start web socket server due to a too old version of Python. Version => 2.7.9 is required.")
-
             # Setup SSL for HTTP server
             if 'ssl' in self._config and self._config['ssl']:
                 import ssl
@@ -280,24 +298,15 @@ class GitAutoDeploy(object):
                                                       server_side=True)
             sa = self._http_server.socket.getsockname()
             self._startup_event.log_info("Listening for http connections on %s port %s" % (sa[0], sa[1]))
-            self._startup_event.address = sa[0]
-            self._startup_event.port = sa[1]
-            self._startup_event.notify()
-
-            # Actual port bound to (nessecary when OS picks randomly free port)
-            self._port = sa[1]
+            self._startup_event.http_address = sa[0]
+            self._startup_event.http_port = sa[1]
+            self._startup_event.set_http_started(True)
 
         except socket.error as e:
             self._startup_event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
 
-    def serve_http(self):
-        import sys
-        import socket
-        import logging
-        import os
-        from .events import SystemEvent
-
+        # Run forever
         try:
             self._http_server.serve_forever()
 
@@ -306,7 +315,7 @@ class GitAutoDeploy(object):
             self._event_store.register_action(event)
             event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
-        
+
         except KeyboardInterrupt as e:
             event = SystemEvent()
             self._event_store.register_action(event)
@@ -317,12 +326,41 @@ class GitAutoDeploy(object):
         pass
 
     def serve_ws(self):
-        if not self._ws_server:
+        """Start a web socket server, used by the web UI to get notifications about updates."""
+
+        # Start a web socket server if the web UI is enabled
+        if not self._config['web-ui-enabled']:
             return
-        self._ws_server.serveforever()
+
+        try:
+            import sys
+            from autobahn.websocket import WebSocketServerProtocol, WebSocketServerFactory
+            from twisted.internet import reactor
+
+            # Create a WebSocketClientHandler instance
+            WebSocketClientHandler = WebSocketClientHandlerFactory(self._config, self._ws_clients, self._event_store)
+
+            uri = u"ws://%s:%s" % (self._config['web-ui-web-socket-host'], self._config['web-ui-web-socket-port'])
+            factory = WebSocketServerFactory(uri)
+            factory.protocol = WebSocketClientHandler
+            # factory.setProtocolOptions(maxConnections=2)
+
+            # note to self: if using putChild, the child must be bytes...
+            self._ws_server_port = reactor.listenTCP(self._config['web-ui-web-socket-port'], factory)
+
+            self._startup_event.log_info("Listening for web socket connections on %s port %s" % (self._config['web-ui-web-socket-host'], self._config['web-ui-web-socket-port']))
+            self._startup_event.ws_address = self._config['web-ui-web-socket-host']
+            self._startup_event.ws_port = self._config['web-ui-web-socket-port']
+            self._startup_event.set_ws_started(True)
+
+            # Serve forever (until reactor.stop())
+            reactor.run(installSignalHandlers=False)
+
+        except ImportError:
+            self._startup_event.log_error("Unable to start web socket server due to missing dependency.")
 
     def serve_forever(self):
-        """Start listening for incoming requests."""
+        """Start HTTP and web socket servers."""
         import sys
         import socket
         import logging
@@ -337,45 +375,24 @@ class GitAutoDeploy(object):
         wwwroot = os.path.join(os.path.dirname(os.path.realpath(__file__)), "wwwroot")
         os.chdir(wwwroot)
 
+        # Start HTTP server
         t1 = threading.Thread(target=self.serve_http)
         #t1.daemon = True
+
+        # Start web socket server
+        t2 = threading.Thread(target=self.serve_ws)
+        #t2.daemon = True
+
         t1.start()
-
-
-        #t2 = threading.Thread(target=self.serve_ws)
-        #t1.daemon = True
-        #t2.start()
+        t2.start()
 
         # Wait for thread to finish without blocking main thread
-        while t1.isAlive:
+        while t1.is_alive():
             t1.join(5)
 
         # Wait for thread to finish without blocking main thread
-        #while t2.isAlive:
-        #    t2.join(5)
-
-
-    def handle_request(self):
-        """Start listening for incoming requests."""
-        import sys
-        import socket
-        from .events import SystemEvent
-
-        try:
-            self._http_server.handle_request()
-
-        except socket.error as e:
-            event = SystemEvent()
-            self._event_store.register_action(event)
-            event.log_critical("Error on socket: %s" % e)
-            sys.exit(1)
-        
-        except KeyboardInterrupt as e:
-            event = SystemEvent()
-            self._event_store.register_action(event)
-            event.log_info('Requested close by keyboard interrupt signal')
-            self.stop()
-            self.exit()
+        while t2.is_alive():
+            t2.join(5)
 
     def signal_handler(self, signum, frame):
         from .events import SystemEvent
@@ -407,12 +424,16 @@ class GitAutoDeploy(object):
 
             # Shut down the underlying TCP server
             self._http_server.shutdown()
+
             # Close the socket
             self._http_server.socket.close()
 
         # Stop web socket server if running
-        if self._ws_server is not None:
-            self._ws_server.close()
+        try:
+            from twisted.internet import reactor
+            reactor.callFromThread(reactor.stop)
+        except ImportError:
+            pass
 
     def exit(self):
         import sys
@@ -428,7 +449,7 @@ class GitAutoDeploy(object):
             sys.stdout = self._default_stdout
             sys.stderr = self._default_stderr
 
-        sys.exit(0)
+        #sys.exit(0)
 
 def main():
     import signal

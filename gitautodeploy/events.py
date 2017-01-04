@@ -33,10 +33,7 @@ class SystemEvent(object):
 
     def register_message(self, message, level="INFO"):
         self.messages.append(message)
-        self.hub.update_action(self, message)
-
-    def notify(self):
-        self.hub.notify(self)
+        self.hub.notify_observers(type="event-updated", event=self.dict_repr())
 
     def set_id(self, id):
         self.id = id
@@ -46,9 +43,12 @@ class SystemEvent(object):
 
     def set_waiting(self, value):
         self.waiting = value
+        self.hub.notify_observers(type="event-updated", event=self.dict_repr())
 
     def set_success(self, value):
         self.success = value
+        self.hub.notify_observers(type="event-updated", event=self.dict_repr())
+        self.hub.notify_observers(type="event-success", id=self.id, success=value)
 
     def log_debug(self, message):
         self.logger.debug(message)
@@ -70,8 +70,8 @@ class SystemEvent(object):
         self.logger.critical(message)
         self.register_message(message, "CRITICAL")
 
-    def update(self):
-        self.hub.update_action(self)
+    #def update(self):
+    #    self.hub.notify_observers(type="event-updated", event=self.dict_repr())
 
 
 class WebhookAction(SystemEvent):
@@ -97,9 +97,13 @@ class WebhookAction(SystemEvent):
 
 class StartupEvent(SystemEvent):
 
-    def __init__(self, address=None, port=None):
-        self.address = address
-        self.port = port
+    def __init__(self, http_address=None, http_port=None, ws_address=None, ws_port=None):
+        self.http_address = http_address
+        self.http_port = http_port
+        self.http_started = False
+        self.ws_address = ws_address
+        self.ws_port = ws_port
+        self.ws_started = False
         super(StartupEvent, self).__init__()
 
     def __repr__(self):
@@ -107,10 +111,27 @@ class StartupEvent(SystemEvent):
 
     def dict_repr(self):
         data = super(StartupEvent, self).dict_repr()
-        data['address'] = self.address
-        data['port'] = self.port
+        data['http-address'] = self.http_address
+        data['http-port'] = self.http_port
+        data['http-started'] = self.http_started
+        data['ws-address'] = self.ws_address
+        data['ws-port'] = self.ws_port
+        data['ws-started'] = self.ws_started
         return data
 
+    def set_http_started(self, value):
+        self.http_started = value
+        self.hub.notify_observers(type="event-updated", event=self.dict_repr())
+        self.validate_success()
+
+    def set_ws_started(self, value):
+        self.ws_started = value
+        self.hub.notify_observers(type="event-updated", event=self.dict_repr())
+        self.validate_success()
+
+    def validate_success(self):
+        if self.http_started and self.ws_started:
+            self.set_success(True)
 
 class EventStore(object):
 
@@ -126,26 +147,20 @@ class EventStore(object):
         if observer in self.observers:
             self.observers.remove(observer)
 
-    def update_observers(self, *args, **kwargs):
+    def notify_observers(self, *args, **kwargs):
         for observer in self.observers:
             observer.update(*args, **kwargs)
 
-    def register_action(self, action):
-        action.set_id(self.next_id)
-        action.register_hub(self)
+    def register_action(self, event):
+        event.set_id(self.next_id)
+        event.register_hub(self)
         self.next_id = self.next_id + 1
-        self.actions.append(action)
-        self.update_observers(action)
+        self.actions.append(event)
+        self.notify_observers(type="new-event", event=event.dict_repr())
 
         # Store max 100 actions
         if len(self.actions) > 100:
             self.actions.pop(0)
-
-    def notify(self, event):
-        self.update_observers(event=event)
-
-    def update_action(self, action, message=None):
-        self.update_observers(action, message)
 
     def dict_repr(self):
         action_repr = []

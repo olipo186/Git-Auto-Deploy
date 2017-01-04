@@ -1,4 +1,7 @@
-from .parsers import CodingRequestParser, GitLabCIRequestParser, GitLabRequestParser, GitHubRequestParser, BitBucketRequestParser, GenericRequestParser
+from .parsers import CodingRequestParser, GitLabCIRequestParser
+from .parsers import GitLabRequestParser, GitHubRequestParser
+from .parsers import BitBucketRequestParser, GenericRequestParser
+
 
 class WebbhookRequestProcessor(object):
 
@@ -70,7 +73,7 @@ class WebbhookRequestProcessor(object):
 
             # In case there is no path configured for the repository, no pull will
             # be made.
-            if not 'path' in repo_config:
+            if 'path' not in repo_config:
                 res = GitWrapper.deploy(repo_config)
                 repo_result['deploy'] = res
                 result.append(repo_result)
@@ -142,9 +145,9 @@ class WebbhookRequestProcessor(object):
 
                 result.append(repo_result)
 
-            action.log_info("Deploy commands were executed")
-            action.set_success(True)
-            action.update()
+        action.log_info("Deploy commands were executed")
+        action.set_waiting(False)
+        action.set_success(True)
 
         return result
 
@@ -183,7 +186,7 @@ class WebhookRequestFilter(object):
                     continue
 
                 # If the filter value is set to True. the filter
-                # will pass regardless of the actual value 
+                # will pass regardless of the actual value
                 if filter_value == True:
                     continue
 
@@ -276,7 +279,7 @@ def WebhookRequestHandlerFactory(config, event_store):
         def do_HEAD(self):
             import json
 
-            if not self._config['web-ui']['enabled'] or not self.client_address[0] in self._config['web-ui']['remote-whitelist']:
+            if not self._config['web-ui-enabled'] or not self.client_address[0] in self._config['web-ui-whitelist']:
                 self.send_error(403)
                 return
 
@@ -285,12 +288,15 @@ def WebhookRequestHandlerFactory(config, event_store):
         def do_GET(self):
             import json
 
-            if not self._config['web-ui']['enabled'] or not self.client_address[0] in self._config['web-ui']['remote-whitelist']:
+            if not self._config['web-ui-enabled'] or not self.client_address[0] in self._config['web-ui-whitelist']:
                 self.send_error(403)
                 return
 
             if self.path == "/api/status":
-                data = self.event_store.dict_repr()
+                data = {
+                    'events': self.event_store.dict_repr(),
+                    'web-socket-port': self._config['web-ui-web-socket-port']
+                }
                 self.send_response(200, 'OK')
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -317,8 +323,8 @@ def WebhookRequestHandlerFactory(config, event_store):
             request_headers = dict((k.lower(), v) for k, v in request_headers.items())
 
             action = WebhookAction(self.client_address, request_headers, request_body)
-            action.set_waiting(True)
             event_store.register_action(action)
+            action.set_waiting(True)
 
             action.log_info('Incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
 
@@ -381,7 +387,6 @@ def WebhookRequestHandlerFactory(config, event_store):
                 action.log_info("Executing deploy commands")
 
                 # Schedule the execution of the webhook (git pull and trigger deploy etc)
-                #request_processor.execute_webhook(repo_configs, request_headers, request_body, action)
                 thread = threading.Thread(target=request_processor.execute_webhook, args=[repo_configs, request_headers, request_body, action])
                 thread.start()
 
@@ -397,8 +402,8 @@ def WebhookRequestHandlerFactory(config, event_store):
                 self.send_error(400, 'Unprocessable request')
                 action.log_warning('Unable to process incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
                 test_case['expected']['status'] = 400
+                action.set_waiting(False)
                 action.set_success(False)
-                action.update()
                 return
 
             except Exception as e:
@@ -408,8 +413,8 @@ def WebhookRequestHandlerFactory(config, event_store):
 
                 test_case['expected']['status'] = 500
                 action.log_warning("Unable to process request")
+                action.set_waiting(False)
                 action.set_success(False)
-                action.update()
 
                 raise e
 
@@ -418,9 +423,6 @@ def WebhookRequestHandlerFactory(config, event_store):
                 # Save the request as a test case
                 if 'log-test-case' in self._config and self._config['log-test-case']:
                     self.save_test_case(test_case)
-
-                action.set_waiting(False)
-                action.update()
 
         def log_message(self, format, *args):
             """Overloads the default message logging method to allow messages to

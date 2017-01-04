@@ -2,17 +2,10 @@ import React, { Component } from 'react';
 import './EventMessages.scss';
 
 class EventMessages extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-        event: props.event
-    };
-  }
 
   getMessages() {
     
-    var messages = this.state.event.messages;
+    var messages = this.props.event.messages;
 
     if(!messages)
       return;
