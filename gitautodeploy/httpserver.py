@@ -1,4 +1,7 @@
-from .parsers import CodingRequestParser, GitLabCIRequestParser, GitLabRequestParser, GitHubRequestParser, BitBucketRequestParser, GenericRequestParser
+from .parsers import CodingRequestParser, GitLabCIRequestParser
+from .parsers import GitLabRequestParser, GitHubRequestParser
+from .parsers import BitBucketRequestParser, GenericRequestParser
+
 
 class WebbhookRequestProcessor(object):
 
@@ -70,7 +73,7 @@ class WebbhookRequestProcessor(object):
 
             # In case there is no path configured for the repository, no pull will
             # be made.
-            if not 'path' in repo_config:
+            if 'path' not in repo_config:
                 res = GitWrapper.deploy(repo_config)
                 repo_result['deploy'] = res
                 result.append(repo_result)
@@ -183,7 +186,7 @@ class WebhookRequestFilter(object):
                     continue
 
                 # If the filter value is set to True. the filter
-                # will pass regardless of the actual value 
+                # will pass regardless of the actual value
                 if filter_value == True:
                     continue
 

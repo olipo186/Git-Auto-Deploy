@@ -28,7 +28,9 @@ def get_config_defaults():
 
     config['web-ui'] = {
         'enabled': False,
-        'remote-whitelist': ['127.0.0.1']
+        'remote-whitelist': ['127.0.0.1'],
+        'ws-host': '0.0.0.0',
+        'ws-port': 9000
     }
 
     return config
