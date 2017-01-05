@@ -290,20 +290,26 @@ class GitAutoDeploy(object):
                                       WebhookRequestHandler)
 
             # Setup SSL for HTTP server
+            scheme = 'HTTP'
             if 'ssl' in self._config and self._config['ssl']:
-                import ssl
-                logger.info("enabling ssl")
-                self._http_server.socket = ssl.wrap_socket(self._http_server.socket,
-                                                      certfile=os.path.expanduser(self._config['ssl-pem']),
-                                                      server_side=True)
+                if not os.path.isfile(self._config['ssl-cert']):
+                    self._startup_event.log_critical("Unable to enable SSL: File does not exist: %s" % self._config['ssl-cert'])
+                else:
+                    import ssl
+                    self._startup_event.log_info("Enabling SSL on TCP socket for HTTP server")
+                    scheme = 'HTTPS'
+                    self._http_server.socket = ssl.wrap_socket(self._http_server.socket,
+                                                        keyfile=self._config['ssl-key'],
+                                                        certfile=self._config['ssl-cert'],
+                                                        server_side=True)
             sa = self._http_server.socket.getsockname()
-            self._startup_event.log_info("Listening for http connections on %s port %s" % (sa[0], sa[1]))
+            self._startup_event.log_info("Listening for %s connections on %s port %s" % (scheme, sa[0], sa[1]))
             self._startup_event.http_address = sa[0]
             self._startup_event.http_port = sa[1]
             self._startup_event.set_http_started(True)
 
         except socket.error as e:
-            self._startup_event.log_critical("Error on socket: %s" % e)
+            self._startup_event.log_critical("Unable to start http server: %s" % e)
             sys.exit(1)
 
         # Run forever
@@ -336,6 +342,7 @@ class GitAutoDeploy(object):
             import sys
             from autobahn.websocket import WebSocketServerProtocol, WebSocketServerFactory
             from twisted.internet import reactor
+            from twisted.internet.error import BindError
 
             # Create a WebSocketClientHandler instance
             WebSocketClientHandler = WebSocketClientHandlerFactory(self._config, self._ws_clients, self._event_store)
@@ -355,6 +362,9 @@ class GitAutoDeploy(object):
 
             # Serve forever (until reactor.stop())
             reactor.run(installSignalHandlers=False)
+
+        except BindError as e:
+            self._startup_event.log_critical("Unable to start web socket server: %s" % e)
 
         except ImportError:
             self._startup_event.log_error("Unable to start web socket server due to missing dependency.")
@@ -462,12 +472,14 @@ class GitAutoDeploy(object):
             sys.stdout = self._default_stdout
             sys.stderr = self._default_stderr
 
-        #sys.exit(0)
 
 def main():
     import signal
     from gitautodeploy import GitAutoDeploy
-    from cli.config import get_config_defaults, get_config_from_environment, get_config_from_argv, find_config_file, get_config_from_file, get_repo_config_from_environment, init_config
+    from cli.config import get_config_defaults, get_config_from_environment
+    from cli.config import get_config_from_argv, find_config_file
+    from cli.config import get_config_from_file, get_repo_config_from_environment
+    from cli.config import init_config, get_config_file_path, rename_legacy_attribute_names
     import sys
     import os
 
@@ -482,34 +494,31 @@ def main():
     if hasattr(signal, 'SIGPIPE') and hasattr(signal, 'SIG_IGN'):
         signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
+    # Get default config values
     config = get_config_defaults()
 
     # Get config values from environment variables and commadn line arguments
     environment_config = get_config_from_environment()
     argv_config = get_config_from_argv(sys.argv[1:])
 
-    # Merge config values
+    # Merge config values from environment variables
     config.update(environment_config)
-    config.update(argv_config)
 
-    # Config file path provided?
-    if 'config' in config and config['config']:
-        config_file_path = os.path.realpath(config['config'])
-
-    else:
-
-        # Directories to scan for config files
-        target_directories = [
-            os.getcwd(),  # cwd
-            os.path.dirname(os.path.realpath(__file__))  # script path
-        ]
-
-        config_file_path = find_config_file(target_directories)
+    search_target = os.path.dirname(os.path.realpath(__file__))
+    config_file_path = get_config_file_path(environment_config, argv_config, search_target)
 
     # Config file path provided or found?
     if config_file_path:
         file_config = get_config_from_file(config_file_path)
+
+        # Merge config values from config file (overrides environment variables)
         config.update(file_config)
+
+    # Merge config value from command line (overrides environment variables and config file)
+    config.update(argv_config)
+
+    # Rename legacy config option names
+    config = rename_legacy_attribute_names(config)
 
     # Extend config data with any repository defined by environment variables
     repo_config = get_repo_config_from_environment()

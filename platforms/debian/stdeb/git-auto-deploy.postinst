@@ -21,10 +21,10 @@ touch $HOME_DIR/.ssh/known_hosts
 
 # Generate SSL certificate if openssl is installed
 if [ -x "$(command -v openssl)" ]; then
-  openssl req -x509 -newkey rsa:4096 -keyout $HOME_DIR/key.pem -out $HOME_DIR/cert.pem -days 365 -nodes -subj "/C=/ST=/L=/O=Git Auto Deploy/OU=/CN=localhost"
+  openssl req -new -x509 -keyout $HOME_DIR/cert.pem -out $HOME_DIR/cert.pem -days 365 -nodes -subj "/C=/ST=/L=/O=Git Auto Deploy/OU=/CN=localhost"
 fi
 
-# Set permissions on home dir
+# Set permissions on home dirßß
 chown -R $GAD_UID:$GAD_GID $HOME_DIR
 chmod -R 750 $HOME_DIR
 

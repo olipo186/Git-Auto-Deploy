@@ -32,7 +32,7 @@ class GitWrapper():
 
         # All commands need to success
         for command in commands:
-            res = ProcessWrapper().call(command, cwd=repo_config['path'], shell=True)
+            res = ProcessWrapper().call(command, cwd=repo_config['path'], shell=True, supressStderr=True)
 
             if res != 0:
                 logger.error("Command '%s' failed with exit code %s" % (command, res))
@@ -76,7 +76,7 @@ class GitWrapper():
 
         # All commands need to success
         for command in commands:
-            res = ProcessWrapper().call(command, cwd=repo_config['path'], shell=True)
+            res = ProcessWrapper().call(command, cwd=repo_config['path'], shell=True, supressStderr=True)
 
             if res != 0:
                 logger.error("Command '%s' failed with exit code %s" % (command, res))

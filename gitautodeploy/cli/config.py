@@ -7,7 +7,8 @@ def get_config_defaults():
     config['config'] = None
     config['ssh-keyscan'] = False
     config['ssl'] = False
-    config['ssl-pem-file'] = '~/.gitautodeploy.pem'
+    config['ssl-key'] = None  # If specific, holds the private key
+    config['ssl-cert'] = '~/cert.pem'  # Holds either only the public or both the private and public keys
     config['pidfilepath'] = '~/.gitautodeploy.pid'
     config['logfilepath'] = None
     config['host'] = '0.0.0.0'
@@ -29,9 +30,19 @@ def get_config_defaults():
     config['web-ui-enabled'] = False
     config['web-ui-whitelist'] = ['127.0.0.1']
     config['web-ui-web-socket-host'] = '0.0.0.0'
-    config['web-ui-web-socket-port'] = 9000
+    config['web-ui-web-socket-port'] = 9001
 
     return config
+
+
+def rename_legacy_attribute_names(config):
+
+    if 'ssl-pem-file' in config:
+        config['ssl-cert'] = config['ssl-pem-file']
+        del config['ssl-pem-file']
+
+    return config
+
 
 def get_config_from_environment():
     """Get configuration values provided as environment variables."""
@@ -54,8 +65,8 @@ def get_config_from_environment():
     if 'GAD_SSL' in os.environ:
         config['ssl'] = True
 
-    if 'GADGAD_SSL_PEM_FILE_SSL' in os.environ:
-        config['ssl-pem-file'] = os.environ['GAD_SSL_PEM_FILE']
+    if 'GAD_SSL_CERT' in os.environ:
+        config['ssl-cert'] = os.environ['GAD_SSL_CERT']
 
     if 'GAD_PID_FILE' in os.environ:
         config['pidfilepath'] = os.environ['GAD_PID_FILE']
@@ -112,13 +123,18 @@ def get_config_from_argv(argv):
                         type=str)
 
     parser.add_argument("--host",
-                        help="address to bind to",
+                        help="address to bind http server to",
                         dest="host",
                         type=str)
 
     parser.add_argument("--port",
-                        help="port to bind to",
+                        help="port to bind http server to",
                         dest="port",
+                        type=int)
+
+    parser.add_argument("--ws-port",
+                        help="port to bind web socket server to",
+                        dest="web-ui-web-socket-port",
                         type=int)
 
     parser.add_argument("--ssl",
@@ -126,9 +142,14 @@ def get_config_from_argv(argv):
                         dest="ssl",
                         action="store_true")
 
-    parser.add_argument("--ssl-pem",
-                        help="path to ssl pem file",
-                        dest="ssl-pem",
+    parser.add_argument("--ssl-key",
+                        help="path to ssl key file",
+                        dest="ssl-key",
+                        type=str)
+
+    parser.add_argument("--ssl-cert",
+                        help="path to ssl cert file",
+                        dest="ssl-cert",
                         type=str)
 
     config = vars(parser.parse_args(argv))
@@ -237,6 +258,12 @@ def init_config(config):
     if 'logfilepath' in config and config['logfilepath']:
         config['logfilepath'] = os.path.expanduser(config['logfilepath'])
 
+    if 'ssl-cert' in config and config['ssl-cert']:
+        config['ssl-cert'] = os.path.expanduser(config['ssl-cert'])
+
+    if 'ssl-key' in config and config['ssl-key']:
+        config['ssl-key'] = os.path.expanduser(config['ssl-key'])
+
     if 'repositories' not in config:
         config['repositories'] = []
 
@@ -307,6 +334,7 @@ def init_config(config):
 
     return config
 
+
 def get_repo_config_from_environment():
     """Look for repository config in any defined environment variables. If
     found, import to main config."""
@@ -337,3 +365,28 @@ def get_repo_config_from_environment():
         repo_config['deploy'] = os.environ['GAD_REPO_DEPLOY']
 
     return repo_config
+
+
+def get_config_file_path(env_config, argv_config, search_target):
+    import os
+
+    # Config file path provided in argument vector?
+    if 'config' in argv_config and argv_config['config']:
+        config_file_path = os.path.realpath(argv_config['config'])
+
+    # Config file path provided in environment variable?
+    elif 'config' in env_config and env_config['config']:
+        config_file_path = os.path.realpath(env_config['config'])
+
+    # Search file system
+    else:
+
+        # Directories to scan for config files
+        target_directories = [
+            os.getcwd(),  # cwd
+            search_target  # script path
+        ]
+
+        config_file_path = find_config_file(target_directories)
+
+    return config_file_path

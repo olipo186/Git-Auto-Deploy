@@ -9,13 +9,17 @@ class ProcessWrapper():
         """Run command with arguments. Wait for command to complete. Sends
         output to logging module. The arguments are the same as for the Popen
         constructor."""
-        
+
         from subprocess import Popen, PIPE
         import logging
         logger = logging.getLogger()
 
         kwargs['stdout'] = PIPE
         kwargs['stderr'] = PIPE
+
+        if 'supressStderr' in kwargs:
+            supressStderr = kwargs['supressStderr']
+            del kwargs['supressStderr']
 
         p = Popen(*popenargs, **kwargs)
         stdout, stderr = p.communicate()
@@ -30,6 +34,9 @@ class ProcessWrapper():
 
         if stderr:
             for line in stderr.strip().split("\n"):
-                logger.error(line)
+                if supressStderr:
+                    logger.info(line)
+                else:
+                    logger.error(line)
 
         return p.returncode
