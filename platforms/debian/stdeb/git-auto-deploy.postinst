@@ -18,6 +18,13 @@ adduser $GAD_UID $GAD_GID
 mkdir -p $HOME_DIR
 mkdir -p $HOME_DIR/.ssh
 touch $HOME_DIR/.ssh/known_hosts
+
+# Generate SSL certificate if openssl is installed
+if [ -x "$(command -v openssl)" ]; then
+  openssl req -x509 -newkey rsa:4096 -keyout $HOME_DIR/key.pem -out $HOME_DIR/cert.pem -days 365 -nodes -subj "/C=/ST=/L=/O=Git Auto Deploy/OU=/CN=localhost"
+fi
+
+# Set permissions on home dir
 chown -R $GAD_UID:$GAD_GID $HOME_DIR
 chmod -R 750 $HOME_DIR
 
@@ -27,14 +34,18 @@ chown $GAD_UID:$GAD_GID /var/log/$NAME.log
 chmod 750 /var/log/$NAME.log
 
 # Create data directory
-mkdir -p $DATA_DIR
-chown -R $GAD_UID:$GAD_GID $DATA_DIR
-chmod 750 $DATA_DIR
+if [ ! -d "$DATA_DIR" ]; then
+    mkdir -p $DATA_DIR
+    chown -R $GAD_UID:$GAD_GID $DATA_DIR
+    chmod 750 $DATA_DIR
+fi
 
 # Create pid file
-mkdir $PID_DIR
-touch $PID_FILE
-chown $GAD_UID:$GAD_GID $PID_DIR $PID_FILE
-chmod 750 $PID_FILE
+if [ ! -d "$PID_DIR" ]; then
+    mkdir $PID_DIR
+    touch $PID_FILE
+    chown $GAD_UID:$GAD_GID $PID_DIR $PID_FILE
+    chmod 750 $PID_FILE
+fi
 
 update-rc.d $NAME defaults
