@@ -20,12 +20,11 @@ class Timeline extends Component {
     this.wsSocket = null;
     this.wsIsOpen = false;
     this.wsIsRecovering = false;
-    this.wsPort = 9000;
+    this.wsPort = undefined;
   }
 
   componentDidMount() {
     this.fetchEventList();
-    this.initWebsocketConnection();
     this.initUserNotification();
   }
 
@@ -87,7 +86,7 @@ class Timeline extends Component {
     var url = '/api/status';
 
     if (process.env.NODE_ENV === 'development') {
-      url = 'http://10.0.0.1:8001/api/status';
+      url = 'https://10.0.0.1:8001/api/status';
     }
 
     axios.get(url)
@@ -95,6 +94,9 @@ class Timeline extends Component {
         const events = res.data.events.map(obj =>  new Event(obj));
         this.wsPort = res.data['web-socket-port'];
         this.setState({ events: events, loaded: true });
+
+        // Once we get to know the web socket port, we can make the web socket connection
+        this.initWebsocketConnection();
       })
       .catch(err => {
         this.setState({loaded: false});
@@ -179,7 +181,7 @@ class Timeline extends Component {
 
   getWebsocketURI() {
     if (process.env.NODE_ENV === "development") {
-      return "ws://10.0.0.1:" + this.wsPort;
+      return "wss://10.0.0.1:" + this.wsPort;
     }
     var scheme = window.location.protocol === "https" ? "wss" : "ws";
     return scheme + "://" + window.location.hostname + ":" + this.wsPort;

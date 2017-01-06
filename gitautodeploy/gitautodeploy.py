@@ -339,9 +339,9 @@ class GitAutoDeploy(object):
             return
 
         try:
-            import sys
+            import os
             from autobahn.websocket import WebSocketServerProtocol, WebSocketServerFactory
-            from twisted.internet import reactor
+            from twisted.internet import reactor, ssl
             from twisted.internet.error import BindError
 
             # Create a WebSocketClientHandler instance
@@ -353,9 +353,15 @@ class GitAutoDeploy(object):
             # factory.setProtocolOptions(maxConnections=2)
 
             # note to self: if using putChild, the child must be bytes...
-            self._ws_server_port = reactor.listenTCP(self._config['web-ui-web-socket-port'], factory)
+            if 'ssl' in self._config and self._config['ssl'] and os.path.isfile(self._config['ssl-cert']):
+                contextFactory = ssl.DefaultOpenSSLContextFactory(privateKeyFileName=self._config['ssl-key'], certificateFileName=self._config['ssl-cert'])
+                self._ws_server_port = reactor.listenSSL(self._config['web-ui-web-socket-port'], factory, contextFactory)
+                protocol = "SSL"
+            else:
+                self._ws_server_port = reactor.listenTCP(self._config['web-ui-web-socket-port'], factory)
+                protocol = "TCP"
 
-            self._startup_event.log_info("Listening for web socket connections on %s port %s" % (self._config['web-ui-web-socket-host'], self._config['web-ui-web-socket-port']))
+            self._startup_event.log_info("Listening for web socket connections over %s on %s port %s" % (protocol, self._config['web-ui-web-socket-host'], self._config['web-ui-web-socket-port']))
             self._startup_event.ws_address = self._config['web-ui-web-socket-host']
             self._startup_event.ws_port = self._config['web-ui-web-socket-port']
             self._startup_event.set_ws_started(True)

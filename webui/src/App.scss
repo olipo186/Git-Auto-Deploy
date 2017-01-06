@@ -11,4 +11,16 @@
         width: 100%;
         max-width: 450px;
     }
+
+    .insecure-scheme {
+        width: 100%;
+        text-align: center;
+        margin: 0 auto;
+        font-family: 'Lato', sans-serif;
+        font-weight: 300;
+        position: absolute;
+        top: 40%;
+        margin-top: -1rem;
+        
+    }
 }
