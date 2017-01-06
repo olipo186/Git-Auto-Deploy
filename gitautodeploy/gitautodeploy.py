@@ -306,7 +306,9 @@ class GitAutoDeploy(object):
             self.stop()
             self.exit()
 
-        print("HTTP server did quit")
+        event = SystemEvent()
+        self._event_store.register_action(event)
+        event.log_info('HTTP server did quit')
 
     def serve_https(self):
         """Starts a HTTPS server that listens for webhook requests and serves the web ui."""
@@ -325,7 +327,7 @@ class GitAutoDeploy(object):
             return
 
         if not os.path.isfile(self._config['ssl-cert']):
-            self._startup_event.log_critical("Unable to enable SSL: File does not exist: %s" % self._config['ssl-cert'])
+            self._startup_event.log_critical("Unable to activate SSL: File does not exist: %s" % self._config['ssl-cert'])
             return
 
         # Setup
@@ -375,7 +377,9 @@ class GitAutoDeploy(object):
             self.stop()
             self.exit()
 
-        print("HTTPS server did quit")
+        event = SystemEvent()
+        self._event_store.register_action(event)
+        event.log_info('HTTPS server did quit')
 
     def serve_wss(self):
         """Start a web socket server over SSL, used by the web UI to get notifications about updates."""
@@ -389,7 +393,7 @@ class GitAutoDeploy(object):
             return
 
         if not os.path.isfile(self._config['ssl-cert']):
-            self._startup_event.log_critical("Unable to enable SSL: File does not exist: %s" % self._config['ssl-cert'])
+            self._startup_event.log_critical("Unable to activate SSL: File does not exist: %s" % self._config['ssl-cert'])
             return
 
         try:
@@ -432,7 +436,9 @@ class GitAutoDeploy(object):
         except ImportError:
             self._startup_event.log_error("Unable to start web socket server due to missing dependency.")
 
-        print("WSS server did quit")
+        event = SystemEvent()
+        self._event_store.register_action(event)
+        event.log_info('WSS server did quit')
 
     def serve_forever(self):
         """Start HTTP and web socket servers."""

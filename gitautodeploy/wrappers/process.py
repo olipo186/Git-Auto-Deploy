@@ -17,6 +17,7 @@ class ProcessWrapper():
         kwargs['stdout'] = PIPE
         kwargs['stderr'] = PIPE
 
+        supressStderr = None
         if 'supressStderr' in kwargs:
             supressStderr = kwargs['supressStderr']
             del kwargs['supressStderr']

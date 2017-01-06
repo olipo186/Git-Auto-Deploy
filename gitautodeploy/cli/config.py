@@ -81,21 +81,6 @@ def rename_legacy_attribute_names(config):
             del config[old_name]
             print("Config option '%s' is deprecated. Please use '%s' instead." % (old_name, new_name))
 
-#    if 'ssl-pem-file' in config:
-#        config['ssl-cert'] = config['ssl-pem-file']
-#        del config['ssl-pem-file']
-#        logger.warn("Config option 'ssl-pem-file' is deprecated. Please use 'ssl-cert' instead.")
-
-#    if 'host' in config:
-#        config['http-host'] = config['host']
-#        del config['host']
-#        logger.warn("Config option 'ssl-pem-file' is deprecated. Please use 'http-host' instead.")
-
-#    if 'port' in config:
-#        config['http-port'] = config['port']
-#        del config['port']
-#        logger.warn("Config option 'ssl-pem-file' is deprecated. Please use 'http-port' instead.")
-
     return config
 
 
@@ -117,8 +102,8 @@ def get_config_from_environment():
     if 'GAD_SSH_KEYSCAN' in os.environ:
         config['ssh-keyscan'] = True
 
-    if 'GAD_SSL' in os.environ:
-        config['ssl'] = True
+    if 'GAD_SSL_KEY' in os.environ:
+        config['ssl-key'] = os.environ['GAD_SSL_KEY']
 
     if 'GAD_SSL_CERT' in os.environ:
         config['ssl-cert'] = os.environ['GAD_SSL_CERT']
@@ -158,11 +143,13 @@ def get_config_from_argv(argv):
     parser.add_argument("-d", "--daemon-mode",
                         help="run in background (daemon mode)",
                         dest="daemon-mode",
+                        default=None,
                         action="store_true")
 
     parser.add_argument("-q", "--quiet",
                         help="supress console output",
                         dest="quiet",
+                        default=None,
                         action="store_true")
 
     parser.add_argument("-c", "--config",
@@ -173,6 +160,7 @@ def get_config_from_argv(argv):
     parser.add_argument("--ssh-keyscan",
                         help="scan repository hosts for ssh keys",
                         dest="ssh-keyscan",
+                        default=None,
                         action="store_true")
 
     parser.add_argument("--pid-file",
@@ -226,8 +214,9 @@ def get_config_from_argv(argv):
                         type=int)
 
     parser.add_argument("--ssl",
-                        help="use ssl",
-                        dest="ssl",
+                        help="enable https",
+                        dest="https-enabled",
+                        default=None,
                         action="store_true")
 
     parser.add_argument("--ssl-key",
