@@ -2,21 +2,52 @@ def get_config_defaults():
     """Get the default configuration values."""
 
     config = {}
+
+    # Supress console output
     config['quiet'] = False
+
+    # Run in daemon mode
     config['daemon-mode'] = False
+
+    # File containing additional config options
     config['config'] = None
-    config['ssh-keyscan'] = False
-    config['ssl'] = False
-    config['ssl-key'] = None  # If specific, holds the private key
-    config['ssl-cert'] = '~/cert.pem'  # Holds either only the public or both the private and public keys
-    config['pidfilepath'] = '~/.gitautodeploy.pid'
-    config['logfilepath'] = None
-    config['host'] = '0.0.0.0'
-    config['port'] = 8001
-    config['intercept-stdout'] = True
+
+    # File to store a copy of the console output
+    config['log-file'] = None
+
+    # File to store the process id (pid)
+    config['pid-file'] = '~/.gitautodeploy.pid'
+
+    # HTTP server options
+    config['http-enabled'] = True
+    config['http-host'] = '0.0.0.0'
+    config['http-port'] = 8001
+
+    # HTTPS server options
+    config['https-enabled'] = True
+    config['https-host'] = '0.0.0.0'
+    config['https-port'] = 8002
+
+    # Web socket server options (used by web UI for real time updates)
+    config['wss-enabled'] = False  # Disabled by default until authentication is in place
+    config['wss-host'] = '0.0.0.0'
+    config['wss-port'] = 8003
+
+    # TLS/SSL cert (necessary for HTTPS and web socket server to work)
+    config['ssl-key'] = None  # If specified, holds the private key
+    config['ssl-cert'] = '~/cert.pem'  # Holds the public key or both the private and public keys
+
+    # Web user interface options
+    config['web-ui-enabled'] = False  # Disabled by default until authentication is in place
+    config['web-ui-whitelist'] = ['127.0.0.1']
+    config['web-ui-require-https'] = True
 
     # Record all log levels by default
     config['log-level'] = 'NOTSET'
+
+    # Other options
+    config['intercept-stdout'] = True
+    config['ssh-keyscan'] = False
 
     # Include details with deploy command return codes in HTTP response. Causes
     # to await any git pull or deploy command actions before it sends the
@@ -27,19 +58,43 @@ def get_config_defaults():
     config['log-test-case'] = False
     config['log-test-case-dir'] = None
 
-    config['web-ui-enabled'] = False
-    config['web-ui-whitelist'] = ['127.0.0.1']
-    config['web-ui-web-socket-host'] = '0.0.0.0'
-    config['web-ui-web-socket-port'] = 9001
-
     return config
 
 
 def rename_legacy_attribute_names(config):
+    import logging
+    logger = logging.getLogger()
 
-    if 'ssl-pem-file' in config:
-        config['ssl-cert'] = config['ssl-pem-file']
-        del config['ssl-pem-file']
+    rewrite_map = {
+        'ssl': 'https-enabled',
+        'ssl-pem-file': 'ssl-cert',
+        'host': 'http-host',
+        'port': 'http-port',
+        'pidfilepath': 'pid-file',
+        'logfilepath': 'log-file'
+    }
+
+    for item in rewrite_map.items():
+        old_name, new_name = item
+        if old_name in config:
+            config[new_name] = config[old_name]
+            del config[old_name]
+            print("Config option '%s' is deprecated. Please use '%s' instead." % (old_name, new_name))
+
+#    if 'ssl-pem-file' in config:
+#        config['ssl-cert'] = config['ssl-pem-file']
+#        del config['ssl-pem-file']
+#        logger.warn("Config option 'ssl-pem-file' is deprecated. Please use 'ssl-cert' instead.")
+
+#    if 'host' in config:
+#        config['http-host'] = config['host']
+#        del config['host']
+#        logger.warn("Config option 'ssl-pem-file' is deprecated. Please use 'http-host' instead.")
+
+#    if 'port' in config:
+#        config['http-port'] = config['port']
+#        del config['port']
+#        logger.warn("Config option 'ssl-pem-file' is deprecated. Please use 'http-port' instead.")
 
     return config
 
@@ -69,18 +124,31 @@ def get_config_from_environment():
         config['ssl-cert'] = os.environ['GAD_SSL_CERT']
 
     if 'GAD_PID_FILE' in os.environ:
-        config['pidfilepath'] = os.environ['GAD_PID_FILE']
+        config['pid-file'] = os.environ['GAD_PID_FILE']
 
     if 'GAD_LOG_FILE' in os.environ:
-        config['logfilepath'] = os.environ['GAD_LOG_FILE']
+        config['log-file'] = os.environ['GAD_LOG_FILE']
 
     if 'GAD_HOST' in os.environ:
-        config['host'] = os.environ['GAD_HOST']
+        config['http-host'] = os.environ['GAD_HOST']
+
+    if 'GAD_HTTP_HOST' in os.environ:
+        config['http-host'] = os.environ['GAD_HTTP_HOST']
+
+    if 'GAD_HTTPS_HOST' in os.environ:
+        config['https-host'] = os.environ['GAD_HTTPS_HOST']
 
     if 'GAD_PORT' in os.environ:
-        config['port'] = int(os.environ['GAD_PORT'])
+        config['http-port'] = int(os.environ['GAD_PORT'])
+
+    if 'GAD_HTTP_PORT' in os.environ:
+        config['http-port'] = int(os.environ['GAD_HTTP_PORT'])
+
+    if 'GAD_HTTPS_PORT' in os.environ:
+        config['https-port'] = int(os.environ['GAD_HTTPS_PORT'])
 
     return config
+
 
 def get_config_from_argv(argv):
     import argparse
@@ -109,12 +177,12 @@ def get_config_from_argv(argv):
 
     parser.add_argument("--pid-file",
                         help="specify a custom pid file",
-                        dest="pidfilepath",
+                        dest="pid-file",
                         type=str)
 
     parser.add_argument("--log-file",
                         help="specify a log file",
-                        dest="logfilepath",
+                        dest="log-file",
                         type=str)
 
     parser.add_argument("--log-level",
@@ -124,13 +192,33 @@ def get_config_from_argv(argv):
 
     parser.add_argument("--host",
                         help="address to bind http server to",
-                        dest="host",
+                        dest="http-host",
                         type=str)
+
+    #parser.add_argument("--http-host",
+    #                    help="address to bind http server to",
+    #                    dest="http-host",
+    #                    type=str)
+
+    #parser.add_argument("--https-host",
+    #                    help="address to bind https server to",
+    #                    dest="https-host",
+    #                    type=str)
 
     parser.add_argument("--port",
                         help="port to bind http server to",
-                        dest="port",
+                        dest="http-port",
                         type=int)
+
+    #parser.add_argument("--http-port",
+    #                    help="port to bind http server to",
+    #                    dest="http-port",
+    #                    type=int)
+
+    #parser.add_argument("--https-port",
+    #                    help="port to bind http server to",
+    #                    dest="https-port",
+    #                    type=int)
 
     parser.add_argument("--ws-port",
                         help="port to bind web socket server to",
@@ -165,6 +253,7 @@ def get_config_from_argv(argv):
 
     return config
 
+
 def find_config_file(target_directories=None):
     """Attempt to find a path to a config file. Provided paths are scanned
     for *.conf(ig)?.json files."""
@@ -191,6 +280,7 @@ def find_config_file(target_directories=None):
                 logger.info("Using '%s' as config" % path)
                 return path
 
+
 def get_config_from_file(path):
     """Get configuration values from config file."""
     import logging
@@ -208,6 +298,7 @@ def get_config_from_file(path):
         config_data = {}
 
     return config_data
+
 
 def read_json_file(file_path):
     import json
@@ -243,6 +334,7 @@ def read_json_file(file_path):
 
     return data
 
+
 def init_config(config):
     """Initialize config by filling out missing values etc."""
 
@@ -252,11 +344,11 @@ def init_config(config):
     logger = logging.getLogger()
 
     # Translate any ~ in the path into /home/<user>
-    if 'pidfilepath' in config and config['pidfilepath']:
-        config['pidfilepath'] = os.path.expanduser(config['pidfilepath'])
+    if 'pid-file' in config and config['pid-file']:
+        config['pid-file'] = os.path.expanduser(config['pid-file'])
 
-    if 'logfilepath' in config and config['logfilepath']:
-        config['logfilepath'] = os.path.expanduser(config['logfilepath'])
+    if 'log-file' in config and config['log-file']:
+        config['log-file'] = os.path.expanduser(config['log-file'])
 
     if 'ssl-cert' in config and config['ssl-cert']:
         config['ssl-cert'] = os.path.expanduser(config['ssl-cert'])

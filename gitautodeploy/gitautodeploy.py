@@ -20,7 +20,10 @@ from .httpserver import WebhookRequestHandlerFactory
 class GitAutoDeploy(object):
     _instance = None
     _http_server = None
+    _https_server = None
+    _https_server_unwrapped_socket = None
     _config = {}
+    _server_status = {}
     _pid = None
     _event_store = None
     _default_stdout = None
@@ -105,19 +108,19 @@ class GitAutoDeploy(object):
     def create_pid_file(self):
         import os
 
-        with open(self._config['pidfilepath'], 'w') as f:
+        with open(self._config['pid-file'], 'w') as f:
             f.write(str(os.getpid()))
 
     def read_pid_file(self):
-        with open(self._config['pidfilepath'], 'r') as f:
+        with open(self._config['pid-file'], 'r') as f:
             return f.readlines()
 
     def remove_pid_file(self):
         import os
         import errno
-        if 'pidfilepath' in self._config and self._config['pidfilepath']:
+        if 'pid-file' in self._config and self._config['pid-file']:
             try:
-                os.remove(self._config['pidfilepath'])
+                os.remove(self._config['pid-file'])
             except OSError as e:
                 # errno.ENOENT = no such file or directory
                 if e.errno != errno.ENOENT:
@@ -157,25 +160,6 @@ class GitAutoDeploy(object):
 
     def update(self, *args, **kwargs):
         import json
-
-        #message = {
-        #    'type': 'unknown'
-        #}
-
-        #if 'event' in kwargs:
-            #if 'message' in kwargs:
-            #    message = {
-            #        'type': 'event-message',
-            #        'event-id': kwargs['event'].id,
-            #        'message': kwargs['message']
-            #    }
-            #else:
-            #message = {
-            #    'type': 'event-update',
-            #    'event-id': kwargs['event'].id,
-            #    'event': kwargs['event'].dict_repr()
-            #}
-
         data = json.dumps(kwargs).encode('utf-8')
         for client in self._ws_clients:
             client.sendMessage(data)
@@ -227,9 +211,9 @@ class GitAutoDeploy(object):
             level = logging.getLevelName(self._config['log-level'])
             logger.setLevel(level)
 
-        if 'logfilepath' in self._config and self._config['logfilepath']:
+        if 'log-file' in self._config and self._config['log-file']:
             # Translate any ~ in the path into /home/<user>
-            fileHandler = logging.FileHandler(self._config['logfilepath'])
+            fileHandler = logging.FileHandler(self._config['log-file'])
             fileHandler.setFormatter(logFormatter)
             logger.addHandler(fileHandler)
 
@@ -270,47 +254,40 @@ class GitAutoDeploy(object):
         """Starts a HTTP server that listens for webhook requests and serves the web ui."""
         import sys
         import socket
-        import logging
         import os
+        from .events import SystemEvent
 
         try:
             from BaseHTTPServer import HTTPServer
         except ImportError as e:
             from http.server import HTTPServer
 
+        if not self._config['http-enabled']:
+            return
+
         # Setup
         try:
 
             # Create web hook request handler class
-            WebhookRequestHandler = WebhookRequestHandlerFactory(self._config, self._event_store)
+            WebhookRequestHandler = WebhookRequestHandlerFactory(self._config, self._event_store, self._server_status, is_https=False)
 
             # Create HTTP server
-            self._http_server = HTTPServer((self._config['host'],
-                                       self._config['port']),
+            self._http_server = HTTPServer((self._config['http-host'],
+                                       self._config['http-port']),
                                       WebhookRequestHandler)
 
             # Setup SSL for HTTP server
-            scheme = 'HTTP'
-            if 'ssl' in self._config and self._config['ssl']:
-                if not os.path.isfile(self._config['ssl-cert']):
-                    self._startup_event.log_critical("Unable to enable SSL: File does not exist: %s" % self._config['ssl-cert'])
-                else:
-                    import ssl
-                    self._startup_event.log_info("Enabling SSL on TCP socket for HTTP server")
-                    scheme = 'HTTPS'
-                    self._http_server.socket = ssl.wrap_socket(self._http_server.socket,
-                                                        keyfile=self._config['ssl-key'],
-                                                        certfile=self._config['ssl-cert'],
-                                                        server_side=True)
             sa = self._http_server.socket.getsockname()
-            self._startup_event.log_info("Listening for %s connections on %s port %s" % (scheme, sa[0], sa[1]))
+            self._server_status['http-uri'] = "http://%s:%s" % (self._config['http-host'], self._config['http-port'])
+
+            self._startup_event.log_info("Listening for connections on %s" % self._server_status['http-uri'])
             self._startup_event.http_address = sa[0]
             self._startup_event.http_port = sa[1]
             self._startup_event.set_http_started(True)
 
         except socket.error as e:
-            self._startup_event.log_critical("Unable to start http server: %s" % e)
-            sys.exit(1)
+            self._startup_event.log_critical("Unable to start HTTP server: %s" % e)
+            return
 
         # Run forever
         try:
@@ -329,13 +306,90 @@ class GitAutoDeploy(object):
             self.stop()
             self.exit()
 
-        pass
+        print("HTTP server did quit")
 
-    def serve_ws(self):
-        """Start a web socket server, used by the web UI to get notifications about updates."""
+    def serve_https(self):
+        """Starts a HTTPS server that listens for webhook requests and serves the web ui."""
+        import sys
+        import socket
+        import os
+        import ssl
+        from .events import SystemEvent
+
+        try:
+            from BaseHTTPServer import HTTPServer
+        except ImportError as e:
+            from http.server import HTTPServer
+
+        if not self._config['https-enabled']:
+            return
+
+        if not os.path.isfile(self._config['ssl-cert']):
+            self._startup_event.log_critical("Unable to enable SSL: File does not exist: %s" % self._config['ssl-cert'])
+            return
+
+        # Setup
+        try:
+
+            # Create web hook request handler class
+            WebhookRequestHandler = WebhookRequestHandlerFactory(self._config, self._event_store, self._server_status, is_https=True)
+
+            # Create HTTP server
+            self._https_server = HTTPServer((self._config['https-host'],
+                                       self._config['https-port']),
+                                      WebhookRequestHandler)
+
+            # Setup SSL for HTTP server
+            self._https_server_unwrapped_socket = self._https_server.socket
+            self._https_server.socket = ssl.wrap_socket(self._https_server.socket,
+                                                keyfile=self._config['ssl-key'],
+                                                certfile=self._config['ssl-cert'],
+                                                server_side=True)
+
+            sa = self._https_server.socket.getsockname()
+            self._server_status['https-uri'] = "https://%s:%s" % (self._config['https-host'], self._config['https-port'])
+
+            self._startup_event.log_info("Listening for connections on %s" % self._server_status['https-uri'])
+            self._startup_event.http_address = sa[0]
+            self._startup_event.http_port = sa[1]
+            self._startup_event.set_http_started(True)
+
+        except socket.error as e:
+            self._startup_event.log_critical("Unable to start HTTPS server: %s" % e)
+            return
+
+        # Run forever
+        try:
+            self._https_server.serve_forever()
+
+        except socket.error as e:
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_critical("Error on socket: %s" % e)
+            sys.exit(1)
+
+        except KeyboardInterrupt as e:
+            event = SystemEvent()
+            self._event_store.register_action(event)
+            event.log_info('Requested close by keyboard interrupt signal')
+            self.stop()
+            self.exit()
+
+        print("HTTPS server did quit")
+
+    def serve_wss(self):
+        """Start a web socket server over SSL, used by the web UI to get notifications about updates."""
+        import os
 
         # Start a web socket server if the web UI is enabled
         if not self._config['web-ui-enabled']:
+            return
+
+        if not self._config['wss-enabled']:
+            return
+
+        if not os.path.isfile(self._config['ssl-cert']):
+            self._startup_event.log_critical("Unable to enable SSL: File does not exist: %s" % self._config['ssl-cert'])
             return
 
         try:
@@ -347,23 +401,26 @@ class GitAutoDeploy(object):
             # Create a WebSocketClientHandler instance
             WebSocketClientHandler = WebSocketClientHandlerFactory(self._config, self._ws_clients, self._event_store)
 
-            uri = u"ws://%s:%s" % (self._config['web-ui-web-socket-host'], self._config['web-ui-web-socket-port'])
+            uri = u"ws://%s:%s" % (self._config['wss-host'], self._config['wss-port'])
             factory = WebSocketServerFactory(uri)
             factory.protocol = WebSocketClientHandler
             # factory.setProtocolOptions(maxConnections=2)
 
             # note to self: if using putChild, the child must be bytes...
-            if 'ssl' in self._config and self._config['ssl'] and os.path.isfile(self._config['ssl-cert']):
+            if self._config['ssl-key'] and self._config['ssl-cert']:
                 contextFactory = ssl.DefaultOpenSSLContextFactory(privateKeyFileName=self._config['ssl-key'], certificateFileName=self._config['ssl-cert'])
-                self._ws_server_port = reactor.listenSSL(self._config['web-ui-web-socket-port'], factory, contextFactory)
-                protocol = "SSL"
             else:
-                self._ws_server_port = reactor.listenTCP(self._config['web-ui-web-socket-port'], factory)
-                protocol = "TCP"
+                contextFactory = ssl.DefaultOpenSSLContextFactory(privateKeyFileName=self._config['ssl-cert'], certificateFileName=self._config['ssl-cert'])
 
-            self._startup_event.log_info("Listening for web socket connections over %s on %s port %s" % (protocol, self._config['web-ui-web-socket-host'], self._config['web-ui-web-socket-port']))
-            self._startup_event.ws_address = self._config['web-ui-web-socket-host']
-            self._startup_event.ws_port = self._config['web-ui-web-socket-port']
+
+            self._ws_server_port = reactor.listenSSL(self._config['wss-port'], factory, contextFactory)
+            # self._ws_server_port = reactor.listenTCP(self._config['wss-port'], factory)
+
+            self._server_status['wss-uri'] = "wss://%s:%s" % (self._config['wss-host'], self._config['wss-port'])
+
+            self._startup_event.log_info("Listening for connections on %s" % self._server_status['wss-uri'])
+            self._startup_event.ws_address = self._config['wss-host']
+            self._startup_event.ws_port = self._config['wss-port']
             self._startup_event.set_ws_started(True)
 
             # Serve forever (until reactor.stop())
@@ -374,6 +431,8 @@ class GitAutoDeploy(object):
 
         except ImportError:
             self._startup_event.log_error("Unable to start web socket server due to missing dependency.")
+
+        print("WSS server did quit")
 
     def serve_forever(self):
         """Start HTTP and web socket servers."""
@@ -404,24 +463,27 @@ class GitAutoDeploy(object):
         wwwroot = os.path.join(os.path.dirname(os.path.realpath(__file__)), "wwwroot")
         os.chdir(wwwroot)
 
-        # Start HTTP server
-        t1 = threading.Thread(target=self.serve_http)
-        #t1.daemon = True
+        threads = [
+            # HTTP server
+            threading.Thread(target=self.serve_http),
 
-        # Start web socket server
-        t2 = threading.Thread(target=self.serve_ws)
-        #t2.daemon = True
+            # HTTPS server
+            threading.Thread(target=self.serve_https),
 
-        t1.start()
-        t2.start()
+            # Web socket SSL server
+            threading.Thread(target=self.serve_wss)
+        ]
 
-        # Wait for thread to finish without blocking main thread
-        while t1.is_alive():
-            t1.join(5)
+        # Start all threads
+        for thread in threads:
+            thread.start()
 
-        # Wait for thread to finish without blocking main thread
-        while t2.is_alive():
-            t2.join(5)
+        # Wait for each thread to finish
+        for thread in threads:
+
+            # Wait for thread to finish without blocking main thread
+            while thread.is_alive():
+                thread.join(5)
 
     def signal_handler(self, signum, frame):
         from .events import SystemEvent
@@ -456,6 +518,19 @@ class GitAutoDeploy(object):
 
             # Close the socket
             self._http_server.socket.close()
+
+        # Stop HTTPS server if running
+        if self._https_server is not None:
+
+            # Shut down the underlying TCP server
+            self._https_server.shutdown()
+
+            # Close the socket
+            self._https_server.socket.close()
+
+        if self._https_server_unwrapped_socket is not None:
+
+            self._https_server_unwrapped_socket.close()
 
         # Stop web socket server if running
         try:

@@ -1,12 +1,40 @@
 {
-//  "pidfilepath": "/var/run/git-auto-deploy/git-auto-deploy.pid",
-  "logfilepath": "/var/log/git-auto-deploy.log",
-  "host": "0.0.0.0",
-  "port": 8001,
-  "global_deploy": [
-    "echo Deploy started!",
-    "echo Deploy completed!"
-  ],
+  // HTTP server options
+  //"http-enabled": true,
+  //"http-host": "0.0.0.0",
+  //"http-port": 8001,
+
+  // HTTPS server options
+  //"https-enabled": true,
+  //"https-host": "0.0.0.0",
+  //"https-port": 8002,
+
+  // Web socket server options (used by web UI for real time updates)
+  //"wss-enabled": false,
+  //"wss-host": "0.0.0.0",
+  //"wss-port": 8003,
+
+  // Web user interface options
+  //"web-ui-enabled": false,
+  //"web-ui-whitelist": ["127.0.0.1"],
+
+  // TLS/SSL cert (necessary for HTTPS and web socket server to work)
+  //"ssl-key": null,  // If specified, holds the private key
+  "ssl-cert": "/etc/git-auto-deploy/cert.pem",  // Holds the public key or both the private and public keys
+
+  // File to store a copy of the console output
+  "log-file": "/var/log/git-auto-deploy.log",
+
+  // Record all log levels by default
+  //"log-level": "NOTSET",
+
+  // Deploy commands that should be executed for all projects
+  //"global_deploy": [
+  //  "echo Deploy started!",
+  //  "echo Deploy completed!"
+  //],
+
+  // Project configs
   "repositories": [
     {
       "url": "https://github.com/olipo186/Git-Auto-Deploy.git",

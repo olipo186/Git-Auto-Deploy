@@ -7,20 +7,29 @@ import DateNode from './Components/Timeline/DateNode';
 import EndNode from './Components/Timeline/EndNode';
 import EventMessages from './Components/Timeline/EventMessages';
 import moment from 'moment';
+import WebSocketStatus from './Components/WebSocketStatus';
 
 class Timeline extends Component {
   constructor(props) {
     super(props);
 
+    var host = window.location.protocol + '//' + window.location.host;
+ 
+    if (process.env.NODE_ENV === 'development') {
+      host = 'https://10.0.0.1:8002';
+    }
+
     this.state = {
       events: [],
-      loaded: false
+      loaded: false,
+      error: false,
+      wsIsOpen: false,
+      wsIsRecovering: false,
+      wsURI: null,
+      host: host
     };
 
     this.wsSocket = null;
-    this.wsIsOpen = false;
-    this.wsIsRecovering = false;
-    this.wsPort = undefined;
   }
 
   componentDidMount() {
@@ -83,23 +92,33 @@ class Timeline extends Component {
 
   fetchEventList() {
 
-    var url = '/api/status';
+    var self = this;
 
-    if (process.env.NODE_ENV === 'development') {
-      url = 'https://10.0.0.1:8001/api/status';
-    }
-
-    axios.get(url)
-      .then(res => {
+    axios.get(this.state.host + '/api/status')
+      .then(function(res) {
         const events = res.data.events.map(obj =>  new Event(obj));
-        this.wsPort = res.data['web-socket-port'];
-        this.setState({ events: events, loaded: true });
+
+        const wsURI = res.data['wss-uri'] === undefined ? null : res.data['wss-uri'];
+
+        self.setState({
+          events: events,
+          loaded: true,
+          error: false,
+          wsURI: wsURI
+        });
 
         // Once we get to know the web socket port, we can make the web socket connection
-        this.initWebsocketConnection();
+        if(wsURI && !self.state.wsIsRecovering) {
+          self.initWebsocketConnection(res.data['wss-uri']);
+        }
+
       })
       .catch(err => {
-        this.setState({loaded: false});
+        console.warn(err);
+        this.setState({
+          loaded: true,
+          error: true
+        });
       });
       
   }
@@ -179,28 +198,22 @@ class Timeline extends Component {
     }
   }
 
-  getWebsocketURI() {
-    if (process.env.NODE_ENV === "development") {
-      return "wss://10.0.0.1:" + this.wsPort;
-    }
-    var scheme = window.location.protocol === "https" ? "wss" : "ws";
-    return scheme + "://" + window.location.hostname + ":" + this.wsPort;
-  }
-
-  initWebsocketConnection() {
+  initWebsocketConnection(uri) {
     var self = this;
-    var uri = self.getWebsocketURI();
 
     self.wsSocket = new WebSocket(uri);
     self.wsSocket.binaryType = "arraybuffer";
     self.wsSocket.onopen = function() {
 
-      self.wsIsOpen = true;
-
-      if(self.wsIsRecovering) {
-        self.wsIsRecovering = false;
+      if(self.state.wsIsRecovering) {
         self.fetchEventList();
       }
+
+      self.setState({
+        wsIsOpen: true,
+        wsIsRecovering: false
+      });
+
     };
 
     self.wsSocket.onmessage = (e) => {
@@ -225,8 +238,11 @@ class Timeline extends Component {
 
       self.wsSocket.close();
       self.wsSocket = null;
-      self.wsIsOpen = false;
-      self.wsIsRecovering = true;
+
+      self.setState({
+        wsIsOpen: false,
+        wsIsRecovering: true
+      });
 
       if(self.wsReconnectTimeout !== undefined) {
         clearTimeout(self.wsReconnectTimeout);
@@ -235,11 +251,10 @@ class Timeline extends Component {
       // Try to reconnect again after 2 seconds
       self.wsReconnectTimeout = setTimeout(function() {
 
-        self.initWebsocketConnection();
+        self.initWebsocketConnection(uri);
         self.wsReconnectTimeout = undefined;
       }, 2000);
     };
-
   }
 
   /*
@@ -304,7 +319,15 @@ class Timeline extends Component {
     if(!this.state.loaded) {
       return (
         <div className="Timeline">
-          <div className="status-message">Unable to connect</div>
+          <div className="status-message">Connecting to {this.state.host}..</div>
+        </div>
+      );
+    }
+
+    if(this.state.error) {
+      return (
+        <div className="Timeline">
+          <div className="status-message">Unable to connect to {this.state.host}</div>
         </div>
       );
     }
@@ -314,6 +337,7 @@ class Timeline extends Component {
         <div className="primary-view">
             {this.getTimelineObjects()}
         </div>
+        <WebSocketStatus wsIsOpen={this.state.wsIsOpen} wsIsRecovering={this.state.wsIsRecovering} wsURI={this.state.wsURI} />
       </div>
     );
   }
