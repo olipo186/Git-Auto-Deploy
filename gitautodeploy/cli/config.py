@@ -43,6 +43,7 @@ def get_config_defaults():
     config['web-ui-password'] = None
     config['web-ui-whitelist'] = ['127.0.0.1']
     config['web-ui-require-https'] = True
+    config['web-ui-auth-enabled'] = True
 
     # Record all log levels by default
     config['log-level'] = 'NOTSET'

@@ -21,7 +21,8 @@ class Event {
       if(this.event.type === "WebhookAction")
         return "blue";
 
-      return "purple";
+      return "blue";
+//      return "purple";
   }
 
   getTitle() {

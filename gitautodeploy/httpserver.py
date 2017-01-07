@@ -35,7 +35,7 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
                 return
 
             # Client needs to authenticate
-            if not self.validate_web_ui_authentication():
+            if not self.validate_web_ui_basic_auth():
                 return
 
             return SimpleHTTPRequestHandler.do_HEAD(self)
@@ -55,10 +55,10 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
                 return
 
             # Client needs to authenticate
-            if not self.validate_web_ui_authentication():
+            if not self.validate_web_ui_basic_auth():
                 return
 
-            # Handle API call
+            # Handle status API call
             if self.path == "/api/status":
                 self.handle_status_api()
                 return
@@ -68,8 +68,12 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
 
         def handle_status_api(self):
             import json
+            from os import urandom
+            from base64 import b64encode
+
             data = {
                 'events': self._event_store.dict_repr(),
+                'auth-key': self._server_status['auth-key']
             }
 
             data.update(self.get_server_status())
@@ -286,9 +290,12 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
             self.send_error(403, "%s is not allowed access" % self.client_address[0])
             return False
 
-        def validate_web_ui_authentication(self):
+        def validate_web_ui_basic_auth(self):
             """Authenticate the user"""
             import base64
+
+            if not self._config['web-ui-auth-enabled']:
+                return True
 
             # Verify that a username and password is specified in the config
             if self._config['web-ui-username'] is None or self._config['web-ui-password'] is None:

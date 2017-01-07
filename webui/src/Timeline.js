@@ -24,12 +24,20 @@ class Timeline extends Component {
       loaded: false,
       error: false,
       wsIsOpen: false,
+      wsIsAuthenticated: false,
       wsIsRecovering: false,
       wsURI: null,
+      wsAuthKey: null,
       host: host
     };
 
     this.wsSocket = null;
+
+    var self = this;
+
+    setInterval(function() {
+      self.recover();
+    }, 5000);
   }
 
   componentDidMount() {
@@ -90,6 +98,21 @@ class Timeline extends Component {
     };
   }
 
+  recover() {
+    var self = this;
+
+    if(!self.state.isOpen) {
+      self.initWebsocketConnection(self.state.wsURI);
+      return;
+    }
+
+    if(!self.state.wsIsAuthenticated) {
+      self.authenticateWebsocketConnection();
+      return;
+    }
+
+  }
+
   fetchEventList() {
 
     var self = this;
@@ -104,7 +127,8 @@ class Timeline extends Component {
           events: events,
           loaded: true,
           error: false,
-          wsURI: wsURI
+          wsURI: wsURI,
+          wsAuthKey: res.data['auth-key']
         });
 
         // Once we get to know the web socket port, we can make the web socket connection
@@ -172,10 +196,43 @@ class Timeline extends Component {
     return undefined;
   }
 
+  authenticateWebsocketConnection(authKey) {
+    var self = this;
+
+    // Authenticate
+    self.wsSocket.send(JSON.stringify({
+      "type": "authenticate",
+      "auth-key": self.state.wsAuthKey
+    }));
+  }
+
   handleJSONMessage(data) {
     var event;
+    var self = this;
 
-    if(data.type === "new-event") {
+    // Auth key was invalid, maybe the server restarted
+    if(data.type === "bad-auth-key") {
+
+      self.setState({
+        wsIsAuthenticated: false,
+        wsIsRecovering: true
+      });
+
+      // Get a fresh auth key
+      self.fetchEventList();
+
+    } else if(data.type === "authenticated") {
+
+      if(self.state.wsIsRecovering) {
+        self.fetchEventList();
+      }
+
+      self.setState({
+        wsIsAuthenticated: true,
+        wsIsRecovering: false
+      });
+
+    } else if(data.type === "new-event") {
 
       event = new Event(data.event);
       this.addOrUpdateEvent(event);
@@ -201,19 +258,19 @@ class Timeline extends Component {
   initWebsocketConnection(uri) {
     var self = this;
 
+    if(!uri)
+      return;
+
     self.wsSocket = new WebSocket(uri);
     self.wsSocket.binaryType = "arraybuffer";
     self.wsSocket.onopen = function() {
 
-      if(self.state.wsIsRecovering) {
-        self.fetchEventList();
-      }
-
       self.setState({
         wsIsOpen: true,
-        wsIsRecovering: false
       });
 
+      self.authenticateWebsocketConnection();
+      
     };
 
     self.wsSocket.onmessage = (e) => {
@@ -337,7 +394,7 @@ class Timeline extends Component {
         <div className="primary-view">
             {this.getTimelineObjects()}
         </div>
-        <WebSocketStatus wsIsOpen={this.state.wsIsOpen} wsIsRecovering={this.state.wsIsRecovering} wsURI={this.state.wsURI} />
+        <WebSocketStatus wsIsOpen={this.state.wsIsOpen} wsIsRecovering={this.state.wsIsRecovering} wsURI={this.state.wsURI} wsIsAuthenticated={this.state.wsIsAuthenticated} />
       </div>
     );
   }

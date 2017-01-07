@@ -3,6 +3,14 @@ import './WebSocketStatus.scss';
 
 class WebSocketStatus extends Component {
   render() {
+
+    if(this.props.wsIsOpen && !this.props.wsIsAuthenticated)
+      return (
+        <div className="WebSocketStatus">
+          Authenticating against {this.props.wsURI}
+        </div>
+      );
+
     if(this.props.wsIsRecovering)
       return (
         <div className="WebSocketStatus">

@@ -170,6 +170,7 @@ class GitAutoDeploy(object):
         import socket
         import os
         import logging
+        import base64
         from .lock import Lock
 
         # This solves https://github.com/olipo186/Git-Auto-Deploy/issues/118
@@ -238,6 +239,9 @@ class GitAutoDeploy(object):
 
         self._pid = os.getpid()
         self.create_pid_file()
+
+        # Generate auth key to protect the web socket server
+        self._server_status['auth-key'] = base64.b64encode(os.urandom(32))
 
         # Clear any existing lock files, with no regard to possible ongoing processes
         for repo_config in self._config['repositories']:
@@ -404,7 +408,7 @@ class GitAutoDeploy(object):
             from twisted.internet.error import BindError
 
             # Create a WebSocketClientHandler instance
-            WebSocketClientHandler = WebSocketClientHandlerFactory(self._config, self._ws_clients, self._event_store)
+            WebSocketClientHandler = WebSocketClientHandlerFactory(self._config, self._ws_clients, self._event_store, self._server_status)
 
             uri = u"ws://%s:%s" % (self._config['wss-host'], self._config['wss-port'])
             factory = WebSocketServerFactory(uri)
