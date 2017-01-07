@@ -101,7 +101,7 @@ class Timeline extends Component {
   recover() {
     var self = this;
 
-    if(!self.state.isOpen) {
+    if(!self.state.wsIsOpen) {
       self.initWebsocketConnection(self.state.wsURI);
       return;
     }
