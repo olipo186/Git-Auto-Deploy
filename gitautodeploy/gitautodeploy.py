@@ -384,6 +384,7 @@ class GitAutoDeploy(object):
     def serve_wss(self):
         """Start a web socket server over SSL, used by the web UI to get notifications about updates."""
         import os
+        from .events import SystemEvent
 
         # Start a web socket server if the web UI is enabled
         if not self._config['web-ui-enabled']:
