@@ -22,7 +22,7 @@ wwwroot_files = package_files(package_path, "wwwroot")
 data_files = package_files(package_path, "data")
 
 setup(name='git-auto-deploy',
-      version='0.12.1',
+      version='0.13',
       url='https://github.com/olipo186/Git-Auto-Deploy',
       author='Oliver Poignant',
       author_email='oliver@poignant.se',
