@@ -39,6 +39,8 @@ def get_config_defaults():
 
     # Web user interface options
     config['web-ui-enabled'] = False  # Disabled by default until authentication is in place
+    config['web-ui-username'] = None
+    config['web-ui-password'] = None
     config['web-ui-whitelist'] = ['127.0.0.1']
     config['web-ui-require-https'] = True
 

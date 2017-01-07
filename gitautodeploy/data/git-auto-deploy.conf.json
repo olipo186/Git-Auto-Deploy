@@ -16,6 +16,8 @@
 
   // Web user interface options
   //"web-ui-enabled": false,
+  //"web-ui-username": null,
+  //"web-ui-password": null,
   //"web-ui-whitelist": ["127.0.0.1"],
 
   // TLS/SSL cert (necessary for HTTPS and web socket server to work)

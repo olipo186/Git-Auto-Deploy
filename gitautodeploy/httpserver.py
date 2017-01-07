@@ -10,80 +10,74 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
         HTTP requests."""
 
         def __init__(self, *args, **kwargs):
-             self._config = config
-             self._event_store = event_store
-             self._server_status = server_status
-             self._is_https = is_https
-             super(WebhookRequestHandler, self).__init__(*args, **kwargs)
+            self._config = config
+            self._event_store = event_store
+            self._server_status = server_status
+            self._is_https = is_https
+            super(WebhookRequestHandler, self).__init__(*args, **kwargs)
 
-        def end_headers (self):
+        def end_headers(self):
             self.send_header('Access-Control-Allow-Origin', '*')
             SimpleHTTPRequestHandler.end_headers(self)
 
         def do_HEAD(self):
-            import json
 
-            if not self._config['web-ui-enabled']:
-                self.send_error(403, "Web UI is not enabled")
+            # Web UI needs to be enabled
+            if not self.validate_web_ui_enabled():
                 return
 
-            if not self._is_https and self._config['web-ui-require-https']:
-
-                # Attempt to redirect the request to HTTPS
-                server_status = self.get_server_status()
-                if 'https-uri' in server_status:
-                    self.send_response(307)
-                    self.send_header('Location', '%s%s' % (server_status['https-uri'], self.path))
-                    self.end_headers()
-                    return
-
-                self.send_error(403, "Web UI is only accessible through HTTPS")
+            # Web UI might require HTTPS
+            if not self.validate_web_ui_https():
                 return
 
-            if not self.client_address[0] in self._config['web-ui-whitelist']:
-                self.send_error(403, "%s is not allowed access" % self.client_address[0])
+            # Client needs to be whitelisted
+            if not self.validate_web_ui_whitelist():
+                return
+
+            # Client needs to authenticate
+            if not self.validate_web_ui_authentication():
                 return
 
             return SimpleHTTPRequestHandler.do_HEAD(self)
 
         def do_GET(self):
-            import json
 
-            if not self._config['web-ui-enabled']:
-                self.send_error(403, "Web UI is not enabled")
+            # Web UI needs to be enabled
+            if not self.validate_web_ui_enabled():
                 return
 
-            if not self._is_https and self._config['web-ui-require-https']:
-
-                # Attempt to redirect the request to HTTPS
-                server_status = self.get_server_status()
-                if 'https-uri' in server_status:
-                    self.send_response(307)
-                    self.send_header('Location', '%s%s' % (server_status['https-uri'], self.path))
-                    self.end_headers()
-                    return
-
-                self.send_error(403, "Web UI is only accessible through HTTPS")
+            # Web UI might require HTTPS
+            if not self.validate_web_ui_https():
                 return
 
-            if not self.client_address[0] in self._config['web-ui-whitelist']:
-                self.send_error(403, "%s is not allowed access" % self.client_address[0])
+            # Client needs to be whitelisted
+            if not self.validate_web_ui_whitelist():
                 return
 
+            # Client needs to authenticate
+            if not self.validate_web_ui_authentication():
+                return
+
+            # Handle API call
             if self.path == "/api/status":
-                data = {
-                    'events': self._event_store.dict_repr(),
-                }
-
-                data.update(self.get_server_status())
-
-                self.send_response(200, 'OK')
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps(data).encode('utf-8'))
+                self.handle_status_api()
                 return
 
+            # Serve static file
             return SimpleHTTPRequestHandler.do_GET(self)
+
+        def handle_status_api(self):
+            import json
+            data = {
+                'events': self._event_store.dict_repr(),
+            }
+
+            data.update(self.get_server_status())
+
+            self.send_response(200, 'OK')
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(data).encode('utf-8'))
 
         def do_POST(self):
             """Invoked on incoming POST requests"""
@@ -235,17 +229,83 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
 
         def get_server_status(self):
             """Generate a copy of the server status object that contains the public IP or hostname."""
+
             server_status = {}
             for item in self._server_status.items():
                 key, value = item
                 public_host = self.headers.get('host').split(':')[0]
+
                 if key == 'http-uri':
                     server_status[key] = value.replace(self._config['http-host'], public_host)
+
                 if key == 'https-uri':
                     server_status[key] = value.replace(self._config['https-host'], public_host)
+
                 if key == 'wss-uri':
                     server_status[key] = value.replace(self._config['wss-host'], public_host)
+
             return server_status
 
-    return WebhookRequestHandler
+        def validate_web_ui_enabled(self):
+            """Verify that the Web UI is enabled"""
 
+            if self._config['web-ui-enabled']:
+                return True
+
+            self.send_error(403, "Web UI is not enabled")
+            return False
+
+        def validate_web_ui_https(self):
+            """Verify that the request is made over HTTPS"""
+
+            if self._is_https and self._config['web-ui-require-https']:
+                return True
+
+            # Attempt to redirect the request to HTTPS
+            server_status = self.get_server_status()
+            if 'https-uri' in server_status:
+                self.send_response(307)
+                self.send_header('Location', '%s%s' % (server_status['https-uri'], self.path))
+                self.end_headers()
+                return False
+
+            self.send_error(403, "Web UI is only accessible through HTTPS")
+            return False
+
+        def validate_web_ui_whitelist(self):
+            """Verify that the client address is whitelisted"""
+
+            # Allow all if whitelist is empty
+            if len(self._config['web-ui-whitelist']) == 0:
+                return True
+
+            # Verify that client IP is whitelisted
+            if self.client_address[0] in self._config['web-ui-whitelist']:
+                return True
+
+            self.send_error(403, "%s is not allowed access" % self.client_address[0])
+            return False
+
+        def validate_web_ui_authentication(self):
+            """Authenticate the user"""
+            import base64
+
+            # Verify that a username and password is specified in the config
+            if self._config['web-ui-username'] is None or self._config['web-ui-password'] is None:
+                self.send_error(403, "Authentication credentials missing in config")
+                return False
+
+            # Verify that the provided username and password matches the ones in the config
+            key = base64.b64encode("%s:%s" % (self._config['web-ui-username'], self._config['web-ui-password']))
+            if self.headers.getheader('Authorization') == 'Basic ' + key:
+                return True
+
+            # Let the client know that authentication is required
+            self.send_response(401)
+            self.send_header('WWW-Authenticate', 'Basic realm=\"GAD\"')
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write('Not authenticated')
+            return False
+
+    return WebhookRequestHandler
