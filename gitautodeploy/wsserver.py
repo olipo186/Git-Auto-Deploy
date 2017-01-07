@@ -1,3 +1,5 @@
+from .events import SystemEvent
+
 try:
     from autobahn.websocket import WebSocketServerProtocol
 except ImportError:
@@ -7,7 +9,6 @@ def WebSocketClientHandlerFactory(config, clients, event_store, server_status):
     """Factory method for webhook request handler class"""
 
     class WebSocketClientHandler(WebSocketServerProtocol, object):
-        from .events import SystemEvent
 
         def __init__(self, *args, **kwargs):
             self._config = config

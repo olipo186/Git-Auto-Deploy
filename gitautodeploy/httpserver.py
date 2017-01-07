@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from .webhook import WebhookRequestFilter, WebbhookRequestProcessor
+from .events import WebhookAction
+
 def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=False):
     """Factory method for webhook request handler class"""
     try:
@@ -88,8 +92,6 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
             from threading import Timer
             import logging
             import json
-            from .events import WebhookAction
-            from .webhook import WebhookRequestFilter, WebbhookRequestProcessor
             import threading
 
             logger = logging.getLogger()
