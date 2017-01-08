@@ -104,7 +104,7 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
             request_headers = dict((k.lower(), v) for k, v in request_headers.items())
 
             action = WebhookAction(self.client_address, request_headers, request_body)
-            event_store.register_action(action)
+            self._event_store.register_action(action)
             action.set_waiting(True)
 
             action.log_info('Incoming request from %s:%s' % (self.client_address[0], self.client_address[1]))
@@ -129,6 +129,8 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
                     self.send_error(400, 'Unrecognized service')
                     test_case['expected']['status'] = 400
                     action.log_error("Unable to find appropriate handler for request. The source service is not supported")
+                    action.set_waiting(False)
+                    action.set_success(False)
                     return
 
                 service_handler = ServiceRequestHandler(self._config)
@@ -138,21 +140,29 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
                 # Could be GitHubParser, GitLabParser or other
                 repo_configs = service_handler.get_repo_configs(request_headers, request_body, action)
 
+                action.log_info("%s candidates found" % len(repo_configs))
+
                 request_filter = WebhookRequestFilter()
 
                 if len(repo_configs) == 0:
                     self.send_error(400, 'Bad request')
                     test_case['expected']['status'] = 400
                     action.log_error("No matching repository config")
+                    action.set_waiting(False)
+                    action.set_success(False)
                     return
 
                 # Apply filters
                 repo_configs = request_filter.apply_filters(repo_configs, request_headers, request_body, action)
 
+                action.log_info("%s candidates matches the filters" % len(repo_configs))
+
                 if not service_handler.validate_request(request_headers, repo_configs, action):
                     self.send_error(400, 'Bad request')
                     test_case['expected']['status'] = 400
-                    action.log_warning("Request not valid")
+                    action.log_warning("Request is not valid")
+                    action.set_waiting(False)
+                    action.set_success(False)
                     return
 
                 test_case['expected']['status'] = 200
@@ -162,22 +172,27 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
                 self.end_headers()
 
                 if len(repo_configs) == 0:
-                    action.log_info("Filter does not match")
+                    action.set_waiting(False)
+                    action.set_success(False)
                     return
 
-                action.log_info("Executing deploy commands")
+                action.log_info("Proceeding with %s candidates" % len(repo_configs))
+                action.set_waiting(False)
+                action.set_success(True)
 
-                # Schedule the execution of the webhook (git pull and trigger deploy etc)
-                thread = threading.Thread(target=request_processor.execute_webhook, args=[repo_configs, request_headers, request_body, action])
-                thread.start()
+                for repo_config in repo_configs:
 
-                # Add additional test case data
-                test_case['config'] = {
-                    'url': 'url' in repo_configs[0] and repo_configs[0]['url'],
-                    'branch': 'branch' in repo_configs[0] and repo_configs[0]['branch'],
-                    'remote': 'remote' in repo_configs[0] and repo_configs[0]['remote'],
-                    'deploy': 'echo test!'
-                }
+                    # Schedule the execution of the webhook (git pull and trigger deploy etc)
+                    thread = threading.Thread(target=request_processor.execute_webhook, args=[repo_config, self._event_store])
+                    thread.start()
+
+                    # Add additional test case data
+                    test_case['config'] = {
+                        'url': 'url' in repo_config and repo_config['url'],
+                        'branch': 'branch' in repo_config and repo_config['branch'],
+                        'remote': 'remote' in repo_config and repo_config['remote'],
+                        'deploy': 'echo test!'
+                    }
 
             except ValueError as e:
                 self.send_error(400, 'Unprocessable request')
@@ -210,8 +225,7 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
             go through our custom logger instead."""
             import logging
             logger = logging.getLogger()
-            logger.info("%s - %s" % (self.client_address[0],
-                                            format%args))
+            logger.info("%s - %s" % (self.client_address[0], format%args))
 
         def save_test_case(self, test_case):
             """Log request information in a way it can be used as a test case."""

@@ -26,7 +26,7 @@ setup(name='git-auto-deploy',
       url='https://github.com/olipo186/Git-Auto-Deploy',
       author='Oliver Poignant',
       author_email='oliver@poignant.se',
-      packages = find_packages(),
+      packages=find_packages(),
       package_data={'gitautodeploy': data_files + wwwroot_files},
       entry_points={
           'console_scripts': [

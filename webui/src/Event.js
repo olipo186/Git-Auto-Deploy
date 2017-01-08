@@ -33,6 +33,9 @@ class Event {
       if(this.event.type === "WebhookAction")
         return "Webhook";
 
+      if(this.event.type === "DeployEvent")
+        return "Deploy";
+
       return this.event.type;
   }
 
@@ -51,6 +54,9 @@ class Event {
           return this.event.messages[this.event.messages.length - 1]
         return "Incoming request from " + this.event['client-address'];
       }
+
+      if(this.event.type === "DeployEvent")
+        return this.event.name;
 
       return this.event.type;
   }

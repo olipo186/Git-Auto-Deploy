@@ -44,6 +44,7 @@ def get_config_defaults():
     config['web-ui-whitelist'] = ['127.0.0.1']
     config['web-ui-require-https'] = True
     config['web-ui-auth-enabled'] = True
+    config['web-ui-prevent-root'] = True
 
     # Record all log levels by default
     config['log-level'] = 'NOTSET'
@@ -51,6 +52,7 @@ def get_config_defaults():
     # Other options
     config['intercept-stdout'] = True
     config['ssh-keyscan'] = False
+    config['allow-root-user'] = False
 
     # Include details with deploy command return codes in HTTP response. Causes
     # to await any git pull or deploy command actions before it sends the
@@ -231,6 +233,13 @@ def get_config_from_argv(argv):
                         help="path to ssl cert file",
                         dest="ssl-cert",
                         type=str)
+
+    parser.add_argument("--allow-root-user",
+                        help="allow running as root user",
+                        dest="allow-root-user",
+                        default=None,
+                        action="store_true")
+
 
     config = vars(parser.parse_args(argv))
 
