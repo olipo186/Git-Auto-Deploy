@@ -342,6 +342,7 @@ def init_config(config):
     import os
     import re
     import logging
+    from .models import Project
     logger = logging.getLogger()
 
     # Translate any ~ in the path into /home/<user>
@@ -359,6 +360,8 @@ def init_config(config):
 
     if 'repositories' not in config:
         config['repositories'] = []
+
+    deserialized = []
 
     for repo_config in config['repositories']:
 
@@ -424,6 +427,11 @@ def init_config(config):
                     filter['ref'] = None
 
                 filter['pull_request'] = True
+
+        project = Project(repo_config)
+        deserialized.append(project)
+
+    config['repositories'] = deserialized
 
     return config
 

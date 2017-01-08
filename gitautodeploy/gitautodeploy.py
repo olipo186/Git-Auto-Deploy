@@ -30,6 +30,7 @@ class GitAutoDeploy(object):
     _default_stderr = None
     _startup_event = None
     _ws_clients = []
+    _http_port = None
 
     def __new__(cls, *args, **kwargs):
         """Overload constructor to enable singleton access"""
@@ -260,7 +261,7 @@ class GitAutoDeploy(object):
         #if 'daemon-mode' not in self._config or not self._config['daemon-mode']:
         #    self._startup_event.log_info('Git Auto Deploy started')
 
-    def serve_http(self):
+    def serve_http(self, serve_forever=True):
         """Starts a HTTP server that listens for webhook requests and serves the web ui."""
         import sys
         import socket
@@ -288,8 +289,8 @@ class GitAutoDeploy(object):
 
             # Setup SSL for HTTP server
             sa = self._http_server.socket.getsockname()
-            self._server_status['http-uri'] = "http://%s:%s" % (self._config['http-host'], self._config['http-port'])
-
+            self._http_port = sa[1]
+            self._server_status['http-uri'] = "http://%s:%s" % (self._config['http-host'], sa[1])
             self._startup_event.log_info("Listening for connections on %s" % self._server_status['http-uri'])
             self._startup_event.http_address = sa[0]
             self._startup_event.http_port = sa[1]
@@ -299,17 +300,22 @@ class GitAutoDeploy(object):
             self._startup_event.log_critical("Unable to start HTTP server: %s" % e)
             return
 
+        if not serve_forever:
+            return
+
         # Run forever
         try:
             self._http_server.serve_forever()
 
         except socket.error as e:
+            print e
             event = SystemEvent()
             self._event_store.register_action(event)
             event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
 
         except KeyboardInterrupt as e:
+            print e
             event = SystemEvent()
             self._event_store.register_action(event)
             event.log_info('Requested close by keyboard interrupt signal')
@@ -359,7 +365,8 @@ class GitAutoDeploy(object):
                                                 server_side=True)
 
             sa = self._https_server.socket.getsockname()
-            self._server_status['https-uri'] = "https://%s:%s" % (self._config['https-host'], self._config['https-port'])
+            self._http_port = sa[1]
+            self._server_status['https-uri'] = "https://%s:%s" % (self._config['https-host'], sa[1])
 
             self._startup_event.log_info("Listening for connections on %s" % self._server_status['https-uri'])
             self._startup_event.http_address = sa[0]

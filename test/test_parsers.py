@@ -1,6 +1,7 @@
 import unittest
 from utils import WebhookTestCaseBase
 
+
 class WebhookTestCase(WebhookTestCaseBase):
 
     test_case = None
@@ -19,7 +20,10 @@ class WebhookTestCase(WebhookTestCaseBase):
 
         # GAD configuration for this test case
         config = {
-            'port': 0,
+            'http-port': 0,
+            'https-enabled': False,
+            'wss-enabled': False,
+            'web-ui-require-https': False,
             'intercept-stdout': False,
             'detailed-response': True,
             'log-level': 'ERROR',

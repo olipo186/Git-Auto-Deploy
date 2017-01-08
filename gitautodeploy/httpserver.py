@@ -1,6 +1,7 @@
 from __future__ import absolute_import
-from .webhook import WebhookRequestFilter, WebbhookRequestProcessor
 from .events import WebhookAction
+from .parsers import get_service_handler
+
 
 def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=False):
     """Factory method for webhook request handler class"""
@@ -119,10 +120,8 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
 
             try:
 
-                request_processor = WebbhookRequestProcessor()
-
                 # Will raise a ValueError exception if it fails
-                ServiceRequestHandler = request_processor.get_service_handler(request_headers, request_body, action)
+                ServiceRequestHandler = get_service_handler(request_headers, request_body, action)
 
                 # Unable to identify the source of the request
                 if not ServiceRequestHandler:
@@ -138,26 +137,32 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
                 action.log_info("Handling the request with %s" % ServiceRequestHandler.__name__)
 
                 # Could be GitHubParser, GitLabParser or other
-                repo_configs = service_handler.get_repo_configs(request_headers, request_body, action)
+                projects = service_handler.get_matching_projects(request_headers, request_body, action)
 
-                action.log_info("%s candidates found" % len(repo_configs))
+                action.log_info("%s candidates matches the request" % len(projects))
 
-                request_filter = WebhookRequestFilter()
+                # request_filter = WebhookRequestFilter()
 
-                if len(repo_configs) == 0:
+                if len(projects) == 0:
                     self.send_error(400, 'Bad request')
                     test_case['expected']['status'] = 400
-                    action.log_error("No matching repository config")
+                    action.log_error("No matching projects")
                     action.set_waiting(False)
                     action.set_success(False)
                     return
 
                 # Apply filters
-                repo_configs = request_filter.apply_filters(repo_configs, request_headers, request_body, action)
+                matching_projects = []
+                for project in projects:
+                    if project.apply_filters(request_headers, request_body, action):
+                        matching_projects.append(project)
 
-                action.log_info("%s candidates matches the filters" % len(repo_configs))
+                # Only keep projects that matches
+                projects = matching_projects
 
-                if not service_handler.validate_request(request_headers, repo_configs, action):
+                action.log_info("%s candidates matches after applying filters" % len(projects))
+
+                if not service_handler.validate_request(request_headers, projects, action):
                     self.send_error(400, 'Bad request')
                     test_case['expected']['status'] = 400
                     action.log_warning("Request is not valid")
@@ -171,26 +176,26 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
 
-                if len(repo_configs) == 0:
+                if len(projects) == 0:
                     action.set_waiting(False)
                     action.set_success(False)
                     return
 
-                action.log_info("Proceeding with %s candidates" % len(repo_configs))
+                action.log_info("Proceeding with %s candidates" % len(projects))
                 action.set_waiting(False)
                 action.set_success(True)
 
-                for repo_config in repo_configs:
+                for project in projects:
 
                     # Schedule the execution of the webhook (git pull and trigger deploy etc)
-                    thread = threading.Thread(target=request_processor.execute_webhook, args=[repo_config, self._event_store])
+                    thread = threading.Thread(target=project.execute_webhook, args=[self._event_store])
                     thread.start()
 
                     # Add additional test case data
                     test_case['config'] = {
-                        'url': 'url' in repo_config and repo_config['url'],
-                        'branch': 'branch' in repo_config and repo_config['branch'],
-                        'remote': 'remote' in repo_config and repo_config['remote'],
+                        'url': 'url' in project and project['url'],
+                        'branch': 'branch' in project and project['branch'],
+                        'remote': 'remote' in project and project['remote'],
                         'deploy': 'echo test!'
                     }
 

@@ -21,6 +21,9 @@ class Event {
       if(this.event.type === "WebhookAction")
         return "blue";
 
+      if(this.event.type === "DeployEvent")
+        return "blue";
+
       return "blue";
 //      return "purple";
   }

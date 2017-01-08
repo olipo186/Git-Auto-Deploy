@@ -1,8 +1,9 @@
-from .common import WebhookRequestParser
+from .base import WebhookRequestParserBase
 
-class GenericRequestParser(WebhookRequestParser):
 
-    def get_repo_configs(self, request_headers, request_body, action):
+class GenericRequestParser(WebhookRequestParserBase):
+
+    def get_matching_projects(self, request_headers, request_body, action):
         import json
 
         data = json.loads(request_body)

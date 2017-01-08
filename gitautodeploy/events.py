@@ -97,8 +97,8 @@ class WebhookAction(SystemEvent):
 
 class DeployEvent(SystemEvent):
 
-    def __init__(self, repo_config):
-        self.repo_config = repo_config
+    def __init__(self, project):
+        self.project = project
         super(DeployEvent, self).__init__()
 
     def __repr__(self):
@@ -106,11 +106,8 @@ class DeployEvent(SystemEvent):
 
     def dict_repr(self):
         data = super(DeployEvent, self).dict_repr()
-        data['name'] = self.get_name()
+        data['name'] = self.project.get_name()
         return data
-
-    def get_name(self):
-        return self.repo_config['url'].split('/')[-1].split('.git')[0]
 
 
 class StartupEvent(SystemEvent):

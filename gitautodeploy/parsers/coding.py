@@ -1,8 +1,9 @@
-from .common import WebhookRequestParser
+from .base import WebhookRequestParserBase
 
-class CodingRequestParser(WebhookRequestParser):
 
-    def get_repo_configs(self, request_headers, request_body, action):
+class CodingRequestParser(WebhookRequestParserBase):
+
+    def get_matching_projects(self, request_headers, request_body, action):
         import json
 
         data = json.loads(request_body)
@@ -34,7 +35,6 @@ class CodingRequestParser(WebhookRequestParser):
             repo_configs.append(repo_config)
 
         return repo_configs
-
 
     def verify_token(self, secret_token, request_token):
         return secret_token == request_token

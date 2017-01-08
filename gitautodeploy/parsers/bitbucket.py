@@ -1,8 +1,9 @@
-from .common import WebhookRequestParser
+from .base import WebhookRequestParserBase
 
-class BitBucketRequestParser(WebhookRequestParser):
 
-    def get_repo_configs(self, request_headers, request_body, action):
+class BitBucketRequestParser(WebhookRequestParserBase):
+
+    def get_matching_projects(self, request_headers, request_body, action):
         import json
 
         data = json.loads(request_body)

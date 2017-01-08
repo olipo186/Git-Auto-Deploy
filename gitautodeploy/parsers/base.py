@@ -1,5 +1,4 @@
-
-class WebhookRequestParser(object):
+class WebhookRequestParserBase(object):
     """Abstract parent class for git service parsers. Contains helper
     methods."""
 

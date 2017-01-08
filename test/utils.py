@@ -48,7 +48,7 @@ class WebhookTestCaseBase(unittest.TestCase):
         for current_thread in threading.enumerate():
             if current_thread == main_thread:
                 continue
-            #print "Waiting for thread %s to finish" % current_thread
+            # print "Waiting for thread %s to finish" % current_thread
             current_thread.join()
 
     def tearDown(self):
@@ -103,12 +103,15 @@ class GADRunnerThread(threading.Thread):
         self._app = GitAutoDeploy()
         self._app.setup(config)
 
+        # Setup HTTP server, but do not start serving
+        self._app.serve_http(serve_forever=False)
+
         # Store PID and port in thread instance
         self.pid = self._app._pid
-        self.port = self._app._port
+        self.port = self._app._http_port
 
     def run(self):
-        self._app.handle_request()
+        self._app._http_server.handle_request()
 
     def exit(self):
         self._app.stop()
