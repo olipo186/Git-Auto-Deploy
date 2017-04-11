@@ -357,7 +357,7 @@ def init_config(config):
     import os
     import re
     import logging
-    from .models import Project
+    from ..models import Project
     logger = logging.getLogger()
 
     # Translate any ~ in the path into /home/<user>
