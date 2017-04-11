@@ -1,3 +1,11 @@
+class ConfigFileNotFoundException(Exception):
+    pass
+
+
+class ConfigFileInvalidException(Exception):
+    pass
+
+
 def get_config_defaults():
     """Get the default configuration values."""
 
@@ -305,13 +313,18 @@ def read_json_file(file_path):
     import json
     import logging
     import re
-    logger = logging.getLogger()
+    import errno
 
     try:
         json_string = open(file_path).read()
 
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            raise ConfigFileNotFoundException(file_path)
+        else:
+            raise e
+
     except Exception as e:
-        logger.critical("Could not load %s file\n" % file_path)
         raise e
 
     try:
@@ -329,8 +342,10 @@ def read_json_file(file_path):
 
         data = json.loads('\n'.join(lines))
 
+    except ValueError as e:
+        raise ConfigFileInvalidException(file_path)
+
     except Exception as e:
-        logger.critical("%s file is not valid JSON\n" % file_path)
         raise e
 
     return data

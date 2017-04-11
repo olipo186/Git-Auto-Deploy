@@ -165,6 +165,29 @@ class GitAutoDeploy(object):
         for client in self._ws_clients:
             client.sendMessage(data)
 
+    def get_log_formatter(self):
+        import logging
+        return logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
+
+    def setup_console_logger(self):
+        import logging
+
+        # Set up logging
+        logger = logging.getLogger()
+
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setFormatter(self.get_log_formatter())
+
+        # Check if a stream handler is already present (will be if GAD is started by test script)
+        handler_present = False
+        for handler in logger.handlers:
+            if isinstance(handler, type(consoleHandler)):
+                handler_present = True
+                break
+
+        if not handler_present:
+            logger.addHandler(consoleHandler)
+
     def setup(self, config):
         """Setup an instance of GAD based on the provided config object."""
         import sys
@@ -190,24 +213,18 @@ class GitAutoDeploy(object):
 
         # Set up logging
         logger = logging.getLogger()
-        logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
+        logFormatter = self.get_log_formatter()
 
         # Enable console output?
         if ('quiet' in self._config and self._config['quiet']) or ('daemon-mode' in self._config and self._config['daemon-mode']):
+
+            # Add a default null handler that suppresses any console output
             logger.addHandler(NullHandler())
+
         else:
-            consoleHandler = logging.StreamHandler()
-            consoleHandler.setFormatter(logFormatter)
 
-            # Check if a stream handler is already present (will be if GAD is started by test script)
-            handler_present = False
-            for handler in logger.handlers:
-                if isinstance(handler, type(consoleHandler)):
-                    handler_present = True
-                    break
-
-            if not handler_present:
-                logger.addHandler(consoleHandler)
+            # Set up console logger if not already present
+            self.setup_console_logger()
 
         # Set logging level
         if 'log-level' in self._config:
@@ -585,8 +602,12 @@ def main():
     from cli.config import get_config_from_argv, find_config_file
     from cli.config import get_config_from_file, get_repo_config_from_environment
     from cli.config import init_config, get_config_file_path, rename_legacy_attribute_names
+    from cli.config import ConfigFileNotFoundException, ConfigFileInvalidException
+    import logging
     import sys
     import os
+
+    logger = logging.getLogger()
 
     app = GitAutoDeploy()
 
@@ -614,7 +635,17 @@ def main():
 
     # Config file path provided or found?
     if config_file_path:
-        file_config = get_config_from_file(config_file_path)
+
+        try:
+            file_config = get_config_from_file(config_file_path)
+        except ConfigFileNotFoundException as e:
+            app.setup_console_logger()
+            logger.critical("No config file not found at '%s'" % e)
+            return
+        except ConfigFileInvalidException as e:
+            app.setup_console_logger()
+            logger.critical("Unable to read config file due to invalid JSON format in '%s'" % e)
+            return
 
         # Merge config values from config file (overrides environment variables)
         config.update(file_config)
