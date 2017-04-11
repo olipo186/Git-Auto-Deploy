@@ -333,14 +333,12 @@ class GitAutoDeploy(object):
             self._http_server.serve_forever()
 
         except socket.error as e:
-            print e
             event = SystemEvent()
             self._event_store.register_action(event)
             event.log_critical("Error on socket: %s" % e)
             sys.exit(1)
 
         except KeyboardInterrupt as e:
-            print e
             event = SystemEvent()
             self._event_store.register_action(event)
             event.log_info('Requested close by keyboard interrupt signal')
