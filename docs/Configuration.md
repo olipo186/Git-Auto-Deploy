@@ -1,6 +1,6 @@
 # Command line options and environment variables
 
-```Git-Auto-Deploy``` supports a number of configurable options. Some of them are available using command line options, where others are only configurable from the config file. Below is a list of the options made available from the command line. Every command line option has also a corresponding environemnt variable. In the cases where a corresponding config file attribute is available, that attribute name is listed.
+```Git-Auto-Deploy``` supports a number of configurable options. Some of them are available using command line options, where others are only configurable from the config file. Below is a list of the options made available from the command line. Every command line option has also a corresponding environment variable. In the cases where a corresponding config file attribute is available, that attribute name is listed.
 
 There is also support for supplying configuration options for up to one repository using environmetn variables. Variable names and descriptios are available in the section (Repository configuration using environment variables)[#eepository-configuration-using-environment-variables].
 
