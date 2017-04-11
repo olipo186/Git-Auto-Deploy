@@ -1,3 +1,9 @@
+if __name__ == '__main__':
+    import sys
+    print("Critical - GAD must be started as a python module, for example using python -m gitautodeploy")
+    sys.exit()
+
+
 class LogInterface(object):
     """Interface that functions as a stdout and stderr handler and directs the
     output to the logging module, which in turn will output to either console,
@@ -14,8 +20,10 @@ class LogInterface(object):
     def flush(self):
         pass
 
+
 from .wsserver import WebSocketClientHandlerFactory
 from .httpserver import WebhookRequestHandlerFactory
+
 
 class GitAutoDeploy(object):
     _instance = None
