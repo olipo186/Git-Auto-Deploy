@@ -25,5 +25,5 @@ class WebhookRequestParserBase(object):
 
         return configs
 
-    def validate_request(self, request_headers, repo_configs, action):
+    def validate_request(self, request_headers, request_body, repo_configs, action):
         return True

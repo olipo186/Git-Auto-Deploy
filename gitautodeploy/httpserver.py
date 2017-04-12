@@ -162,10 +162,10 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
 
                 action.log_info("%s candidates matches after applying filters" % len(projects))
 
-                if not service_handler.validate_request(request_headers, projects, action):
+                if not service_handler.validate_request(request_headers, request_body, projects, action):
                     self.send_error(400, 'Bad request')
                     test_case['expected']['status'] = 400
-                    action.log_warning("Request is not valid")
+                    action.log_warning("Request was rejected due to a secret token mismatch")
                     action.set_waiting(False)
                     action.set_success(False)
                     return

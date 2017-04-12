@@ -28,7 +28,7 @@ class GitLabRequestParser(WebhookRequestParserBase):
 
         return repo_configs
 
-    def validate_request(self, request_headers, repo_configs, action):
+    def validate_request(self, request_headers, request_body, repo_configs, action):
 
         for repo_config in repo_configs:
 
