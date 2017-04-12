@@ -62,11 +62,6 @@ def get_config_defaults():
     config['ssh-keyscan'] = False
     config['allow-root-user'] = False
 
-    # Include details with deploy command return codes in HTTP response. Causes
-    # to await any git pull or deploy command actions before it sends the
-    # response.
-    config['detailed-response'] = False
-
     # Log incoming webhook requests in a way they can be used as test cases
     config['log-test-case'] = False
     config['log-test-case-dir'] = None

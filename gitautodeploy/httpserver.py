@@ -208,10 +208,7 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
                 return
 
             except Exception as e:
-
-                if 'detailed-response' in self._config and self._config['detailed-response']:
-                    self.send_error(500, 'Unable to process request')
-
+                self.send_error(500, 'Unable to process request')
                 test_case['expected']['status'] = 500
                 action.log_warning("Unable to process request")
                 action.set_waiting(False)

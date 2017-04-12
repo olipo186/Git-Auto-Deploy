@@ -25,7 +25,6 @@ class WebhookTestCase(WebhookTestCaseBase):
             'wss-enabled': False,
             'web-ui-require-https': False,
             'intercept-stdout': False,
-            'detailed-response': True,
             'log-level': 'ERROR',
             'repositories': []
         }
