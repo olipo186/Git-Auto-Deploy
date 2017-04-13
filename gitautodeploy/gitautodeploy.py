@@ -247,7 +247,7 @@ class GitAutoDeploy(object):
 
         # Display a warning when trying to run as root
         if not self._config['allow-root-user'] and getpass.getuser() == 'root':
-            logger.critical("Refusing to start. This application shouldn't run as root. Please run it as a different user. To disregard this warning and start anyway, set the config option \"allow-root-user\" to true, or use the command line argument --allow-root-user")
+            logger.critical("Refusing to start as root. This application shouldn't run as a privileged used. Please run it as a different user. To disregard this warning and start anyway, set the config option \"allow-root-user\" to true, or use the command line argument --allow-root-user")
             sys.exit()
 
         if 'ssh-keyscan' in self._config and self._config['ssh-keyscan']:
