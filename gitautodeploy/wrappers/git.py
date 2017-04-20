@@ -70,9 +70,15 @@ class GitWrapper():
         else:
             commands.append('unset GIT_DIR')
 
+        if "prepull" in repo_config:
+            commands.append(repo_config['prepull'])
+
         commands.append('git fetch ' + repo_config['remote'])
         commands.append('git reset --hard ' + repo_config['remote'] + "/" + repo_config['branch'])
         commands.append('git submodule update --init --recursive')
+
+        if "postpull" in repo_config:
+            commands.append(repo_config['postpull'])
 
         # All commands need to success
         for command in commands:
