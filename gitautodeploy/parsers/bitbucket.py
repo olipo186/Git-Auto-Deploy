@@ -28,6 +28,16 @@ class BitBucketRequestParser(WebhookRequestParserBase):
             # needed since the configured repositories might be configured using a different username.
             repo_urls.append('https://bitbucket.org/%s.git' % (data['repository']['full_name']))
 
+        if 'fullName' in data['repository']:
+            # For Bitbucket Server add repository name (OWNER/REPO_NAME).
+            # Support "Post Webhooks for Bitbucket".
+            repo_urls.append(data['repository']['fullName'])
+
+        if 'slug' in data['repository']:
+            # For Bitbucket Server add repository slug.
+            # Support "Post-Receive WebHooks" and "Post Webhooks for Bitbucket".
+            repo_urls.append(data['repository']['slug'])
+
         # Get a list of configured repositories that matches the incoming web hook reqeust
         repo_configs = self.get_matching_repo_configs(repo_urls, action)
 

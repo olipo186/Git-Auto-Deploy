@@ -1,0 +1,131 @@
+{
+  "config": {
+    "branch": "master",
+    "deploy": "echo test!",
+    "remote": "origin",
+    "url": "https://bitbucket.example.com/scm/PROJ_KEY/test-hook.git",
+    "match-url": "PROJ_KEY/test-hook",
+    "header-filter": {
+      "x-event-key": "pullrequest:merged"
+    }
+  },
+  "expected": {
+    "status": 200,
+    "data": []
+  },
+  "headers": {
+    "accept": "*/*",
+    "accept-encoding": "gzip, deflate",
+    "connection": "keep-alive",
+    "content-length": "4248",
+    "content-type": "application/json",
+    "host": "narpau.se:8001",
+    "user-agent": "Bitbucket-Webhooks/2.0",
+    "x-attempt-number": "1",
+    "x-event-key": "pullrequest:created",
+    "x-hook-uuid": "1f813038-7b26-4d08-9b80-ee76eeb53d93",
+    "x-request-uuid": "2e6626d9-effe-46f7-8bfd-e9dee9a58920"
+  },
+  "payload": {
+    "actor": {
+      "username": "username",
+      "displayName": "User Name"
+    },
+    "pullrequest": {
+      "id": "1",
+      "title": "Pull request title",
+      "link": "https://bitbucket.example.com/projects/PROJ_KEY/repos/test-hook/pull-requests/1",
+      "authorLogin": "User Name",
+      "fromRef": {
+        "repository": {
+          "scmId": "git",
+          "project": {
+            "key": "PROJ_KEY",
+            "name": "Project Key"
+          },
+          "slug": "test-hook",
+          "links": {
+            "self": [
+              {
+                "href": "https://bitbucket.example.com/projects/PROJ_KEY/repos/test-hook/browse"
+              }
+            ]
+          },
+          "public": false,
+          "owner": {
+            "username": "PROJ_KEY",
+            "displayName": "PROJ_KEY"
+          },
+          "fullName": "PROJ_KEY/test-hook",
+          "ownerName": "PROJ_KEY"
+        },
+        "branch": {
+          "name": "test",
+          "rawNode": "4f430da32d7bea2ea13fb8e564267758bce84801"
+        },
+        "commit": {
+          "message": null,
+          "date": null,
+          "hash": "4f430da32d7bea2ea13fb8e564267758bce84801",
+          "authorTimestamp": 0
+        }
+      },
+      "toRef": {
+        "repository": {
+          "scmId": "git",
+          "project": {
+            "key": "PROJ_KEY",
+            "name": "Project Key"
+          },
+          "slug": "test-hook",
+          "links": {
+            "self": [
+              {
+                "href": "https://bitbucket.example.com/projects/PROJ_KEY/repos/test-hook/browse"
+              }
+            ]
+          },
+          "public": false,
+          "owner": {
+            "username": "PROJ_KEY",
+            "displayName": "PROJ_KEY"
+          },
+          "fullName": "PROJ_KEY/test-hook",
+          "ownerName": "PROJ_KEY"
+        },
+        "branch": {
+          "name": "develop",
+          "rawNode": "82f42b549b35a42626df183003f84db6d896209d"
+        },
+        "commit": {
+          "message": null,
+          "date": null,
+          "hash": "82f42b549b35a42626df183003f84db6d896209d",
+          "authorTimestamp": 0
+        }
+      }
+    },
+    "repository": {
+      "scmId": "git",
+      "project": {
+        "key": "PROJ_KEY",
+        "name": "Project Key"
+      },
+      "slug": "test-hook",
+      "links": {
+        "self": [
+          {
+            "href": "https://bitbucket.example.com/projects/PROJ_KEY/repos/test-hook/browse"
+          }
+        ]
+      },
+      "public": false,
+      "owner": {
+        "username": "PROJ_KEY",
+        "displayName": "PROJ_KEY"
+      },
+      "fullName": "PROJ_KEY/test-hook",
+      "ownerName": "PROJ_KEY"
+    }
+  }
+}

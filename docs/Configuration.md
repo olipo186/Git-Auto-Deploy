@@ -277,6 +277,55 @@ Execute script upon GitLab CI successful build of `master` branch.
 }
 ```
 
+#### Bitbucket Server
+
+Get source using SSH.
+
+```json
+{
+  "host": "0.0.0.0",
+  "port": 8080,
+  "global_deploy": [
+    "echo Pre-deploy script",
+    "echo Post-deploy script"
+  ],
+  "repositories": [
+    {
+      "url": "ssh://git@bitbucket.example.com/KEY/Git-Auto-Deploy.git",
+      "match-url": "Git-Auto-Deploy",
+      "branch": "master",
+      "remote": "origin",
+      "path": "~/repositories/Git-Auto-Deploy",
+      "deploy": "echo deploying"
+    }
+  ]
+}
+```
+
+Using HTTPS.
+
+```json
+{
+  "host": "0.0.0.0",
+  "port": 8080,
+  "global_deploy": [
+    "echo Pre-deploy script",
+    "echo Post-deploy script"
+  ],
+  "repositories": [
+    {
+      "url": "https://bitbucket.example.com/scm/KEY/Git-Auto-Deploy.git",
+      "match-url": "Git-Auto-Deploy",
+      "branch": "master",
+      "remote": "origin",
+      "path": "~/repositories/Git-Auto-Deploy",
+      "deploy": "echo deploying"
+    }
+  ]
+}
+```
+```
+
 # Repository configuration using environment variables
 
 It's possible to configure up to one repository using environment variables. This can be useful in some specific use cases where a full config file is undesired.
