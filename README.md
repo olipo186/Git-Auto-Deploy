@@ -1,13 +1,13 @@
 [![Build Status](https://travis-ci.org/olipo186/Git-Auto-Deploy.svg?branch=master)](https://travis-ci.org/olipo186/Git-Auto-Deploy)
 # What is it?
 
-Git-Auto-Deploy consists of a small HTTP server that listens for Web hook requests sent from GitHub, GitLab or Bitbucket servers. This application allows you to continuously and automatically deploy you projects each time you push new commits to your repository.</p>
+Git-Auto-Deploy consists of a small HTTP server that listens for Webhook requests sent from GitHub, GitLab or Bitbucket servers. This application allows you to continuously and automatically deploy your projects each time you push new commits to your repository.</p>
 
 ![workflow](https://cloud.githubusercontent.com/assets/1056476/9344294/d3bc32a4-4607-11e5-9a44-5cd9b22e61d9.png)
 
 # How does it work?
 
-When commits are pushed to your Git repository, the Git server will notify ```Git-Auto-Deploy``` by sending a HTTP POST request with a JSON body to a pre configured URL (your-host:8001). The JSON body contains detailed information about the repository and what event that triggered the request. ```Git-Auto-Deploy``` parses and validates the request, and if all goes well it issues a ```git pull```.
+When commits are pushed to your Git repository, the Git server will notify ```Git-Auto-Deploy``` by sending an HTTP POST request with a JSON body to a pre-configured URL (your-host:8001). The JSON body contains detailed information about the repository and what event that triggered the request. ```Git-Auto-Deploy``` parses and validates the request, and if all goes well it issues a ```git pull```.
 
 Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command upon each successful ```git pull```, which can be used to trigger custom build actions or test scripts.</p>
 
@@ -15,7 +15,7 @@ Additionally, ```Git-Auto-Deploy``` can be configured to execute a shell command
 
 You can install ```Git-Auto-Deploy``` in multiple ways. Below are instructions for the most common methods.
 
-## Install from PPA (recommended for ubuntu systems)
+## Install from PPA (recommended for Ubuntu systems)
 
 [Using Debian? Have a look at this answer for instructions.](https://github.com/olipo186/Git-Auto-Deploy/issues/153)
 
@@ -73,10 +73,10 @@ To start ```Git-Auto-Deploy``` automatically on boot, open crontab in edit mode 
 
     @reboot /usr/bin/python -m /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
-You can also configure ```Git-Auto-Deploy``` to start on boot using a init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
+You can also configure ```Git-Auto-Deploy``` to start on boot using an init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
 
 ## Install and run GAD under Windows
-GAD runs under Windows, but requires some requisites.
+GAD runs under Windows but requires some requisites.
 
 1. Install Python 2.7 using the [Windows installer](https://www.python.org/downloads/).
 2. Verify that Python is added to your [system PATH](https://technet.microsoft.com/en-us/library/cc772047(v=ws.11).aspx). Make sure ``C:\Python27`` and ``C:\Python27\Scripts`` is part of the PATH system environment variable.
@@ -93,7 +93,7 @@ GAD runs under Windows, but requires some requisites.
 
 ## Command line options
 
-Below is a summarized list of the most common command line options. For a full list of available command line options, invoke the application with the argument ```--help``` or read the documentation article about [all avaialble command line options, environment variables and config attributes](./docs/Configuration.md).
+Below is a summarized list of the most common command line options. For a full list of available command line options, invoke the application with the argument ```--help``` or read the documentation article about [all available command line options, environment variables and config attributes](./docs/Configuration.md).
 
 Command line option    | Environment variable | Config attribute | Description
 ---------------------- | -------------------- | ---------------- | --------------------------
@@ -125,4 +125,4 @@ To make your git provider send notifications to ```Git-Auto-Deploy``` you will n
 
 # More documentation
 
-[Have a look in the *docs* directory](./docs), where you'll find more detailed documentation on configurations, alternative installation methods and example workflows.
+[Have a look in the *docs* directory](./docs), where you'll find more detailed documentation on configurations, alternative installation methods, and example workflows.
