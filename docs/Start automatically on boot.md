@@ -56,12 +56,15 @@ Make is start automatically on system boot;
 
 Have a look at [this script](../platforms/linux/initfiles/centos) which was kindly provided by https://github.com/olipo186/Git-Auto-Deploy/issues/192. Usage:
 
-Start
+Start:
+
     GitAutoDeploy_Service.sh start
 
-Stop
+Stop:
+
     GitAutoDeploy_Service.sh stop
 
-Stop
+Stop:
+
     GitAutoDeploy_Service.sh restart
 
