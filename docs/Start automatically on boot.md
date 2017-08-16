@@ -52,4 +52,16 @@ Make is start automatically on system boot;
 
     systemctl enable gitautodeploy
     
+## CentOS 7
+
+Have a look at [this script](../platforms/linux/initfiles/centos) which was kindly provided by https://github.com/olipo186/Git-Auto-Deploy/issues/192. Usage:
+
+Start
+    GitAutoDeploy_Service.sh start
+
+Stop
+    GitAutoDeploy_Service.sh stop
+
+Stop
+    GitAutoDeploy_Service.sh restart
 

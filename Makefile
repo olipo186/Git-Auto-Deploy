@@ -12,7 +12,8 @@ PYTHON       ?= python2
 DISTROS= \
 	xenial \
 	trusty \
-	precise
+	precise \
+	zesty
 
 # Package name and version
 PACKAGE_NAME=$(shell python setup.py --name)
