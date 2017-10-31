@@ -10,8 +10,10 @@
 
 3. Add read and write permissions to /etc/git-auto-deploy
 
-``` chown -R git-auto-deploy:git-auto-deploy /etc/git-auto-deploy
-chmod -R 700 /etc/git-auto-deploy/.ssh/* ```
+``` 
+chown -R git-auto-deploy:git-auto-deploy /etc/git-auto-deploy
+chmod -R 700 /etc/git-auto-deploy/.ssh/* 
+```
 
 4. Add write permissions to your repository path
 ```chown -R git-auto-deploy:git-auto-deploy /home/myrepo```
