@@ -287,7 +287,10 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
         def validate_web_ui_https(self):
             """Verify that the request is made over HTTPS"""
 
-            if self._is_https and self._config['web-ui-require-https']:
+            if self._is_https:
+                return True
+
+            if not self._config['web-ui-require-https']:
                 return True
 
             # Attempt to redirect the request to HTTPS
