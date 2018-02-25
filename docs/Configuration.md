@@ -46,6 +46,8 @@ Repository configurations are comprised of the following elements:
  - **payload-filter**: A list of inclusive filters/rules that is applied to the request body of incoming web hook requests and determines whether the deploy command should be executed or not. See section *Filters* for more details.
  - **header-filter**: A set of inclusive filters/rules that is applied to the request header of incoming web hook requests and determines whether the deploy command should be executed or not. See section *Filters* for more details.
  - **secret-token**: The secret token set for your webhook (currently only implemented for [GitHub](https://developer.github.com/webhooks/securing/) and GitLab)
+ - **prepull**: A command to execute immediately before the `git pull`.  This command could do something required for the ``git pull`` to succeed such as changing file permissions. 
+ - **postpull**: A command to execute immediately after the `git pull`.  After the **prepull** command is executed, **postpull** can clean up any changes made.
 
 ## Filters
 *(Currently only supported for GitHub and GitLab)*
@@ -167,7 +169,7 @@ deploy action only on a `build` event on the `master` branch.
 
 #### GitHub
 
-The following example will trigger when a pull request with **master** as base is closed.
+The following example will trigger when a pull request with **master** as base is closed. The command `./prepull` and `./postpull` will execute immediately before and after the pull
 ```json
 {
   "host": "0.0.0.0",
@@ -183,6 +185,8 @@ The following example will trigger when a pull request with **master** as base i
       "remote": "origin",
       "path": "~/repositories/Git-Auto-Deploy",
       "deploy": "echo deploying",
+      "prepull": "chmod u+w config.json",
+      "postpull": "chmod u-w config.json",
       "filters": [
         {
             "action": "closed",
