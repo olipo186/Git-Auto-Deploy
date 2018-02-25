@@ -13,8 +13,7 @@ DISTROS= \
 	artful \
 	xenial \
 	trusty \
-	precise \
-	zesty
+	precise
 
 # Package name and version
 PACKAGE_NAME=$(shell python setup.py --name)
