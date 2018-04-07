@@ -73,7 +73,7 @@ To start ```Git-Auto-Deploy``` automatically on boot, open crontab in edit mode 
 
     @reboot /usr/bin/python -m /path/to/Git-Auto-Deploy/gitautodeploy --daemon-mode --quiet --config /path/to/git-auto-deploy.conf.json
 
-You can also configure ```Git-Auto-Deploy``` to start on boot using an init.d-script (for Debian and Sys-V like init systems) or a service for systemd. [Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start automatically on boot.md).
+You can also configure ```Git-Auto-Deploy``` to start on boot using an init.d-script (for Debian and Sys-V like init systems) or a service for systemd.[Read more about starting Git-Auto-Deploy automatically using init.d or systemd](./docs/Start%20automatically%20on%20boot.md).
 
 ## Install and run GAD under Windows
 GAD runs under Windows but requires some requisites.
@@ -87,9 +87,9 @@ GAD runs under Windows but requires some requisites.
 
 ## Alternative installation methods
 
-* [Install as a python module (experimental)](./docs/Install as a python module.md)
-* [Install as a debian package (experimental)](./docs/Install as a debian package.md)
-* [Start automatically on boot (init.d and systemd)](./docs/Start automatically on boot.md)
+* [Install as a python module (experimental)](./docs/Install%20as%20a%20python%20module.md)
+* [Install as a debian package (experimental)](./docs/Install%20as%20a%20debian%20package.md)
+* [Start automatically on boot (init.d and systemd)](./docs/Start%20automatically%20on%20boot.md)
 
 ## Command line options
 
