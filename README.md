@@ -109,7 +109,7 @@ Command line option    | Environment variable | Config attribute | Description
 To make your git provider send notifications to ```Git-Auto-Deploy``` you will need to provide the hostname and port for your ```Git-Auto-Deploy``` instance. Instructions for the most common git providers is listed below.
 
 **GitHub**
-1. Go to your repository -> Settings -> Webhooks and Services -> Add webhook</li>
+1. Go to your repository -> Settings -> Webhooks -> Add webhook</li>
 2. In "Payload URL", enter your hostname and port (your-host:8001)
 3. Hit "Add webhook"
 
