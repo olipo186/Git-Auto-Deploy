@@ -352,7 +352,11 @@ def init_config(config):
     import os
     import re
     import logging
-    from ..models import Project
+    try:
+        from ..models import Project
+    except ValueError:
+        from gitautodeploy.models import Project
+        
     logger = logging.getLogger()
 
     # Translate any ~ in the path into /home/<user>
