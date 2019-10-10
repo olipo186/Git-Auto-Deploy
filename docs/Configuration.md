@@ -2,7 +2,7 @@
 
 ```Git-Auto-Deploy``` supports a number of configurable options. Some of them are available using command line options, where others are only configurable from the config file. Below is a list of the options made available from the command line. Every command line option has also a corresponding environment variable. In the cases where a corresponding config file attribute is available, that attribute name is listed.
 
-There is also support for supplying configuration options for up to one repository using environmetn variables. Variable names and descriptios are available in the section (Repository configuration using environment variables)[#eepository-configuration-using-environment-variables].
+There is also support for supplying configuration options for up to one repository using environment variables. Variable names and descriptions are available in the section (Repository configuration using environment variables)[#eepository-configuration-using-environment-variables].
 
 The list of available command line options can also be seen by invoke the application with the argument ```--help```.
 
@@ -52,7 +52,7 @@ Repository configurations are comprised of the following elements:
 ## Filters
 *(Currently only supported for GitHub and GitLab)*
 
-With filters, it is possible to trigger the deploy only if a set of specific criterias are met. The filter can be applied to the web hook request header (if specified using the *header-filter* option) or to the request body (*payload-filter*).
+With filters, it is possible to trigger the deploy only if a set of specific criteria are met. The filter can be applied to the web hook request header (if specified using the *header-filter* option) or to the request body (*payload-filter*).
 
 ### Allow web hooks with specific header values only (header-filter)
 
@@ -92,9 +92,9 @@ If a header name is specified but with the value set to true, any request that h
 
 ### Allow web hooks with specific payload only (payload-filter)
 
-A web hook request typically contains a payload, or a request body, made up of a JSON object. The JSON object in the request body will follow a format choosen by the Git server. Thus, it's format will differ depending on whether you are using GitHub, GitLab, Bitbucket or any other Git provider.
+A web hook request typically contains a payload, or a request body, made up of a JSON object. The JSON object in the request body will follow a format chosen by the Git server. Thus, it's format will differ depending on whether you are using GitHub, GitLab, Bitbucket or any other Git provider.
 
-A *payload-filter* can be used to set specific criterias for which incoming web hook requests should actually trigger the deploy command. Filter can be setup to only trigger deploys when a commit is made to a specific branch, or when a pull request is closed and has a specific destination branch.
+A *payload-filter* can be used to set specific criteria for which incoming web hook requests should actually trigger the deploy command. Filter can be setup to only trigger deploys when a commit is made to a specific branch, or when a pull request is closed and has a specific destination branch.
 
 Since the format of the payload differs depending on what Git provider you are using, you'll need to inspect the web hook request format yourself and write a filter that matches its structure.
 
