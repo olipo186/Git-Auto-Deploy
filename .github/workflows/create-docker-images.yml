@@ -36,6 +36,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Calculate docker image repo
         run: echo ::set-env name=IMAGE_REPO::$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+      - name: Calculate docker image tag
+        run: echo ::set-env name=IMAGE_TAG::$(./.github/workflows/docker-tag.sh ${{github.ref}})
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v1
         with:
@@ -44,4 +46,5 @@ jobs:
           registry: docker.pkg.github.com
           repository: ${{env.IMAGE_REPO}}/git-auto-deploy
           dockerfile: docker/image-gitautodeploy/Dockerfile
-          tag_with_ref: true
+          tag_with_ref: false
+          tags: ${{env.IMAGE_TAG}}
