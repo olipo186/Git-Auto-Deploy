@@ -1,0 +1,37 @@
+{
+  "== HTTP server options": "==",
+  "http-enabled": true,
+  "http-host": "0.0.0.0",
+  "http-port": 8080,
+
+  "https-enabled": false,
+  "wss-enabled": false,
+
+  "== Web user interface options": "==",
+  "web-ui-enabled": false,
+
+  "== File to store a copy of the console output": "==",
+  "log-file": "~/gitautodeploy.log",
+
+  "== File to store the process id (pid)": "==",
+  "pid-file": "~/.gitautodeploy.pid",
+
+  "== Record all log levels by default": "==",
+  "log-level": "INFO",
+
+  "== Deploy commands that should be executed for all projects": "==",
+  "global_deploy": [
+    "echo Deploy started!",
+    "echo Deploy completed!"
+  ],
+
+  "repositories": [
+    {
+      "url": "https://github.com/olipo186/Git-Auto-Deploy.git",
+      "branch": "master",
+      "remote": "origin",
+      "path": "~/repositories/git-auto-deploy",
+      "deploy": "./docker/examples/gitautodeploy-base-usage/app/run.py"
+    }
+  ]
+}

@@ -24,3 +24,5 @@ Possible usage can look like a child image with following Dockerfile:
     COPY config.json .
 
     CMD ["--ssh-keyscan"]
+
+Also you can look at the [example](../examples/gitautodeploy-base-usage)
