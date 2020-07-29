@@ -1,0 +1,50 @@
+name: Test and build
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v0.*
+      - dv0.*
+
+jobs:
+
+  test:
+    name: Testing
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [2.7, 3.5, 3.8]
+    steps:
+      - uses: actions/checkout@v2
+        name: Check out the repo
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: 'x64'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: python test/test_parsers.py
+
+  push_to_registry:
+    name: Push "git-auto-deploy" docker image to GitHub Packages
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Calculate docker image repo
+        run: echo ::set-env name=IMAGE_REPO::$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+      - name: Calculate docker image tag
+        run: echo ::set-env name=IMAGE_TAG::$(./.github/workflows/docker-tag.sh ${{github.ref}})
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: ${{env.IMAGE_REPO}}/git-auto-deploy
+          dockerfile: docker/image-gitautodeploy/Dockerfile
+          tag_with_ref: false
+          tags: ${{env.IMAGE_TAG}}
