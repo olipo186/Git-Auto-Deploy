@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - dev*
     tags:
       - v0.*
       - dv0.*
@@ -31,6 +32,8 @@ jobs:
     name: Push "git-auto-deploy" docker image to GitHub Packages
     needs: test
     runs-on: ubuntu-latest
+    env:
+      IMAGE_PUSH: ${{ startsWith(github.ref, 'refs/tags') || github.ref == 'refs/heads/master' || endsWith(github.ref, '-push') }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
@@ -48,3 +51,4 @@ jobs:
           dockerfile: docker/image-gitautodeploy/Dockerfile
           tag_with_ref: false
           tags: ${{env.IMAGE_TAG}}
+          push: ${{env.IMAGE_PUSH}}
