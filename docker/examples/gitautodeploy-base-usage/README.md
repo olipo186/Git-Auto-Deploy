@@ -14,6 +14,11 @@ it's addef for example only.
     docker build -t the-example .
     docker run --init --rm -p 8080:8080 the-example
 
+Look at [--init](https://docs.docker.com/engine/reference/run/#specify-an-init-process) flag in the snippet above.
+I think it's important to use it because GAD is supposed to run deployment scripts,
+that means we have a lot of child processes in the container
+that should be utilized properly.
+
 ## Structure
 
 The example consists of `app` and `image` folders.
