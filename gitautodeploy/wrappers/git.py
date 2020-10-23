@@ -112,7 +112,12 @@ class GitWrapper():
             return 0
 
         commands = []
-        commands.append('unset GIT_DIR')
+
+        if platform.system().lower() == "windows":
+            commands.append('bash -c "cd \\"' + repo_config['path'] + '\\" && unset GIT_DIR"')
+        else:
+            commands.append('unset GIT_DIR')
+        
         commands.append('git clone --recursive ' + repo_config['url'] + ' -b ' + repo_config['branch'] + ' ' + repo_config['path'])
 
         # All commands need to success
