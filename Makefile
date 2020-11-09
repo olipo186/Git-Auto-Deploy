@@ -15,7 +15,8 @@ DISTROS= \
 	artful \
 	xenial \
 	trusty \
-	precise
+	precise \
+	groovy
 
 # Package name and version
 PACKAGE_NAME=$(shell python setup.py --name)
