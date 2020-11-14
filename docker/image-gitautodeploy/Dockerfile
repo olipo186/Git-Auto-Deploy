@@ -4,7 +4,7 @@
 # People prefer different ways of configuring:
 # volumes, ONBUILD instructions, secrets, configs, evironment vairables.
 # This image doesn't have any proposals to let everyone do what they want.
-FROM alpine:3.12.0
+FROM alpine:3.12.1
 # Build context is expected to be the root of the git repository Git-Auto-Deploy.
 
 RUN apk --no-cache --update add \
