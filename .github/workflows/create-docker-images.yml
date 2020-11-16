@@ -38,9 +38,9 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Calculate docker image repo
-        run: echo ::set-env name=IMAGE_REPO::$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+        run: echo IMAGE_REPO=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Calculate docker image tag
-        run: echo ::set-env name=IMAGE_TAG::$(./.github/workflows/docker-tag.sh ${{github.ref}})
+        run: echo IMAGE_TAG=$(./.github/workflows/docker-tag.sh ${{github.ref}}) >> $GITHUB_ENV
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v1
         with:
