@@ -37,18 +37,29 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Calculate docker image repo
-        run: echo IMAGE_REPO=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
-      - name: Calculate docker image tag
-        run: echo IMAGE_TAG=$(./.github/workflows/docker-tag.sh ${{github.ref}}) >> $GITHUB_ENV
+
+      - name: Calculate environments
+        run: |
+          echo IMAGE_REPO=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+          echo IMAGE_TAG=$(./.github/workflows/docker-tag.sh ${{github.ref}}) >> $GITHUB_ENV
+
+      - name: Calculate images full names
+        run: |
+          echo IMAGE=docker.pkg.github.com/$IMAGE_REPO/git-auto-deploy:$IMAGE_TAG >> $GITHUB_ENV
+
+      - name: Login to GitHub Packages Docker Registry
+        run: |
+          docker login docker.pkg.github.com -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run: |
+          docker build \
+              --rm \
+              -f docker/image-gitautodeploy/Dockerfile \
+              -t $IMAGE \
+              .
+
       - name: Push to GitHub Packages
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          repository: ${{env.IMAGE_REPO}}/git-auto-deploy
-          dockerfile: docker/image-gitautodeploy/Dockerfile
-          tag_with_ref: false
-          tags: ${{env.IMAGE_TAG}}
-          push: ${{env.IMAGE_PUSH}}
+        if: ${{ env.IMAGE_PUSH == 'true' }}
+        run: |
+          docker push $IMAGE
