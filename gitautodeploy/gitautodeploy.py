@@ -494,7 +494,7 @@ class GitAutoDeploy(object):
             from autobahn.websocket import WebSocketServerProtocol, WebSocketServerFactory
             from twisted.internet import reactor
 
-            # Given that the nessecary dependencies are present, notify the
+            # Given that the necessary dependencies are present, notify the
             # event that we expect the web socket server to be started
             self._startup_event.ws_started = False
         except ImportError:
