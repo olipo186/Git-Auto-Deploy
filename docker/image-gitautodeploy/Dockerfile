@@ -11,7 +11,7 @@ RUN apk --no-cache --update add \
         python2 ca-certificates git openssh-client \
         && \
     python --version && which python && \
-    wget https://bootstrap.pypa.io/get-pip.py && \
+    wget https://bootstrap.pypa.io/2.7/get-pip.py && \
     python get-pip.py && pip install --upgrade pip && rm get-pip.py && \
     rm -rf /var/cache/apk/*
 
