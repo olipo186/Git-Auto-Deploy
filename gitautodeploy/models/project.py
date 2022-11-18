@@ -51,14 +51,24 @@ class Project(collections.MutableMapping):
                 node_value = payload
                 for node_key in filter_key.split('.'):
 
-                    # If the path is not valid the filter does not match
-                    if not node_key in node_value:
-                        action.log_info("Filter '%s' does not match since the path is invalid" % (filter_key))
+                    if node_key == 'changes':
+                        if not node_value[node_key][0]:
+                            action.log_info("Filter '%s' does not match since the path is invalid" % (filter_key))
 
-                        # Filter does not match, do not process this repo config
-                        return False
+                            # Filter does not match, do not process this repo config
+                            return False
+                        else:
+                            node_value = node_value[node_key][0]
 
-                    node_value = node_value[node_key]
+                    else:
+                        # If the path is not valid the filter does not match
+                        if not node_key in node_value:
+                            action.log_info("Filter '%s' does not match since the path is invalid" % (filter_key))
+
+                            # Filter does not match, do not process this repo config
+                            return False
+                        else:
+                            node_value = node_value[node_key]
 
                 if filter_value == node_value:
                     continue

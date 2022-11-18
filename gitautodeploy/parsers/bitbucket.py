@@ -38,7 +38,10 @@ class BitBucketRequestParser(WebhookRequestParserBase):
             # Support "Post-Receive WebHooks" and "Post Webhooks for Bitbucket".
             repo_urls.append(data['repository']['slug'])
 
-        # Get a list of configured repositories that matches the incoming web hook reqeust
+        if 'changes' in data:
+            repo_urls.append(data['changes'][0])
+
+        # Get a list of configured repositories that matches the incoming web hook request
         repo_configs = self.get_matching_repo_configs(repo_urls, action)
 
         return repo_configs
