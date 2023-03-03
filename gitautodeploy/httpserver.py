@@ -119,6 +119,9 @@ def WebhookRequestHandlerFactory(config, event_store, server_status, is_https=Fa
                 res = parse_qs(request_body.decode('utf-8'))
                 if 'payload' in res and len(res['payload']) == 1:
                     request_body = res['payload'][0]
+            
+            # Fix ascii codec cant encode character u'\u201c'
+            request_body = request_body.encode('utf-8')
 
             # Test case debug data
             test_case = {
